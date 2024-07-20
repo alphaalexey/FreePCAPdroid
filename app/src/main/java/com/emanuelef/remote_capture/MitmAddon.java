@@ -73,7 +73,9 @@ public class MitmAddon {
         } catch (PackageManager.NameNotFoundException e) {
             return -1;
         }
-    }    private final ServiceConnection mConnection = new ServiceConnection() {
+    }
+
+    private final ServiceConnection mConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             Log.i(TAG, "Service connected");

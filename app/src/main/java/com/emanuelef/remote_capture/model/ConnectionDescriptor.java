@@ -97,6 +97,7 @@ public class ConnectionDescriptor {
     private boolean decryption_ignored;
     private boolean payload_truncated;
     private boolean encrypted_l7;     // application layer is encrypted (e.g. TLS)
+
     public ConnectionDescriptor(int _incr_id, int _ipver, int _ipproto, String _src_ip, String _dst_ip,
                                 int _src_port, int _dst_port, int _local_port, int _uid, int _ifidx,
                                 boolean _mitm_decrypt, long when) {

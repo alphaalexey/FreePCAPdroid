@@ -1399,7 +1399,7 @@ public class Utils {
         return "Android " + Build.VERSION.RELEASE + " (SDK " + Build.VERSION.SDK_INT + ")";
     }
 
-    public static String getBuildInfo(Context ctx) {
+    public static String getBuildInfo() {
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
         boolean rooted = Utils.isRootAvailable();
 

@@ -82,7 +82,7 @@ public class AboutActivity extends BaseActivity implements MenuProvider {
             startActivity(intent);
             return true;
         } else if (id == R.id.build_info) {
-            String deviceInfo = Utils.getBuildInfo(this) + "\n\n" +
+            String deviceInfo = Utils.getBuildInfo() + "\n\n" +
                     Prefs.asString(this);
 
             // Private DNS

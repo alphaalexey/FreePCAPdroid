@@ -20,7 +20,6 @@ import android.annotation.SuppressLint;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.TypedArray;
 import android.net.Uri;
@@ -49,7 +48,7 @@ public final class ErrorActivity extends AppCompatActivity {
 
     @NonNull
     public static String getAllErrorDetailsFromIntent(@NonNull Context context, @NonNull Intent intent) {
-        String errorDetails = Utils.getBuildInfo(context);
+        String errorDetails = Utils.getBuildInfo();
         errorDetails += "\nStack trace:  \n";
         errorDetails += CustomActivityOnCrash.getStackTraceFromIntent(intent);
 

@@ -24,7 +24,7 @@ android {
             versionNameSuffix '-beta'
             pseudoLocalesEnabled true
 
-            if(project.hasProperty("doNotStrip")) {
+            if (project.hasProperty("doNotStrip")) {
                 // NOTE: packagingOptions will also affect the "release" build, so the "doNotStrip"
                 // guard is required
                 packagingOptions {
