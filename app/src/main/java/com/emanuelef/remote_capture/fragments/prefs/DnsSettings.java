@@ -18,6 +18,7 @@
  */
 
 package com.emanuelef.remote_capture.fragments.prefs;
+
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;

@@ -30,12 +30,12 @@ public class Blocklist extends MatchList {
     public synchronized boolean checkGracePeriods() {
         long now = SystemClock.elapsedRealtime();
         boolean changed = false;
-        Iterator<Map.Entry<Integer,Long>> iter = mUidToGrace.entrySet().iterator();
+        Iterator<Map.Entry<Integer, Long>> iter = mUidToGrace.entrySet().iterator();
 
-        while(iter.hasNext()) {
+        while (iter.hasNext()) {
             Map.Entry<Integer, Long> entry = iter.next();
 
-            if(now >= entry.getValue()) {
+            if (now >= entry.getValue()) {
                 Log.i(TAG, "Grace period ended for app: " + entry.getKey());
                 iter.remove();
                 changed = true;
@@ -52,7 +52,7 @@ public class Blocklist extends MatchList {
 
     @Override
     public boolean matchesApp(int uid) {
-        if(!super.matchesApp(uid))
+        if (!super.matchesApp(uid))
             return false;
 
         synchronized (this) {
@@ -75,7 +75,7 @@ public class Blocklist extends MatchList {
     public void saveAndReload() {
         save();
 
-        if(CaptureService.isServiceActive())
+        if (CaptureService.isServiceActive())
             CaptureService.requireInstance().reloadBlocklist();
     }
 }

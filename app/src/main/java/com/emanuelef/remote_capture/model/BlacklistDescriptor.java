@@ -30,24 +30,11 @@ public class BlacklistDescriptor {
     public final Type type;    // NOTE: used via JNI
     public final String fname; // NOTE: used via JNI
     public final String url;
+    public boolean loaded = false;
+    public int num_rules = 0;
     long mLastUpdate = 0;
     boolean mUpToDate = false;
     boolean mUpdating = false;
-    public boolean loaded = false;
-    public int num_rules = 0;
-
-    // NOTE: used via JNI
-    public enum Type {
-        IP_BLACKLIST,
-        DOMAIN_BLACKLIST,
-    }
-
-    public enum Status {
-        NOT_LOADED,
-        OUTDATED,
-        UPDATING,
-        UP_TO_DATE
-    }
 
     public BlacklistDescriptor(String label, Type type, String fname, String url) {
         this.label = label;
@@ -81,11 +68,11 @@ public class BlacklistDescriptor {
     }
 
     public Status getStatus() {
-        if(mUpdating)
+        if (mUpdating)
             return Status.UPDATING;
-        if(!loaded)
+        if (!loaded)
             return Status.NOT_LOADED;
-        if(!mUpToDate)
+        if (!mUpToDate)
             return Status.OUTDATED;
         return Status.UP_TO_DATE;
     }
@@ -93,7 +80,7 @@ public class BlacklistDescriptor {
     public String getStatusLabel(Context ctx) {
         int id = -1;
 
-        switch(getStatus()) {
+        switch (getStatus()) {
             case NOT_LOADED:
                 id = R.string.status_not_loaded;
                 break;
@@ -114,7 +101,7 @@ public class BlacklistDescriptor {
     public int getStatusColor(Context ctx) {
         int id = -1;
 
-        switch(getStatus()) {
+        switch (getStatus()) {
             case NOT_LOADED:
                 id = R.color.danger;
                 break;
@@ -135,5 +122,18 @@ public class BlacklistDescriptor {
     public String getTypeLabel(Context ctx) {
         int id = (type == Type.IP_BLACKLIST) ? R.string.blacklist_type_ip : R.string.blacklist_type_domain;
         return ctx.getString(id);
+    }
+
+    // NOTE: used via JNI
+    public enum Type {
+        IP_BLACKLIST,
+        DOMAIN_BLACKLIST,
+    }
+
+    public enum Status {
+        NOT_LOADED,
+        OUTDATED,
+        UPDATING,
+        UP_TO_DATE
     }
 }

@@ -52,6 +52,8 @@ import cat.ereza.customactivityoncrash.config.CaocConfig;
  */
 public class PCAPdroid extends Application {
     private static final String TAG = "PCAPdroid";
+    protected static boolean isUnderTest = false;
+    private static WeakReference<PCAPdroid> mInstance;
     private MatchList mVisMask;
     private MatchList mMalwareWhitelist;
     private MatchList mFirewallWhitelist;
@@ -60,14 +62,20 @@ public class PCAPdroid extends Application {
     private Blacklists mBlacklists;
     private CtrlPermissions mCtrlPermissions;
     private Context mLocalizedContext;
-    private static WeakReference<PCAPdroid> mInstance;
-    protected static boolean isUnderTest = false;
+
+    public static @NonNull PCAPdroid getInstance() {
+        return mInstance.get();
+    }
+
+    public static boolean isUnderTest() {
+        return isUnderTest;
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        if(!isUnderTest())
+        if (!isUnderTest())
             Log.init(getCacheDir().getAbsolutePath());
 
         CaocConfig.Builder builder = CaocConfig.Builder.create();
@@ -81,8 +89,8 @@ public class PCAPdroid extends Application {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String theme = prefs.getString(Prefs.PREF_APP_THEME, "");
 
-        if("".equals(theme)) {
-            if(Utils.isTv(this)) {
+        if ("".equals(theme)) {
+            if (Utils.isTv(this)) {
                 // Use the dark theme by default on Android TV
                 theme = "dark";
                 prefs.edit().putString(Prefs.PREF_APP_THEME, theme).apply();
@@ -104,14 +112,14 @@ public class PCAPdroid extends Application {
                     String packageName = intent.getData().getSchemeSpecificPart();
                     Log.d(TAG, "ACTION_PACKAGE_ADDED [new=" + newInstall + "]: " + packageName);
 
-                    if(newInstall)
+                    if (newInstall)
                         checkUidMapping(packageName);
                 } else if (Intent.ACTION_PACKAGE_REMOVED.equals(intent.getAction())) {
                     boolean isUpdate = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false);
                     String packageName = intent.getData().getSchemeSpecificPart();
                     Log.d(TAG, "ACTION_PACKAGE_REMOVED [update=" + isUpdate + "]: " + packageName);
 
-                    if(!isUpdate) {
+                    if (!isUpdate) {
                         checkUidMapping(packageName);
                         removeUninstalledAppsFromAppFilter();
                     }
@@ -122,35 +130,27 @@ public class PCAPdroid extends Application {
         removeUninstalledAppsFromAppFilter();
     }
 
-    public static @NonNull PCAPdroid getInstance() {
-        return mInstance.get();
-    }
-
-    public static boolean isUnderTest() {
-        return isUnderTest;
-    }
-
     public MatchList getVisualizationMask() {
-        if(mVisMask == null)
+        if (mVisMask == null)
             mVisMask = new MatchList(mLocalizedContext, Prefs.PREF_VISUALIZATION_MASK);
 
         return mVisMask;
     }
 
     public Blacklists getBlacklists() {
-        if(mBlacklists == null)
+        if (mBlacklists == null)
             mBlacklists = new Blacklists(mLocalizedContext);
         return mBlacklists;
     }
 
     public MatchList getMalwareWhitelist() {
-        if(mMalwareWhitelist == null)
+        if (mMalwareWhitelist == null)
             mMalwareWhitelist = new MatchList(mLocalizedContext, Prefs.PREF_MALWARE_WHITELIST);
         return mMalwareWhitelist;
     }
 
     public Blocklist getBlocklist() {
-        if(mBlocklist == null)
+        if (mBlocklist == null)
             mBlocklist = new Blocklist(mLocalizedContext);
         return mBlocklist;
     }
@@ -170,26 +170,26 @@ public class PCAPdroid extends Application {
     }
 
     private void checkUidMapping(String pkg) {
-        if(mVisMask != null)
+        if (mVisMask != null)
             mVisMask.uidMappingChanged(pkg);
 
         // When an app is installed/uninstalled, recheck the UID mappings.
         // In particular:
         //  - On app uninstall, invalidate any package_name -> UID mapping
         //  - On app install, add the new package_name -> UID mapping
-        if((mMalwareWhitelist != null) && mMalwareWhitelist.uidMappingChanged(pkg))
+        if ((mMalwareWhitelist != null) && mMalwareWhitelist.uidMappingChanged(pkg))
             CaptureService.reloadMalwareWhitelist();
 
-        if((mFirewallWhitelist != null) && mFirewallWhitelist.uidMappingChanged(pkg)) {
-            if(CaptureService.isServiceActive())
+        if ((mFirewallWhitelist != null) && mFirewallWhitelist.uidMappingChanged(pkg)) {
+            if (CaptureService.isServiceActive())
                 CaptureService.requireInstance().reloadFirewallWhitelist();
         }
 
-        if((mDecryptionList != null) && mDecryptionList.uidMappingChanged(pkg))
+        if ((mDecryptionList != null) && mDecryptionList.uidMappingChanged(pkg))
             CaptureService.reloadDecryptionList();
 
-        if((mBlocklist != null) && mBlocklist.uidMappingChanged(pkg)) {
-            if(CaptureService.isServiceActive())
+        if ((mBlocklist != null) && mBlocklist.uidMappingChanged(pkg)) {
+            if (CaptureService.isServiceActive())
                 CaptureService.requireInstance().reloadBlocklist();
         }
     }
@@ -200,7 +200,7 @@ public class PCAPdroid extends Application {
         ArrayList<String> to_remove = new ArrayList<>();
         PackageManager pm = getPackageManager();
 
-        for (String package_name: filter) {
+        for (String package_name : filter) {
             try {
                 Utils.getPackageInfo(pm, package_name, 0);
             } catch (PackageManager.NameNotFoundException e) {
@@ -218,11 +218,11 @@ public class PCAPdroid extends Application {
     }
 
     public MatchList getFirewallWhitelist() {
-        if(mFirewallWhitelist == null) {
+        if (mFirewallWhitelist == null) {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
             mFirewallWhitelist = new MatchList(mLocalizedContext, Prefs.PREF_FIREWALL_WHITELIST);
 
-            if(!Prefs.isFirewallWhitelistInitialized(prefs)) {
+            if (!Prefs.isFirewallWhitelistInitialized(prefs)) {
                 initFirewallWhitelist();
                 Prefs.setFirewallWhitelistInitialized(prefs);
             }
@@ -231,14 +231,14 @@ public class PCAPdroid extends Application {
     }
 
     public MatchList getDecryptionList() {
-        if(mDecryptionList == null)
+        if (mDecryptionList == null)
             mDecryptionList = new MatchList(mLocalizedContext, Prefs.PREF_DECRYPTION_LIST);
 
         return mDecryptionList;
     }
 
     public CtrlPermissions getCtrlPermissions() {
-        if(mCtrlPermissions == null)
+        if (mCtrlPermissions == null)
             mCtrlPermissions = new CtrlPermissions(this);
         return mCtrlPermissions;
     }

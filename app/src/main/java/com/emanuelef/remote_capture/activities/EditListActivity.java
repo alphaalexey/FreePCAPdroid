@@ -29,22 +29,22 @@ import com.emanuelef.remote_capture.model.MatchList;
 
 /* An activity to edit a MatchList, specified via LIST_INFO_EXTRA */
 public class EditListActivity extends BaseActivity {
-    private static final String TAG = "EditListActivity";
     public static final String LIST_TYPE_EXTRA = "list_type";
+    private static final String TAG = "EditListActivity";
     private ListInfo mListInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if(getIntent() == null) {
+        if (getIntent() == null) {
             Log.e(TAG, "null intent");
             finish();
             return;
         }
 
         ListInfo.Type ltype = Utils.getSerializableExtra(getIntent(), LIST_TYPE_EXTRA, ListInfo.Type.class);
-        if(ltype == null) {
+        if (ltype == null) {
             Log.e(TAG, "null list info");
             finish();
             return;

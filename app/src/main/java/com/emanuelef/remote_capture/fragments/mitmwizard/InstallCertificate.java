@@ -38,10 +38,10 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 
 import com.emanuelef.remote_capture.Log;
+import com.emanuelef.remote_capture.MitmAddon;
 import com.emanuelef.remote_capture.R;
 import com.emanuelef.remote_capture.Utils;
 import com.emanuelef.remote_capture.interfaces.MitmListener;
-import com.emanuelef.remote_capture.MitmAddon;
 import com.pcapdroid.mitm.MitmAPI;
 
 import java.io.IOException;
@@ -53,11 +53,10 @@ public class InstallCertificate extends StepFragment implements MitmListener {
     private static final String TAG = "InstallCertificate";
     private MitmAddon mAddon;
     private String mCaPem;
-    private X509Certificate mCaCert;
-    private boolean mFallbackExport;
-
     private final ActivityResultLauncher<Intent> certExportLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::certExportResult);
+    private X509Certificate mCaCert;
+    private boolean mFallbackExport;
     private final ActivityResultLauncher<Intent> certInstallLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::certInstallResult);
 
@@ -71,7 +70,8 @@ public class InstallCertificate extends StepFragment implements MitmListener {
         showSkipButton(view1 -> new AlertDialog.Builder(view1.getContext())
                 .setTitle(R.string.warning)
                 .setMessage(R.string.mitm_skip_notice)
-                .setNegativeButton(R.string.cancel_action, (dialogInterface, i) -> {})
+                .setNegativeButton(R.string.cancel_action, (dialogInterface, i) -> {
+                })
                 .setPositiveButton(R.string.app_intro_skip_button, (d, whichButton) -> {
                     MitmAddon.setCAInstallationSkipped(requireContext(), true);
                     gotoStep(R.id.navto_done);
@@ -88,8 +88,8 @@ public class InstallCertificate extends StepFragment implements MitmListener {
 
     @Override
     public void onResume() {
-        if(!Utils.isCAInstalled(mCaCert)) {
-            if(!mAddon.isConnected()) {
+        if (!Utils.isCAInstalled(mCaCert)) {
+            if (!mAddon.isConnected()) {
                 if (!mAddon.connect(0)) {
                     new AlertDialog.Builder(requireContext())
                             .setTitle(R.string.error)
@@ -132,7 +132,7 @@ public class InstallCertificate extends StepFragment implements MitmListener {
     private boolean canInstallCertViaIntent() {
         // On Android < 11, an intent can be used for cert installation
         // On Android 11+, users must manually install the certificate from the settings
-        return((Build.VERSION.SDK_INT < Build.VERSION_CODES.R) && !mFallbackExport);
+        return ((Build.VERSION.SDK_INT < Build.VERSION_CODES.R) && !mFallbackExport);
     }
 
     private void fallbackToCertExport() {
@@ -148,7 +148,7 @@ public class InstallCertificate extends StepFragment implements MitmListener {
         intent.setType("application/x-x509-ca-cert");
         intent.putExtra(Intent.EXTRA_TITLE, fname);
 
-        if(!Utils.launchFileDialog(requireContext(), intent, certExportLauncher))
+        if (!Utils.launchFileDialog(requireContext(), intent, certExportLauncher))
             certFail();
     }
 
@@ -166,25 +166,25 @@ public class InstallCertificate extends StepFragment implements MitmListener {
     }
 
     private void certExportResult(final ActivityResult result) {
-        if((result.getResultCode() == Activity.RESULT_OK) && (result.getData() != null)) {
+        if ((result.getResultCode() == Activity.RESULT_OK) && (result.getData() != null)) {
             Context ctx = requireContext();
             Uri cert_uri = result.getData().getData();
             boolean written = false;
 
-            try(PrintWriter writer = new PrintWriter(ctx.getContentResolver().openOutputStream(cert_uri, "rwt"))) {
+            try (PrintWriter writer = new PrintWriter(ctx.getContentResolver().openOutputStream(cert_uri, "rwt"))) {
                 writer.print(mCaPem);
                 written = true;
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            if(written)
+            if (written)
                 Utils.showToastLong(ctx, R.string.cert_exported_now_installed);
         }
     }
 
     private void certInstallResult(final ActivityResult result) {
-        if((result.getResultCode() == Activity.RESULT_OK) && Utils.isCAInstalled(mCaCert))
+        if ((result.getResultCode() == Activity.RESULT_OK) && Utils.isCAInstalled(mCaCert))
             certOk();
         else
             fallbackToCertExport();
@@ -196,7 +196,7 @@ public class InstallCertificate extends StepFragment implements MitmListener {
 
         // NOTE: this may be called when context is null
         Context context = getContext();
-        if(context == null) {
+        if (context == null) {
             Log.d(TAG, "null context");
             return;
         }
@@ -206,13 +206,13 @@ public class InstallCertificate extends StepFragment implements MitmListener {
         // NOTE: onMitmGetCaCertificateResult can be called by fallbackToCertExport
         mStepButton.setText(canInstallCertViaIntent() ? R.string.install_action : R.string.export_action);
 
-        if(mCaPem != null) {
+        if (mCaPem != null) {
             Log.d(TAG, "Got certificate");
             //Log.d(TAG, "certificate: " + cert_str);
             mCaCert = Utils.x509FromPem(mCaPem);
 
-            if(mCaCert != null) {
-                if(Utils.isCAInstalled(mCaCert))
+            if (mCaCert != null) {
+                if (Utils.isCAInstalled(mCaCert))
                     certOk();
                 else {
                     // Cert not installed
@@ -220,13 +220,13 @@ public class InstallCertificate extends StepFragment implements MitmListener {
                     mStepIcon.setColorFilter(mWarnColor);
                     mStepButton.setEnabled(true);
 
-                    if(canInstallCertViaIntent())
+                    if (canInstallCertViaIntent())
                         mStepLabel.setText(R.string.install_ca_certificate);
                     else
                         mStepLabel.setText(R.string.export_ca_certificate);
 
                     mStepButton.setOnClickListener((v) -> {
-                        if(canInstallCertViaIntent())
+                        if (canInstallCertViaIntent())
                             installCaCertificate();
                         else
                             exportCaCertificate();
@@ -242,10 +242,10 @@ public class InstallCertificate extends StepFragment implements MitmListener {
     @Override
     public void onMitmServiceConnect() {
         Context ctx = getContext();
-        if(ctx == null)
+        if (ctx == null)
             return;
 
-        if(!mAddon.requestCaCertificate()) {
+        if (!mAddon.requestCaCertificate()) {
             Toast.makeText(ctx, "requestCaCertificate failed", Toast.LENGTH_LONG).show();
             certFail();
         }
@@ -254,10 +254,10 @@ public class InstallCertificate extends StepFragment implements MitmListener {
     @Override
     public void onMitmServiceDisconnect() {
         Context ctx = getContext();
-        if(ctx == null)
+        if (ctx == null)
             return;
 
-        if(mCaPem == null) {
+        if (mCaPem == null) {
             Toast.makeText(ctx, "addon disconnected", Toast.LENGTH_LONG).show();
             certFail();
         }

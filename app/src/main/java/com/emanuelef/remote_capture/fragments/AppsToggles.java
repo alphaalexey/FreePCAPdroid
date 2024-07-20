@@ -78,9 +78,9 @@ public abstract class AppsToggles extends Fragment implements AppsLoadListener,
         mEmptyText.setText(R.string.loading_apps);
         recyclerView.setEmptyView(mEmptyText);
 
-        if(savedInstanceState != null) {
+        if (savedInstanceState != null) {
             String filter = savedInstanceState.getString("filter");
-            if((filter != null) && !filter.isEmpty())
+            if ((filter != null) && !filter.isEmpty())
                 mQueryToApply = filter;
         }
 
@@ -95,7 +95,7 @@ public abstract class AppsToggles extends Fragment implements AppsLoadListener,
     public void onPause() {
         super.onPause();
 
-        if(mSearchView != null)
+        if (mSearchView != null)
             mQueryToApply = mSearchView.getQuery().toString();
     }
 
@@ -106,7 +106,7 @@ public abstract class AppsToggles extends Fragment implements AppsLoadListener,
         mSearchView = (SearchView) searchItem.getActionView();
         mSearchView.setOnQueryTextListener(this);
 
-        if((mQueryToApply != null) && (!mQueryToApply.isEmpty())) {
+        if ((mQueryToApply != null) && (!mQueryToApply.isEmpty())) {
             Log.d(TAG, "Initial filter: " + mQueryToApply);
             Utils.setSearchQuery(mSearchView, searchItem, mQueryToApply);
         }
@@ -122,7 +122,7 @@ public abstract class AppsToggles extends Fragment implements AppsLoadListener,
         super.onSaveInstanceState(outState);
 
         // this is complemented by the activity onSaveInstanceState
-        if(mSearchView != null) {
+        if (mSearchView != null) {
             String query = mSearchView.getQuery().toString();
             Log.d(TAG, "Saving filter: " + query);
             outState.putString("filter", query);
@@ -136,7 +136,9 @@ public abstract class AppsToggles extends Fragment implements AppsLoadListener,
     }
 
     @Override
-    public boolean onQueryTextSubmit(String query) { return true; }
+    public boolean onQueryTextSubmit(String query) {
+        return true;
+    }
 
     @Override
     public boolean onQueryTextChange(String newText) {

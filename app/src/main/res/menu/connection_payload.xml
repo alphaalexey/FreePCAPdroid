@@ -3,11 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:title="@string/display_as"
         android:icon="@drawable/ic_short_text"
+        android:title="@string/display_as"
         app:showAsAction="ifRoom">
         <menu>
-            <group android:id="@+id/display_as_grp" android:checkableBehavior="single">
+            <group
+                android:id="@+id/display_as_grp"
+                android:checkableBehavior="single">
                 <item
                     android:id="@+id/printable_text"
                     android:title="@string/printable_text" />

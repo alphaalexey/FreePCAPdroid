@@ -8,27 +8,27 @@
     <fragment
         android:id="@+id/intro"
         android:name="com.emanuelef.remote_capture.fragments.mitmwizard.Intro"
-        tools:layout="@layout/fragment_mitm_wizard" >
+        tools:layout="@layout/fragment_mitm_wizard">
         <action
             android:id="@+id/navto_install_addon"
+            app:destination="@id/installMitmApp"
             app:enterAnim="@anim/slide_in_left"
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_right"
-            app:popExitAnim="@anim/slide_out_right"
-            app:destination="@id/installMitmApp" />
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
     <fragment
         android:id="@+id/installMitmApp"
         android:name="com.emanuelef.remote_capture.fragments.mitmwizard.InstallAddon"
-        tools:layout="@layout/fragment_mitm_wizard" >
+        tools:layout="@layout/fragment_mitm_wizard">
         <action
             android:id="@+id/navto_install_cert"
+            app:destination="@id/InstallCertificate"
             app:enterAnim="@anim/slide_in_left"
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_right"
-            app:popExitAnim="@anim/slide_out_right"
-            app:destination="@id/InstallCertificate" />
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
     <fragment
@@ -37,11 +37,11 @@
         tools:layout="@layout/fragment_mitm_wizard">
         <action
             android:id="@+id/navto_done"
+            app:destination="@id/Done"
             app:enterAnim="@anim/slide_in_left"
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_right"
-            app:popExitAnim="@anim/slide_out_right"
-            app:destination="@id/Done" />
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
     <fragment

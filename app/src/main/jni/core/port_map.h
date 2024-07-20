@@ -23,8 +23,11 @@
 #include <stdbool.h>
 #include "zdtun.h"
 
-bool pd_add_port_map(int ipver, int ipproto, int orig_port, int redirect_port, const zdtun_ip_t *redirect_ip);
+bool pd_add_port_map(int ipver, int ipproto, int orig_port, int redirect_port,
+                     const zdtun_ip_t *redirect_ip);
+
 bool pd_check_port_map(zdtun_conn_t *conn);
+
 void pd_reset_port_map();
 
 #endif //PCAPDROID_PORTMAP_H

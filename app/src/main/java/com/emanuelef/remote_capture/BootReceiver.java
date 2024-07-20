@@ -40,15 +40,15 @@ public class BootReceiver extends BroadcastReceiver {
         String action = intent.getAction();
         Log.d(TAG, "onReceive: " + action);
 
-        if(!action.equals(Intent.ACTION_BOOT_COMPLETED) && !action.equals("android.intent.action.QUICKBOOT_POWERON")) {
+        if (!action.equals(Intent.ACTION_BOOT_COMPLETED) && !action.equals("android.intent.action.QUICKBOOT_POWERON")) {
             Log.w(TAG, "Unexpected action: " + action);
             return;
         }
 
-        if(!Prefs.startAtBoot(prefs))
+        if (!Prefs.startAtBoot(prefs))
             return;
 
-        if(CaptureService.isServiceActive()) {
+        if (CaptureService.isServiceActive()) {
             // this can happen, for example, if always-on VPN is enabled, which causes PCAPdroid
             // to be started early
             Log.i(TAG, "Service already active, nothing to do");
@@ -57,9 +57,9 @@ public class BootReceiver extends BroadcastReceiver {
 
         CaptureSettings settings = new CaptureSettings(prefs);
 
-        if(!settings.root_capture) {
+        if (!settings.root_capture) {
             Intent vpnPrepareIntent = VpnService.prepare(context);
-            if(vpnPrepareIntent != null) {
+            if (vpnPrepareIntent != null) {
                 // Cannot perform the VPN setup without an Activity
                 Utils.showToastLong(context, R.string.vpn_setup_failed);
                 return;

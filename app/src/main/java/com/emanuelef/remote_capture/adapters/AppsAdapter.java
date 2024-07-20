@@ -29,8 +29,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.emanuelef.remote_capture.model.AppDescriptor;
 import com.emanuelef.remote_capture.R;
+import com.emanuelef.remote_capture.model.AppDescriptor;
 
 import java.util.List;
 
@@ -40,23 +40,9 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.AppViewHolder>
     private List<AppDescriptor> listStorage;
 
     public AppsAdapter(Context context, List<AppDescriptor> customizedListView) {
-        mLayoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mLayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         listStorage = customizedListView;
         mListener = null;
-    }
-
-    public static class AppViewHolder extends RecyclerView.ViewHolder {
-        TextView textInListView;
-        ImageView imageInListView;
-        TextView packageInListView;
-
-        public AppViewHolder(View view) {
-            super(view);
-
-            textInListView = view.findViewById(R.id.app_name);
-            imageInListView = view.findViewById(R.id.app_icon);
-            packageInListView= view.findViewById(R.id.app_package);
-        }
     }
 
     @NonNull
@@ -65,10 +51,10 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.AppViewHolder>
         View view = mLayoutInflater.inflate(R.layout.app_installed_item, parent, false);
         AppViewHolder recyclerViewHolder = new AppViewHolder(view);
 
-        if(mListener != null)
+        if (mListener != null)
             view.setOnClickListener(mListener);
 
-        return(recyclerViewHolder);
+        return (recyclerViewHolder);
     }
 
     @Override
@@ -78,7 +64,7 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.AppViewHolder>
         holder.textInListView.setText(app.getName());
         holder.packageInListView.setText(app.getPackageName());
 
-        if(app.getIcon() != null)
+        if (app.getIcon() != null)
             holder.imageInListView.setImageDrawable(app.getIcon());
     }
 
@@ -88,7 +74,7 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.AppViewHolder>
     }
 
     public AppDescriptor getItem(int pos) {
-        if((pos < 0) || (pos > listStorage.size()))
+        if ((pos < 0) || (pos > listStorage.size()))
             return null;
 
         return listStorage.get(pos);
@@ -101,5 +87,19 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.AppViewHolder>
 
     public void setOnClickListener(final View.OnClickListener listener) {
         mListener = listener;
+    }
+
+    public static class AppViewHolder extends RecyclerView.ViewHolder {
+        TextView textInListView;
+        ImageView imageInListView;
+        TextView packageInListView;
+
+        public AppViewHolder(View view) {
+            super(view);
+
+            textInListView = view.findViewById(R.id.app_name);
+            imageInListView = view.findViewById(R.id.app_icon);
+            packageInListView = view.findViewById(R.id.app_package);
+        }
     }
 }

@@ -19,6 +19,13 @@
 
 package com.emanuelef.remote_capture.adapters;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 import android.content.Context;
 
 import androidx.collection.ArraySet;
@@ -31,13 +38,6 @@ import com.emanuelef.remote_capture.ConnectionsRegister;
 import com.emanuelef.remote_capture.Whitebox;
 import com.emanuelef.remote_capture.model.ConnectionDescriptor;
 import com.emanuelef.remote_capture.model.ConnectionUpdate;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
 import org.junit.Before;
@@ -76,29 +76,6 @@ public class ConnectionsAdapterTest {
      */
     ArrayList<DataChangeEvent> pendingEvents = new ArrayList<>();
 
-    enum ChangeType {
-        ITEMS_INSERTED,
-        ITEMS_UPDATED,
-        ITEMS_REMOVED,
-    }
-
-    enum UpdateType {
-        UPDATE_STATS,
-        UPDATE_INFO
-    }
-
-    static class DataChangeEvent {
-        public final ChangeType tp;
-        public final int start;
-        public final int count;
-
-        public DataChangeEvent(ChangeType tp, int positionStart, int itemCount) {
-            this.tp = tp;
-            start = positionStart;
-            count = itemCount;
-        }
-    }
-
     @Before
     public void setup() {
         incrId = 0;
@@ -115,10 +92,12 @@ public class ConnectionsAdapterTest {
             public void onItemRangeInserted(int positionStart, int itemCount) {
                 pendingEvents.add(new DataChangeEvent(ChangeType.ITEMS_INSERTED, positionStart, itemCount));
             }
+
             @Override
             public void onItemRangeChanged(int positionStart, int itemCount) {
                 pendingEvents.add(new DataChangeEvent(ChangeType.ITEMS_UPDATED, positionStart, itemCount));
             }
+
             @Override
             public void onItemRangeRemoved(int positionStart, int itemCount) {
                 pendingEvents.add(new DataChangeEvent(ChangeType.ITEMS_REMOVED, positionStart, itemCount));
@@ -145,7 +124,7 @@ public class ConnectionsAdapterTest {
     /* Simple insertion with no filter/rollover */
     public void testSimpleInsertion() {
         // start with 6 connections
-        reg.newConnections(new ConnectionDescriptor[] {
+        reg.newConnections(new ConnectionDescriptor[]{
                 newConnection(false),
                 newConnection(true),
                 newConnection(true),
@@ -162,7 +141,7 @@ public class ConnectionsAdapterTest {
     /* Insertion with rollover but no filter */
     public void testInsertionRollover() {
         // start with 6 connections
-        reg.newConnections(new ConnectionDescriptor[] {
+        reg.newConnections(new ConnectionDescriptor[]{
                 newConnection(false),
                 newConnection(true),
                 newConnection(true),
@@ -173,7 +152,7 @@ public class ConnectionsAdapterTest {
         assertEvent(ChangeType.ITEMS_INSERTED, 0, 6);
 
         // add 4 connections, 2 of which replace the first 2
-        reg.newConnections(new ConnectionDescriptor[] {
+        reg.newConnections(new ConnectionDescriptor[]{
                 newConnection(false),
                 newConnection(false),
                 newConnection(true),
@@ -190,7 +169,7 @@ public class ConnectionsAdapterTest {
     /* Removal of all the connections via reset, no rollover/filter */
     public void testSimpleRemoveAll() {
         // start with 2 connections
-        reg.newConnections(new ConnectionDescriptor[] {
+        reg.newConnections(new ConnectionDescriptor[]{
                 newConnection(true),
                 newConnection(true),
         });
@@ -205,19 +184,19 @@ public class ConnectionsAdapterTest {
     /* Update of connections stats/info with no rollover and no filter */
     public void testUpdate() {
         // start with 2 connections
-        reg.newConnections(new ConnectionDescriptor[] {
+        reg.newConnections(new ConnectionDescriptor[]{
                 newConnection(true),
                 newConnection(true),
         });
         assertEvent(ChangeType.ITEMS_INSERTED, 0, 2);
 
         // update the connections
-        reg.connectionsUpdates(new ConnectionUpdate[] {
+        reg.connectionsUpdates(new ConnectionUpdate[]{
                 connUpdate(1, UpdateType.UPDATE_STATS),
         });
         assertEvent(ChangeType.ITEMS_UPDATED, 1, 1);
 
-        reg.connectionsUpdates(new ConnectionUpdate[] {
+        reg.connectionsUpdates(new ConnectionUpdate[]{
                 connUpdate(1, UpdateType.UPDATE_STATS),
                 connUpdate(0, UpdateType.UPDATE_INFO),
                 connUpdate(2, UpdateType.UPDATE_INFO), // untracked item, must be ignored
@@ -238,7 +217,7 @@ public class ConnectionsAdapterTest {
     /* Insertion with rollover and status filter */
     public void testFilterRollover() {
         // start with 6 connections
-        reg.newConnections(new ConnectionDescriptor[] {
+        reg.newConnections(new ConnectionDescriptor[]{
                 newConnection(false),
                 newConnection(true),
                 newConnection(true),
@@ -294,7 +273,7 @@ public class ConnectionsAdapterTest {
         adapter.refreshFilteredConnections();
 
         // 8 connections (5 active connections) with 4 removed connections (mUnfilteredItemsCount not 0).
-        reg.newConnections(new ConnectionDescriptor[] {
+        reg.newConnections(new ConnectionDescriptor[]{
                 newConnection(false), // true after remove
                 newConnection(true),  // false after remove
                 newConnection(true),  // false after remove
@@ -304,7 +283,7 @@ public class ConnectionsAdapterTest {
                 newConnection(true),
                 newConnection(false),
         });
-        reg.newConnections(new ConnectionDescriptor[] {
+        reg.newConnections(new ConnectionDescriptor[]{
                 newConnection(true),
                 newConnection(false),
                 newConnection(false),
@@ -317,7 +296,7 @@ public class ConnectionsAdapterTest {
 
         // update the connections
         // tests fixFilteredPositions
-        reg.connectionsUpdates(new ConnectionUpdate[] {
+        reg.connectionsUpdates(new ConnectionUpdate[]{
                 connUpdate(0, UpdateType.UPDATE_STATS),  // untracked (ignored)
                 connUpdate(5, UpdateType.UPDATE_STATS),  // pos 1
                 connUpdate(7, UpdateType.UPDATE_STATS),  // filtered out
@@ -343,7 +322,7 @@ public class ConnectionsAdapterTest {
         adapter.refreshFilteredConnections();
 
         // 8 connections (4 active connections) with 1 removed connections (mUnfilteredItemsCount not 0).
-        reg.newConnections(new ConnectionDescriptor[] {
+        reg.newConnections(new ConnectionDescriptor[]{
                 newConnection(true),  // false after remove
                 newConnection(false),
                 newConnection(false),
@@ -353,7 +332,7 @@ public class ConnectionsAdapterTest {
                 newConnection(true),
                 newConnection(true),  // unmatch pos3, incr_id=7
         });
-        reg.newConnections(new ConnectionDescriptor[] {
+        reg.newConnections(new ConnectionDescriptor[]{
                 newConnection(false),
         });
         assertEquals(4, adapter.getItemCount());
@@ -368,7 +347,7 @@ public class ConnectionsAdapterTest {
 
         // NOTE: the positions of the updates are sorted by the adapter. Reporting them here sorted
         // for the reader convenience.
-        reg.connectionsUpdates(new ConnectionUpdate[] {
+        reg.connectionsUpdates(new ConnectionUpdate[]{
                 up1,
                 connUpdate(6, UpdateType.UPDATE_INFO), // pos 2
                 up3,
@@ -387,7 +366,7 @@ public class ConnectionsAdapterTest {
     /* Insertion and updates with rollover and search string. */
     public void testSearch() {
         // 8 connections with 2 removed connections (mUnfilteredItemsCount not 0).
-        reg.newConnections(new ConnectionDescriptor[] {
+        reg.newConnections(new ConnectionDescriptor[]{
                 newConnection(false),
                 newConnection(true),
                 newConnection(true),
@@ -397,11 +376,11 @@ public class ConnectionsAdapterTest {
                 newConnection(true),
                 newConnection(false),
         });
-        reg.newConnections(new ConnectionDescriptor[] {
+        reg.newConnections(new ConnectionDescriptor[]{
                 newConnection(false), // id 8
                 newConnection(true),  // id 9
         });
-        reg.connectionsUpdates(new ConnectionUpdate[] {
+        reg.connectionsUpdates(new ConnectionUpdate[]{
                 connInfo(3, "orange"),
                 connInfo(5, "juice"),
                 connInfo(6, "apple"),
@@ -427,8 +406,6 @@ public class ConnectionsAdapterTest {
         assertEquals(2, adapter.getItem(0).incr_id);
     }
 
-    /* ******************************************************* */
-
     /* Creates a new ConnectionDescriptor and allocates an incrId for it. */
     ConnectionDescriptor newConnection(boolean active) {
         ConnectionDescriptor conn = new ConnectionDescriptor(incrId++, 4, 6,
@@ -445,7 +422,7 @@ public class ConnectionsAdapterTest {
     ConnectionUpdate connUpdate(int incr_id, UpdateType tp) {
         ConnectionUpdate update = new ConnectionUpdate(incr_id);
 
-        if(tp.equals(UpdateType.UPDATE_STATS))
+        if (tp.equals(UpdateType.UPDATE_STATS))
             update.setStats(0, 0, 10, 10, 1, 1,
                     0, 0, ConnectionDescriptor.CONN_STATUS_CONNECTED);
         else
@@ -463,6 +440,8 @@ public class ConnectionsAdapterTest {
 
         return update;
     }
+
+    /* ******************************************************* */
 
     /* Retrieve the oldest event in pendingEvents and asserts it is of the specified type and
      * contains the specified range. */
@@ -485,28 +464,28 @@ public class ConnectionsAdapterTest {
         ArraySet<Integer> notified = new ArraySet<>();
         boolean[] removed_pos = new boolean[MAX_CONNECTIONS];
 
-        while(!pendingEvents.isEmpty()) {
+        while (!pendingEvents.isEmpty()) {
             DataChangeEvent ev = pendingEvents.get(0);
-            if(!ev.tp.equals(tp))
+            if (!ev.tp.equals(tp))
                 break;
             pendingEvents.remove(0);
 
-            if(tp.equals(ChangeType.ITEMS_REMOVED)) {
+            if (tp.equals(ChangeType.ITEMS_REMOVED)) {
                 // Removed notification must be handled carefully as positions of preceding items
                 // must be shifted when an item is removed in a previous notification, e.g.
                 // rem(0) + rem(0) actually means remove item 0 and 1 in the original array
                 boolean[] cur_removed = Arrays.copyOf(removed_pos, removed_pos.length);
 
-                for(int i=0; i<ev.count; i++) {
+                for (int i = 0; i < ev.count; i++) {
                     int k = 0;
                     int found = -1;
 
                     // Skip previously removed items
-                    for(int j=0; j<cur_removed.length; j++) {
-                        if(cur_removed[j])
+                    for (int j = 0; j < cur_removed.length; j++) {
+                        if (cur_removed[j])
                             continue;
 
-                        if(k == (ev.start + i)) {
+                        if (k == (ev.start + i)) {
                             found = j;
                             break;
                         }
@@ -518,11 +497,34 @@ public class ConnectionsAdapterTest {
                     removed_pos[found] = true;
                 }
             } else {
-                for(int i = 0; i < ev.count; i++)
+                for (int i = 0; i < ev.count; i++)
                     notified.add(ev.start + i);
             }
         }
 
         return notified;
+    }
+
+    enum ChangeType {
+        ITEMS_INSERTED,
+        ITEMS_UPDATED,
+        ITEMS_REMOVED,
+    }
+
+    enum UpdateType {
+        UPDATE_STATS,
+        UPDATE_INFO
+    }
+
+    static class DataChangeEvent {
+        public final ChangeType tp;
+        public final int start;
+        public final int count;
+
+        public DataChangeEvent(ChangeType tp, int positionStart, int itemCount) {
+            this.tp = tp;
+            start = positionStart;
+            count = itemCount;
+        }
     }
 }

@@ -18,6 +18,7 @@
  */
 
 package com.emanuelef.remote_capture.activities.prefs;
+
 import android.os.Bundle;
 import android.view.ActionMode;
 import android.view.Menu;
@@ -38,11 +39,11 @@ import java.util.ArrayList;
 
 public class EditCtrlPermissions extends BaseActivity {
     private static final String TAG = "EditCtrlPermissions";
+    private final ArrayList<CtrlPermissions.Rule> mSelected = new ArrayList<>();
     private TextView mEmptyText;
     private CtrlPermissionsAdapter mAdapter;
     private ListView mListView;
     private CtrlPermissions mPermissions;
-    private final ArrayList<CtrlPermissions.Rule> mSelected = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,18 +69,20 @@ public class EditCtrlPermissions extends BaseActivity {
             }
 
             @Override
-            public boolean onPrepareActionMode(ActionMode mode, Menu menu) { return false; }
+            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                return false;
+            }
 
             @Override
             public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
                 int id = item.getItemId();
 
-                if(id == R.id.delete_entry) {
-                    if(mSelected.size() >= mAdapter.getCount()) {
+                if (id == R.id.delete_entry) {
+                    if (mSelected.size() >= mAdapter.getCount()) {
                         mAdapter.clear();
                         mPermissions.removeAll();
                     } else {
-                        for(CtrlPermissions.Rule rule : mSelected) {
+                        for (CtrlPermissions.Rule rule : mSelected) {
                             mAdapter.remove(rule);
                             mPermissions.remove(rule.package_name);
                         }
@@ -88,12 +91,12 @@ public class EditCtrlPermissions extends BaseActivity {
                     mode.finish();
                     recheckListSize();
                     return true;
-                } else if(id == R.id.select_all) {
-                    if(mSelected.size() >= mAdapter.getCount())
+                } else if (id == R.id.select_all) {
+                    if (mSelected.size() >= mAdapter.getCount())
                         mode.finish();
                     else {
-                        for(int i=0; i<mAdapter.getCount(); i++) {
-                            if(!mListView.isItemChecked(i))
+                        for (int i = 0; i < mAdapter.getCount(); i++) {
+                            if (!mListView.isItemChecked(i))
                                 mListView.setItemChecked(i, true);
                         }
                     }
@@ -111,7 +114,7 @@ public class EditCtrlPermissions extends BaseActivity {
             public void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
                 CtrlPermissions.Rule item = mAdapter.getItem(position);
 
-                if(checked)
+                if (checked)
                     mSelected.add(item);
                 else
                     mSelected.remove(item);

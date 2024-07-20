@@ -35,19 +35,18 @@ import com.emanuelef.remote_capture.interfaces.DrawableLoader;
 import java.io.Serializable;
 
 public class AppDescriptor implements Comparable<AppDescriptor>, Serializable {
+    private static final String TAG = "AppDescriptor";
+    private static boolean badgedIconFails = false;
     private final String mName;
     private final String mPackageName;
     private final int mUid;
     private final boolean mIsSystem;
-    private Drawable mIcon;
     private final DrawableLoader mIconLoader;
-    private String mDescription;
-    private static final String TAG = "AppDescriptor";
-    private static boolean badgedIconFails = false;
-
     // NULL for virtual apps
     PackageManager mPm;
     PackageInfo mPackageInfo;
+    private Drawable mIcon;
+    private String mDescription;
 
     public AppDescriptor(String name, DrawableLoader icon_loader, String package_name, int uid, boolean is_system) {
         this.mName = name;
@@ -68,13 +67,13 @@ public class AppDescriptor implements Comparable<AppDescriptor>, Serializable {
         mPackageInfo = pkgInfo;
     }
 
+    public String getDescription() {
+        return mDescription;
+    }
+
     public AppDescriptor setDescription(String dsc) {
         mDescription = dsc;
         return this;
-    }
-
-    public String getDescription() {
-        return mDescription;
     }
 
     public String getName() {
@@ -82,15 +81,15 @@ public class AppDescriptor implements Comparable<AppDescriptor>, Serializable {
     }
 
     public @Nullable Drawable getIcon() {
-        if(mIcon != null)
+        if (mIcon != null)
             return mIcon;
 
-        if(mIconLoader != null) {
+        if (mIconLoader != null) {
             mIcon = mIconLoader.getDrawable();
             return mIcon;
         }
 
-        if((mPackageInfo == null) || (mPm == null))
+        if ((mPackageInfo == null) || (mPm == null))
             return null;
 
         // NOTE: this call is expensive
@@ -128,18 +127,24 @@ public class AppDescriptor implements Comparable<AppDescriptor>, Serializable {
         return mUid;
     }
 
-    public boolean isSystem() { return mIsSystem; }
+    public boolean isSystem() {
+        return mIsSystem;
+    }
 
     // the app does not have a package name (e.g. uid 0 is android system)
-    public boolean isVirtual() { return (mPackageInfo == null); }
+    public boolean isVirtual() {
+        return (mPackageInfo == null);
+    }
 
-    public @Nullable PackageInfo getPackageInfo() { return mPackageInfo; }
+    public @Nullable PackageInfo getPackageInfo() {
+        return mPackageInfo;
+    }
 
     @Override
     public int compareTo(AppDescriptor o) {
         int rv = getName().toLowerCase().compareTo(o.getName().toLowerCase());
 
-        if(rv == 0)
+        if (rv == 0)
             rv = getPackageName().compareTo(o.getPackageName());
 
         return rv;

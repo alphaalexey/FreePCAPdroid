@@ -87,7 +87,7 @@ public class PortMapFragment extends Fragment implements MenuProvider {
             public void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
                 PortMap item = mAdapter.getItem(position);
 
-                if(checked)
+                if (checked)
                     mSelected.add(item);
                 else
                     mSelected.remove(item);
@@ -111,15 +111,15 @@ public class PortMapFragment extends Fragment implements MenuProvider {
             public boolean onActionItemClicked(ActionMode mode, MenuItem menuItem) {
                 int id = menuItem.getItemId();
 
-                if(id == R.id.delete_entry) {
+                if (id == R.id.delete_entry) {
                     confirmDelete(mode);
                     return true;
-                } else if(id == R.id.select_all) {
-                    if(mSelected.size() >= mAdapter.getCount())
+                } else if (id == R.id.select_all) {
+                    if (mSelected.size() >= mAdapter.getCount())
                         mode.finish();
                     else {
-                        for(int i=0; i<mAdapter.getCount(); i++) {
-                            if(!mListView.isItemChecked(i))
+                        for (int i = 0; i < mAdapter.getCount(); i++) {
+                            if (!mListView.isItemChecked(i))
                                 mListView.setItemChecked(i, true);
                         }
                     }
@@ -151,7 +151,7 @@ public class PortMapFragment extends Fragment implements MenuProvider {
         toggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
 
-            if(isChecked == Prefs.isPortMappingEnabled(prefs))
+            if (isChecked == Prefs.isPortMappingEnabled(prefs))
                 return; // not changed
 
             Log.d(TAG, "Port mapping is now " + (isChecked ? "enabled" : "disabled"));
@@ -161,7 +161,7 @@ public class PortMapFragment extends Fragment implements MenuProvider {
 
     @Override
     public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
-        if(menuItem.getItemId() == R.id.add_mapping) {
+        if (menuItem.getItemId() == R.id.add_mapping) {
             openAddDialog();
             return true;
         }
@@ -186,29 +186,31 @@ public class PortMapFragment extends Fragment implements MenuProvider {
         AlertDialog dialog = new AlertDialog.Builder(ctx)
                 .setView(view)
                 .setTitle(R.string.port_mapping)
-                .setPositiveButton(R.string.add_action, (dialogInterface, i) -> {})
-                .setNegativeButton(R.string.cancel_action, (dialogInterface, i) -> {})
+                .setPositiveButton(R.string.add_action, (dialogInterface, i) -> {
+                })
+                .setNegativeButton(R.string.cancel_action, (dialogInterface, i) -> {
+                })
                 .show();
         dialog.setCanceledOnTouchOutside(false);
 
         // custom dismiss logic
         dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-            .setOnClickListener(v -> {
-                PortMap mapping = validateAddDialog(view);
-                if(mapping == null)
-                    return;
+                .setOnClickListener(v -> {
+                    PortMap mapping = validateAddDialog(view);
+                    if (mapping == null)
+                        return;
 
-                boolean exists = !mPortMap.add(mapping);
-                if(exists)
-                    Utils.showToastLong(requireContext(), R.string.port_mapping_exists);
-                else {
-                    mPortMap.save();
-                    mAdapter.add(mapping);
-                    recheckListSize();
-                }
+                    boolean exists = !mPortMap.add(mapping);
+                    if (exists)
+                        Utils.showToastLong(requireContext(), R.string.port_mapping_exists);
+                    else {
+                        mPortMap.save();
+                        mAdapter.add(mapping);
+                        recheckListSize();
+                    }
 
-                dialog.dismiss();
-            });
+                    dialog.dismiss();
+                });
     }
 
     private PortMap validateAddDialog(View view) {
@@ -221,29 +223,29 @@ public class PortMapFragment extends Fragment implements MenuProvider {
         String redirectPort = Objects.requireNonNull(redirectPortField.getText()).toString();
         String proto = ((AutoCompleteTextView) view.findViewById(R.id.proto)).getText().toString();
 
-        if(origPort.isEmpty()) {
+        if (origPort.isEmpty()) {
             origPortField.setError(getString(R.string.required));
             return null;
         }
-        if(!Utils.validatePort(origPort)) {
+        if (!Utils.validatePort(origPort)) {
             origPortField.setError(getString(R.string.invalid));
             return null;
         }
 
-        if(redirectIp.isEmpty()) {
+        if (redirectIp.isEmpty()) {
             redirectIpField.setError(getString(R.string.required));
             return null;
         }
-        if(!Utils.validateIpAddress(redirectIp)) {
+        if (!Utils.validateIpAddress(redirectIp)) {
             redirectIpField.setError(getString(R.string.invalid));
             return null;
         }
 
-        if(redirectPort.isEmpty()) {
+        if (redirectPort.isEmpty()) {
             redirectPortField.setError(getString(R.string.required));
             return null;
         }
-        if(!Utils.validatePort(redirectPort)) {
+        if (!Utils.validatePort(redirectPort)) {
             redirectPortField.setError(getString(R.string.invalid));
             return null;
         }
@@ -258,12 +260,12 @@ public class PortMapFragment extends Fragment implements MenuProvider {
         builder.setMessage(R.string.items_delete_confirm);
         builder.setCancelable(true);
         builder.setPositiveButton(R.string.yes, (dialog, which) -> {
-            if(mSelected.size() >= mAdapter.getCount()) {
+            if (mSelected.size() >= mAdapter.getCount()) {
                 mAdapter.clear();
                 mPortMap.clear();
                 mPortMap.save();
             } else {
-                for(PortMap item : mSelected)
+                for (PortMap item : mSelected)
                     mAdapter.remove(item);
                 updateMappingsFromAdapter();
             }
@@ -271,7 +273,8 @@ public class PortMapFragment extends Fragment implements MenuProvider {
             mode.finish();
             recheckListSize();
         });
-        builder.setNegativeButton(R.string.no, (dialog, whichButton) -> {});
+        builder.setNegativeButton(R.string.no, (dialog, whichButton) -> {
+        });
 
         final AlertDialog alert = builder.create();
         alert.setCanceledOnTouchOutside(true);
@@ -283,15 +286,15 @@ public class PortMapFragment extends Fragment implements MenuProvider {
         Iterator<PortMap> iter = mPortMap.iter();
 
         // Remove the mList rules which are not in the adapter dataset
-        while(iter.hasNext()) {
+        while (iter.hasNext()) {
             PortMap mapping = iter.next();
 
             if (mAdapter.getPosition(mapping) < 0)
                 toRemove.add(mapping);
         }
 
-        if(toRemove.size() > 0) {
-            for(PortMap mapping: toRemove)
+        if (toRemove.size() > 0) {
+            for (PortMap mapping : toRemove)
                 mPortMap.remove(mapping);
             mPortMap.save();
         }

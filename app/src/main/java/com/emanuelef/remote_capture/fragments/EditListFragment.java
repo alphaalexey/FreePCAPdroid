@@ -68,23 +68,22 @@ import java.util.Scanner;
 import java.util.Set;
 
 public class EditListFragment extends Fragment implements MatchList.ListChangeListener, MenuProvider {
+    private static final int MAX_RULES_BEFORE_WARNING = 5000;
+    private static final String TAG = "EditListFragment";
+    private static final String LIST_TYPE_ARG = "list_type";
     private ListEditAdapter mAdapter;
     private TextView mEmptyText;
     private ArrayList<MatchList.Rule> mSelected = new ArrayList<>();
     private MatchList mList;
+    private final ActivityResultLauncher<Intent> exportLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::exportResult);
+    private final ActivityResultLauncher<Intent> importLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::importResult);
     private ListInfo mListInfo;
     private ListView mListView;
     private boolean mIsOwnUpdate;
     private ActionMode mActionMode;
     private AppSelectDialog mAppSelDialog;
-    private static final int MAX_RULES_BEFORE_WARNING = 5000;
-    private static final String TAG = "EditListFragment";
-    private static final String LIST_TYPE_ARG = "list_type";
-
-    private final ActivityResultLauncher<Intent> exportLauncher =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::exportResult);
-    private final ActivityResultLauncher<Intent> importLauncher =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::importResult);
 
     public static EditListFragment newInstance(ListInfo.Type list) {
         EditListFragment fragment = new EditListFragment();
@@ -120,7 +119,7 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
             public void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
                 MatchList.Rule item = mAdapter.getItem(position);
 
-                if(checked)
+                if (checked)
                     mSelected.add(item);
                 else
                     mSelected.remove(item);
@@ -145,15 +144,15 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
             public boolean onActionItemClicked(ActionMode mode, MenuItem menuItem) {
                 int id = menuItem.getItemId();
 
-                if(id == R.id.delete_entry) {
+                if (id == R.id.delete_entry) {
                     confirmDelete(mode);
                     return true;
-                } else if(id == R.id.select_all) {
-                    if(mSelected.size() >= mAdapter.getCount())
+                } else if (id == R.id.select_all) {
+                    if (mSelected.size() >= mAdapter.getCount())
                         mode.finish();
                     else {
-                        for(int i=0; i<mAdapter.getCount(); i++) {
-                            if(!mListView.isItemChecked(i))
+                        for (int i = 0; i < mAdapter.getCount(); i++) {
+                            if (!mListView.isItemChecked(i))
                                 mListView.setItemChecked(i, true);
                         }
                     }
@@ -191,12 +190,12 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
         builder.setMessage(R.string.rules_delete_confirm);
         builder.setCancelable(true);
         builder.setPositiveButton(R.string.yes, (dialog, which) -> {
-            if(mSelected.size() >= mAdapter.getCount()) {
+            if (mSelected.size() >= mAdapter.getCount()) {
                 mAdapter.clear();
                 mList.clear();
                 mList.save();
             } else {
-                for(MatchList.Rule item : mSelected)
+                for (MatchList.Rule item : mSelected)
                     mAdapter.remove(item);
                 updateListFromAdapter();
             }
@@ -205,7 +204,8 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
             mListInfo.reloadRules();
             recheckListSize();
         });
-        builder.setNegativeButton(R.string.no, (dialog, whichButton) -> {});
+        builder.setNegativeButton(R.string.no, (dialog, whichButton) -> {
+        });
 
         final AlertDialog alert = builder.create();
         alert.setCanceledOnTouchOutside(true);
@@ -216,24 +216,24 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
     public void onCreateMenu(@NonNull Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.list_edit_menu, menu);
 
-        if(!Utils.supportsFileDialog(requireContext())) {
+        if (!Utils.supportsFileDialog(requireContext())) {
             menu.findItem(R.id.action_import).setVisible(false);
             menu.findItem(R.id.action_export).setVisible(false);
         }
 
         Set<RuleType> supportedRules = mListInfo.getSupportedRules();
-        if(supportedRules.contains(RuleType.APP))
+        if (supportedRules.contains(RuleType.APP))
             menu.findItem(R.id.add_app).setVisible(true);
-        if(supportedRules.contains(RuleType.HOST))
+        if (supportedRules.contains(RuleType.HOST))
             menu.findItem(R.id.add_host).setVisible(true);
-        if(supportedRules.contains(RuleType.IP))
+        if (supportedRules.contains(RuleType.IP))
             menu.findItem(R.id.add_ip).setVisible(true);
-        if(supportedRules.contains(RuleType.PROTOCOL))
+        if (supportedRules.contains(RuleType.PROTOCOL))
             menu.findItem(R.id.add_proto).setVisible(true);
-        if(supportedRules.contains(RuleType.COUNTRY))
+        if (supportedRules.contains(RuleType.COUNTRY))
             menu.findItem(R.id.add_country).setVisible(true);
 
-        if(mListInfo.getHelpString() <= 0)
+        if (mListInfo.getHelpString() <= 0)
             menu.findItem(R.id.show_hint).setVisible(false);
     }
 
@@ -242,42 +242,42 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
         int id = item.getItemId();
         ListView lv = requireActivity().findViewById(R.id.listview);
 
-        if(lv == null)
+        if (lv == null)
             return false;
 
-        if(id == R.id.action_export) {
-            if(mList.isEmpty())
+        if (id == R.id.action_export) {
+            if (mList.isEmpty())
                 Utils.showToastLong(requireContext(), R.string.no_rules_to_export);
             else
                 startExport();
             return true;
-        } else if(id == R.id.action_import) {
+        } else if (id == R.id.action_import) {
             startImport();
             return true;
-        } else if(id == R.id.copy_to_clipboard) {
-            String contents = Utils.adapter2Text((ListEditAdapter)lv.getAdapter());
+        } else if (id == R.id.copy_to_clipboard) {
+            String contents = Utils.adapter2Text((ListEditAdapter) lv.getAdapter());
             Utils.copyToClipboard(requireContext(), contents);
             return true;
-        } else if(id == R.id.share) {
-            String contents = Utils.adapter2Text((ListEditAdapter)lv.getAdapter());
+        } else if (id == R.id.share) {
+            String contents = Utils.adapter2Text((ListEditAdapter) lv.getAdapter());
             Utils.shareText(requireContext(), getString(mListInfo.getTitle()), contents);
             return true;
-        } else if(id == R.id.show_hint) {
+        } else if (id == R.id.show_hint) {
             Utils.showHelpDialog(requireContext(), mListInfo.getHelpString());
             return true;
-        } else if(id == R.id.add_ip) {
+        } else if (id == R.id.add_ip) {
             showAddIpRule();
             return true;
-        } else if(id == R.id.add_proto) {
+        } else if (id == R.id.add_proto) {
             showAddProtoRule();
             return true;
-        } else if(id == R.id.add_host) {
+        } else if (id == R.id.add_host) {
             showAddHostRule();
             return true;
-        } else if(id == R.id.add_app) {
+        } else if (id == R.id.add_app) {
             showAddAppRule();
             return true;
-        } else if(id == R.id.add_country) {
+        } else if (id == R.id.add_country) {
             showAddCountryRule();
             return true;
         }
@@ -287,12 +287,12 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
 
     private void showAddIpRule() {
         RuleAddDialog.showText(requireContext(), R.string.ip_address, (value, field) -> {
-            if(!Utils.validateIpAddress(value)) {
+            if (!Utils.validateIpAddress(value)) {
                 field.setError(getString(R.string.invalid));
                 return false;
             }
 
-            if(!mList.addIp(value))
+            if (!mList.addIp(value))
                 Utils.showToastLong(requireContext(), R.string.rule_exists);
             else
                 saveAndReload();
@@ -302,7 +302,7 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
 
     private void showAddProtoRule() {
         RuleAddDialog.showCombo(requireContext(), R.string.protocol, Utils.getL7Protocols(), (value, field) -> {
-            if(!mList.addProto(value))
+            if (!mList.addProto(value))
                 Utils.showToastLong(requireContext(), R.string.rule_exists);
             else
                 saveAndReload();
@@ -315,25 +315,25 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
         String[] countryNames = new String[countryCodes.length];
         Context ctx = requireContext();
 
-        for(int i=0; i<countryCodes.length; i++)
+        for (int i = 0; i < countryCodes.length; i++)
             countryNames[i] = Utils.getCountryName(ctx, countryCodes[i]);
 
         RuleAddDialog.showCombo(requireContext(), R.string.country, countryNames, (value, field) -> {
             String code = null;
 
-            for(int i=0; i<countryNames.length; i++) {
-                if(countryNames[i].equals(value)) {
+            for (int i = 0; i < countryNames.length; i++) {
+                if (countryNames[i].equals(value)) {
                     code = countryCodes[i];
                     break;
                 }
             }
 
-            if(code == null) {
+            if (code == null) {
                 field.setError(getString(R.string.invalid));
                 return false;
             }
 
-            if(!mList.addCountry(code))
+            if (!mList.addCountry(code))
                 Utils.showToastLong(ctx, R.string.rule_exists);
             else
                 saveAndReload();
@@ -343,12 +343,12 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
 
     private void showAddHostRule() {
         RuleAddDialog.showText(requireContext(), R.string.host, (value, field) -> {
-            if(!Utils.validateHost(value)) {
+            if (!Utils.validateHost(value)) {
                 field.setError(getString(R.string.invalid));
                 return false;
             }
 
-            if(!mList.addHost(value))
+            if (!mList.addHost(value))
                 Utils.showToastLong(requireContext(), R.string.rule_exists);
             else
                 saveAndReload();
@@ -359,25 +359,25 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
     private void showAddAppRule() {
         mAppSelDialog = new AppSelectDialog((AppCompatActivity) requireActivity(), R.string.app,
                 new AppSelectDialog.AppSelectListener() {
-            @Override
-            public void onSelectedApp(AppDescriptor app) {
-                abortAppSelection();
+                    @Override
+                    public void onSelectedApp(AppDescriptor app) {
+                        abortAppSelection();
 
-                if(!mList.addApp(app.getPackageName()))
-                    Utils.showToastLong(requireContext(), R.string.rule_exists);
-                else
-                    saveAndReload();
-            }
+                        if (!mList.addApp(app.getPackageName()))
+                            Utils.showToastLong(requireContext(), R.string.rule_exists);
+                        else
+                            saveAndReload();
+                    }
 
-            @Override
-            public void onAppSelectionAborted() {
-                abortAppSelection();
-            }
-        });
+                    @Override
+                    public void onAppSelectionAborted() {
+                        abortAppSelection();
+                    }
+                });
     }
 
     private void abortAppSelection() {
-        if(mAppSelDialog != null) {
+        if (mAppSelDialog != null) {
             mAppSelDialog.abort();
             mAppSelDialog = null;
         }
@@ -398,17 +398,17 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
         Iterator<MatchList.Rule> iter = mList.iterRules();
 
         // Remove the mList rules which are not in the adapter dataset
-        while(iter.hasNext()) {
+        while (iter.hasNext()) {
             MatchList.Rule rule = iter.next();
 
             if (mAdapter.getPosition(rule) < 0)
                 toRemove.add(rule);
         }
 
-        if(toRemove.size() > 0) {
+        if (toRemove.size() > 0) {
             mIsOwnUpdate = true;
 
-            for(MatchList.Rule rule: toRemove)
+            for (MatchList.Rule rule : toRemove)
                 mList.removeRule(rule);
             mList.save();
         }
@@ -429,12 +429,12 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
     }
 
     private void exportResult(final ActivityResult result) {
-        if(result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+        if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
             Context context = requireContext();
             String data = mList.toJson(true);
 
-            try(OutputStream out = context.getContentResolver().openOutputStream(result.getData().getData(), "rwt")) {
-                try(PrintWriter printer = new PrintWriter(out)) {
+            try (OutputStream out = context.getContentResolver().openOutputStream(result.getData().getData(), "rwt")) {
+                try (PrintWriter printer = new PrintWriter(out)) {
                     printer.print(data);
                     Utils.showToast(context, R.string.save_ok);
                 }
@@ -455,11 +455,11 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
     }
 
     private void importResult(final ActivityResult result) {
-        if(result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+        if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
             Context context = requireContext();
 
-            try(InputStream in = context.getContentResolver().openInputStream(result.getData().getData())) {
-                try(Scanner s = new Scanner(in).useDelimiter("\\A")) {
+            try (InputStream in = context.getContentResolver().openInputStream(result.getData().getData())) {
+                try (Scanner s = new Scanner(in).useDelimiter("\\A")) {
                     String data = s.hasNext() ? s.next() : "";
                     importRulesData(data, true);
                 }
@@ -475,18 +475,18 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
         MatchList rules = new MatchList(context, "");
 
         int num_rules = rules.fromJson(data, limit_check ? MAX_RULES_BEFORE_WARNING : -1);
-        if((num_rules <= 0) || rules.isEmpty()) {
+        if ((num_rules <= 0) || rules.isEmpty()) {
             Utils.showToastLong(context, R.string.invalid_backup);
             return;
         }
 
-        if(limit_check && (num_rules >= MAX_RULES_BEFORE_WARNING)) {
+        if (limit_check && (num_rules >= MAX_RULES_BEFORE_WARNING)) {
             confirmLoadManyRules(data);
             return;
         }
 
         // go on and import
-        if(!mList.isEmpty())
+        if (!mList.isEmpty())
             confirmImport(rules);
         else
             importRules(rules);
@@ -501,7 +501,8 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
         builder.setPositiveButton(R.string.import_action, (dialog, which) -> {
             importRulesData(data, false);
         });
-        builder.setNegativeButton(R.string.cancel_action, (dialog, which) -> {});
+        builder.setNegativeButton(R.string.cancel_action, (dialog, which) -> {
+        });
 
         final AlertDialog alert = builder.create();
         alert.setCanceledOnTouchOutside(false);
@@ -537,7 +538,7 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
 
     @Override
     public void onListChanged() {
-        if(mIsOwnUpdate) {
+        if (mIsOwnUpdate) {
             Log.d(TAG, "onListChanged: own update");
             mIsOwnUpdate = false;
             return;
@@ -545,7 +546,7 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
 
         Log.d(TAG, "onListChanged");
 
-        if(mActionMode != null) {
+        if (mActionMode != null) {
             mActionMode.finish();
             mActionMode = null;
         }

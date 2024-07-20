@@ -24,7 +24,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.TypedArray;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.View;
@@ -39,20 +38,30 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.res.ResourcesCompat;
 
-import com.emanuelef.remote_capture.BuildConfig;
 import com.emanuelef.remote_capture.Utils;
 import com.emanuelef.remote_capture.model.Prefs;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 
 import cat.ereza.customactivityoncrash.CustomActivityOnCrash;
 import cat.ereza.customactivityoncrash.R;
 import cat.ereza.customactivityoncrash.config.CaocConfig;
 
 public final class ErrorActivity extends AppCompatActivity {
+
+    @NonNull
+    public static String getAllErrorDetailsFromIntent(@NonNull Context context, @NonNull Intent intent) {
+        String errorDetails = Utils.getBuildInfo(context);
+        errorDetails += "\nStack trace:  \n";
+        errorDetails += CustomActivityOnCrash.getStackTraceFromIntent(intent);
+
+        String activityLog = CustomActivityOnCrash.getActivityLogFromIntent(intent);
+        if (activityLog != null) {
+            errorDetails += "\nUser actions: \n";
+            errorDetails += activityLog;
+        }
+
+        errorDetails += "\n" + Prefs.asString(context);
+        return errorDetails;
+    }
 
     @SuppressLint("PrivateResource")
     @Override
@@ -130,12 +139,12 @@ public final class ErrorActivity extends AppCompatActivity {
             moreInfoButton.setVisibility(View.GONE);
         }
 
-        Button emailButton = ((Button)findViewById(com.emanuelef.remote_capture.R.id.report_button));
+        Button emailButton = ((Button) findViewById(com.emanuelef.remote_capture.R.id.report_button));
         Intent emailIntent = new Intent(Intent.ACTION_SENDTO);
         emailIntent.setData(Uri.parse("mailto:"));
         emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{"Emanuele Faranda <black.silver@hotmail.it>"});
         emailIntent.putExtra(Intent.EXTRA_SUBJECT, "PCAPdroid crash");
-        if(emailIntent.resolveActivity(getPackageManager()) != null) {
+        if (emailIntent.resolveActivity(getPackageManager()) != null) {
             emailButton.setOnClickListener(v -> {
                 String errorInformation = getErrorDetails();
                 emailIntent.putExtra(Intent.EXTRA_TEXT, errorInformation);
@@ -163,22 +172,6 @@ public final class ErrorActivity extends AppCompatActivity {
             clipboard.setPrimaryClip(clip);
             Toast.makeText(ErrorActivity.this, R.string.customactivityoncrash_error_activity_error_details_copied, Toast.LENGTH_SHORT).show();
         }
-    }
-
-    @NonNull
-    public static String getAllErrorDetailsFromIntent(@NonNull Context context, @NonNull Intent intent) {
-        String errorDetails = Utils.getBuildInfo(context);
-        errorDetails += "\nStack trace:  \n";
-        errorDetails += CustomActivityOnCrash.getStackTraceFromIntent(intent);
-
-        String activityLog = CustomActivityOnCrash.getActivityLogFromIntent(intent);
-        if (activityLog != null) {
-            errorDetails += "\nUser actions: \n";
-            errorDetails += activityLog;
-        }
-
-        errorDetails += "\n" + Prefs.asString(context);
-        return errorDetails;
     }
 
     private String getErrorDetails() {

@@ -60,18 +60,18 @@ import com.emanuelef.remote_capture.PCAPdroid;
 import com.emanuelef.remote_capture.R;
 import com.emanuelef.remote_capture.Utils;
 import com.emanuelef.remote_capture.activities.AppDetailsActivity;
+import com.emanuelef.remote_capture.activities.ConnectionDetailsActivity;
+import com.emanuelef.remote_capture.activities.EditFilterActivity;
+import com.emanuelef.remote_capture.adapters.ConnectionsAdapter;
+import com.emanuelef.remote_capture.interfaces.ConnectionsListener;
 import com.emanuelef.remote_capture.model.AppDescriptor;
 import com.emanuelef.remote_capture.model.Blocklist;
 import com.emanuelef.remote_capture.model.ConnectionDescriptor;
-import com.emanuelef.remote_capture.activities.ConnectionDetailsActivity;
-import com.emanuelef.remote_capture.adapters.ConnectionsAdapter;
 import com.emanuelef.remote_capture.model.FilterDescriptor;
 import com.emanuelef.remote_capture.model.MatchList;
 import com.emanuelef.remote_capture.model.MatchList.RuleType;
 import com.emanuelef.remote_capture.model.Prefs;
 import com.emanuelef.remote_capture.views.EmptyRecyclerView;
-import com.emanuelef.remote_capture.interfaces.ConnectionsListener;
-import com.emanuelef.remote_capture.activities.EditFilterActivity;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -79,9 +79,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class ConnectionsFragment extends Fragment implements ConnectionsListener, MenuProvider, SearchView.OnQueryTextListener {
-    private static final String TAG = "ConnectionsFragment";
     public static final String FILTER_EXTRA = "filter";
     public static final String QUERY_EXTRA = "query";
+    private static final String TAG = "ConnectionsFragment";
     private Handler mHandler;
     private ConnectionsAdapter mAdapter;
     private FloatingActionButton mFabDown;
@@ -91,18 +91,17 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
     private boolean autoScroll;
     private boolean listenerSet;
     private ChipGroup mActiveFilter;
+    private final ActivityResultLauncher<Intent> filterLauncher =
+            registerForActivityResult(new StartActivityForResult(), this::filterResult);
     private MenuItem mMenuFilter;
     private MenuItem mMenuItemSearch;
     private MenuItem mSave;
     private Uri mCsvFname;
+    private final ActivityResultLauncher<Intent> csvFileLauncher =
+            registerForActivityResult(new StartActivityForResult(), this::csvFileResult);
     private AppsResolver mApps;
     private SearchView mSearchView;
     private String mQueryToApply;
-
-    private final ActivityResultLauncher<Intent> csvFileLauncher =
-            registerForActivityResult(new StartActivityForResult(), this::csvFileResult);
-    private final ActivityResultLauncher<Intent> filterLauncher =
-            registerForActivityResult(new StartActivityForResult(), this::filterResult);
 
     @Override
     public void onResume() {
@@ -123,7 +122,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
         unregisterConnsListener();
         mRecyclerView.setEmptyView(null);
 
-        if(mSearchView != null)
+        if (mSearchView != null)
             mQueryToApply = mSearchView.getQuery().toString();
     }
 
@@ -131,9 +130,9 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        if(mSearchView != null)
+        if (mSearchView != null)
             outState.putString("search", mSearchView.getQuery().toString());
-        if(mAdapter != null)
+        if (mAdapter != null)
             outState.putSerializable("filter_desc", mAdapter.mFilter);
     }
 
@@ -145,7 +144,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
     }
 
     private void refreshEmptyText() {
-        if((CaptureService.getConnsRegister() != null) || CaptureService.isServiceActive())
+        if ((CaptureService.getConnsRegister() != null) || CaptureService.isServiceActive())
             mEmptyText.setText(mAdapter.hasFilter() ? R.string.no_matches_found : R.string.no_connections);
         else
             mEmptyText.setText(R.string.capture_not_running_status);
@@ -163,7 +162,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
     }
 
     private void unregisterConnsListener() {
-        if(listenerSet) {
+        if (listenerSet) {
             ConnectionsRegister reg = CaptureService.getConnsRegister();
             if (reg != null)
                 reg.removeListener(this);
@@ -185,8 +184,8 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
         mEmptyText = view.findViewById(R.id.no_connections);
         mActiveFilter = view.findViewById(R.id.active_filter);
         mActiveFilter.setOnCheckedStateChangeListener((group, checkedIds) -> {
-            if(mAdapter != null) {
-                for(int checkedId: checkedIds)
+            if (mAdapter != null) {
+                for (int checkedId : checkedIds)
                     mAdapter.mFilter.clear(checkedId);
                 refreshFilteredConnections();
             }
@@ -205,7 +204,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
             int pos = mRecyclerView.getChildLayoutPosition(v);
             ConnectionDescriptor item = mAdapter.getItem(pos);
 
-            if(item != null) {
+            if (item != null) {
                 Intent intent = new Intent(requireContext(), ConnectionDetailsActivity.class);
                 intent.putExtra(ConnectionDetailsActivity.CONN_ID_KEY, item.incr_id);
                 startActivity(intent);
@@ -220,7 +219,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
         mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-            //public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int state) {
+                //public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int state) {
                 recheckScroll();
             }
         });
@@ -231,38 +230,38 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
         boolean fromIntent = false;
         Intent intent = requireActivity().getIntent();
 
-        if(intent != null) {
+        if (intent != null) {
             FilterDescriptor filter = Utils.getSerializableExtra(intent, FILTER_EXTRA, FilterDescriptor.class);
-            if(filter != null) {
+            if (filter != null) {
                 mAdapter.mFilter = filter;
                 fromIntent = true;
             }
 
             search = intent.getStringExtra(QUERY_EXTRA);
-            if((search != null) && !search.isEmpty()) {
+            if ((search != null) && !search.isEmpty()) {
                 // Avoid hiding the interesting items
                 mAdapter.mFilter.showMasked = true;
                 fromIntent = true;
             }
         }
 
-        if(savedInstanceState != null) {
-            if((search == null) || search.isEmpty())
+        if (savedInstanceState != null) {
+            if ((search == null) || search.isEmpty())
                 search = savedInstanceState.getString("search");
 
-            if(!fromIntent && savedInstanceState.containsKey("filter_desc"))
+            if (!fromIntent && savedInstanceState.containsKey("filter_desc"))
                 mAdapter.mFilter = Utils.getSerializable(savedInstanceState, "filter_desc", FilterDescriptor.class);
         }
         refreshActiveFilter();
 
-        if((search != null) && !search.isEmpty())
+        if ((search != null) && !search.isEmpty())
             mQueryToApply = search;
 
         // Register for service status
         CaptureService.observeStatus(this, serviceStatus -> {
-            if(serviceStatus == CaptureService.ServiceStatus.STARTED) {
+            if (serviceStatus == CaptureService.ServiceStatus.STARTED) {
                 // register the new connection register
-                if(listenerSet) {
+                if (listenerSet) {
                     unregisterConnsListener();
                     registerConnsListener();
                 }
@@ -288,7 +287,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
         int max_length = 32;
 
         ConnectionDescriptor conn = mAdapter.getSelectedItem();
-        if(conn == null)
+        if (conn == null)
             return;
 
         AppDescriptor app = mApps.getAppByUid(conn.uid, 0);
@@ -308,7 +307,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
         MatchList fwWhitelist = PCAPdroid.getInstance().getFirewallWhitelist();
         MatchList decryptionList = PCAPdroid.getInstance().getDecryptionList();
 
-        if(app != null) {
+        if (app != null) {
             boolean appBlocked = blocklist.matchesApp(app.getUid());
             blockVisible = !appBlocked;
             unblockVisible = appBlocked;
@@ -346,20 +345,20 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
             menu.findItem(R.id.unblock_app_1h).setTitle(getString(R.string.unblock_for_n_hours, 1));
             menu.findItem(R.id.unblock_app_8h).setTitle(getString(R.string.unblock_for_n_hours, 8));
 
-            if(conn.isBlacklisted()) {
+            if (conn.isBlacklisted()) {
                 item = menu.findItem(R.id.mw_whitelist_app);
                 item.setTitle(label);
                 item.setVisible(true);
             }
 
-            if(firewallVisible && whitelistMode) {
+            if (firewallVisible && whitelistMode) {
                 boolean whitelisted = fwWhitelist.matchesApp(app.getUid());
                 menu.findItem(R.id.add_to_fw_whitelist).setVisible(!whitelisted);
                 menu.findItem(R.id.remove_from_fw_whitelist).setVisible(whitelisted);
             }
         }
 
-        if((conn.info != null) && (!conn.info.isEmpty())) {
+        if ((conn.info != null) && (!conn.info.isEmpty())) {
             boolean hostBlocked = blocklist.matchesExactHost(conn.info);
             String label = Utils.shorten(MatchList.getRuleLabel(ctx, RuleType.HOST, conn.info), max_length);
             blockVisible |= !hostBlocked;
@@ -400,7 +399,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
             String dm_clean = Utils.cleanDomain(conn.info);
             String domain = Utils.getSecondLevelDomain(dm_clean);
 
-            if(!domain.equals(dm_clean)) {
+            if (!domain.equals(dm_clean)) {
                 boolean domainBlocked = blocklist.matchesExactHost(domain);
                 label = Utils.shorten(MatchList.getRuleLabel(ctx, RuleType.HOST, domain), max_length);
                 blockVisible |= !domainBlocked;
@@ -419,20 +418,20 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
                 item.setVisible(domainBlocked);
             }
 
-            if(conn.isBlacklistedHost()) {
+            if (conn.isBlacklistedHost()) {
                 item = menu.findItem(R.id.mw_whitelist_host);
                 item.setTitle(label);
                 item.setVisible(true);
             }
         } // conn.info
 
-        if((conn.url != null) && !(conn.url.isEmpty())) {
+        if ((conn.url != null) && !(conn.url.isEmpty())) {
             item = menu.findItem(R.id.copy_url);
             item.setTitle(Utils.shorten(String.format(getString(R.string.url_val), conn.url), max_length));
             item.setVisible(true);
         }
 
-        if(!conn.country.isEmpty()) {
+        if (!conn.country.isEmpty()) {
             item = menu.findItem(R.id.hide_country);
             item.setTitle(Utils.shorten(String.format(getString(R.string.country_val), Utils.getCountryName(ctx, conn.country)), max_length));
             item.setVisible(true);
@@ -465,12 +464,12 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
                 .setTitle(label)
                 .setVisible(decryptIp);
 
-        if(conn.isBlacklistedIp())
+        if (conn.isBlacklistedIp())
             menu.findItem(R.id.mw_whitelist_ip).setTitle(label).setVisible(true);
 
-        if(conn.hasHttpRequest())
+        if (conn.hasHttpRequest())
             menu.findItem(R.id.copy_http_request).setVisible(true);
-        if(conn.hasHttpResponse())
+        if (conn.hasHttpResponse())
             menu.findItem(R.id.copy_http_response).setVisible(true);
 
         label = MatchList.getRuleLabel(ctx, RuleType.PROTOCOL, conn.l7proto);
@@ -480,7 +479,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
         menu.findItem(R.id.block_menu).setVisible((firewallVisible) && blockVisible);
         menu.findItem(R.id.unblock_menu).setVisible(firewallVisible && unblockVisible);
 
-        if(!conn.isBlacklisted())
+        if (!conn.isBlacklisted())
             menu.findItem(R.id.mw_whitelist_menu).setVisible(false);
 
         boolean decryptionEnabled = CaptureService.isDecryptionListEnabled();
@@ -503,136 +502,136 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
         boolean firewall_wl_changed = false;
         boolean decryption_list_changed = false;
 
-        if(conn == null)
+        if (conn == null)
             return super.onContextItemSelected(item);
 
         int id = item.getItemId();
 
-        if(id == R.id.hide_app) {
+        if (id == R.id.hide_app) {
             mAdapter.mMask.addApp(conn.uid);
             mask_changed = true;
-        } else if(id == R.id.hide_host) {
+        } else if (id == R.id.hide_host) {
             mAdapter.mMask.addHost(conn.info);
             mask_changed = true;
-        } else if(id == R.id.hide_ip) {
+        } else if (id == R.id.hide_ip) {
             mAdapter.mMask.addIp(conn.dst_ip);
             mask_changed = true;
-        } else if(id == R.id.hide_proto) {
+        } else if (id == R.id.hide_proto) {
             mAdapter.mMask.addProto(conn.l7proto);
             mask_changed = true;
-        } else if(id == R.id.hide_domain) {
+        } else if (id == R.id.hide_domain) {
             mAdapter.mMask.addHost(Utils.getSecondLevelDomain(conn.info));
             mask_changed = true;
-        } else if(id == R.id.hide_country) {
+        } else if (id == R.id.hide_country) {
             mAdapter.mMask.addCountry(conn.country);
             mask_changed = true;
-        } else if(id == R.id.search_app) {
+        } else if (id == R.id.search_app) {
             AppDescriptor app = mApps.getAppByUid(conn.uid, 0);
-            if(app != null)
+            if (app != null)
                 setQuery(app.getPackageName());
             else
                 return super.onContextItemSelected(item);
-        } else if(id == R.id.search_host)
+        } else if (id == R.id.search_host)
             setQuery(conn.info);
-        else if(id == R.id.search_ip)
+        else if (id == R.id.search_ip)
             setQuery(conn.dst_ip);
-        else if(id == R.id.search_proto)
+        else if (id == R.id.search_proto)
             setQuery(conn.l7proto);
-        else if(id == R.id.mw_whitelist_app)  {
+        else if (id == R.id.mw_whitelist_app) {
             whitelist.addApp(conn.uid);
             whitelist_changed = true;
-        } else if(id == R.id.mw_whitelist_ip)  {
+        } else if (id == R.id.mw_whitelist_ip) {
             whitelist.addIp(conn.dst_ip);
             whitelist_changed = true;
-        } else if(id == R.id.mw_whitelist_host) {
+        } else if (id == R.id.mw_whitelist_host) {
             whitelist.addHost(conn.info);
             whitelist_changed = true;
-        } else if(id == R.id.dec_add_app)  {
+        } else if (id == R.id.dec_add_app) {
             decryptionList.addApp(conn.uid);
             decryption_list_changed = true;
-        } else if(id == R.id.dec_add_ip)  {
+        } else if (id == R.id.dec_add_ip) {
             decryptionList.addIp(conn.dst_ip);
             decryption_list_changed = true;
-        } else if(id == R.id.dec_add_host)  {
+        } else if (id == R.id.dec_add_host) {
             decryptionList.addHost(conn.info);
             decryption_list_changed = true;
-        } else if(id == R.id.dec_rem_app)  {
+        } else if (id == R.id.dec_rem_app) {
             decryptionList.removeApp(conn.uid);
             decryption_list_changed = true;
-        } else if(id == R.id.dec_rem_ip)  {
+        } else if (id == R.id.dec_rem_ip) {
             decryptionList.removeIp(conn.dst_ip);
             decryption_list_changed = true;
-        } else if(id == R.id.dec_rem_host)  {
+        } else if (id == R.id.dec_rem_host) {
             decryptionList.removeHost(conn.info);
             decryption_list_changed = true;
-        } else if(id == R.id.block_app) {
+        } else if (id == R.id.block_app) {
             blocklist.addApp(conn.uid);
             blocklist_changed = true;
-        } else if(id == R.id.block_ip) {
+        } else if (id == R.id.block_ip) {
             blocklist.addIp(conn.dst_ip);
             blocklist_changed = true;
-        } else if(id == R.id.block_host) {
+        } else if (id == R.id.block_host) {
             blocklist.addHost(conn.info);
             blocklist_changed = true;
-        } else if(id == R.id.block_domain) {
+        } else if (id == R.id.block_domain) {
             blocklist.addHost(Utils.getSecondLevelDomain(conn.info));
             blocklist_changed = true;
-        } else if(id == R.id.unblock_app_permanently) {
+        } else if (id == R.id.unblock_app_permanently) {
             blocklist.removeApp(conn.uid);
             blocklist_changed = true;
-        } else if(id == R.id.unblock_app_10m) {
+        } else if (id == R.id.unblock_app_10m) {
             blocklist_changed = blocklist.unblockAppForMinutes(conn.uid, 10);
-        } else if(id == R.id.unblock_app_1h) {
+        } else if (id == R.id.unblock_app_1h) {
             blocklist_changed = blocklist.unblockAppForMinutes(conn.uid, 60);
-        } else if(id == R.id.unblock_app_8h) {
+        } else if (id == R.id.unblock_app_8h) {
             blocklist_changed = blocklist.unblockAppForMinutes(conn.uid, 480);
-        } else if(id == R.id.unblock_ip) {
+        } else if (id == R.id.unblock_ip) {
             blocklist.removeIp(conn.dst_ip);
             blocklist_changed = true;
-        } else if(id == R.id.unblock_host) {
+        } else if (id == R.id.unblock_host) {
             blocklist.removeHost(conn.info);
             blocklist_changed = true;
-        } else if(id == R.id.unblock_domain) {
+        } else if (id == R.id.unblock_domain) {
             blocklist.removeHost(Utils.getSecondLevelDomain(conn.info));
             blocklist_changed = true;
-        } else if(id == R.id.add_to_fw_whitelist) {
+        } else if (id == R.id.add_to_fw_whitelist) {
             fwWhitelist.addApp(conn.uid);
             firewall_wl_changed = true;
-        } else if(id == R.id.remove_from_fw_whitelist) {
+        } else if (id == R.id.remove_from_fw_whitelist) {
             fwWhitelist.removeApp(conn.uid);
             firewall_wl_changed = true;
-        } else if(id == R.id.open_app_details) {
+        } else if (id == R.id.open_app_details) {
             Intent intent = new Intent(requireContext(), AppDetailsActivity.class);
             intent.putExtra(AppDetailsActivity.APP_UID_EXTRA, conn.uid);
             startActivity(intent);
-        } else if(id == R.id.copy_ip)
+        } else if (id == R.id.copy_ip)
             Utils.copyToClipboard(ctx, conn.dst_ip);
-        else if(id == R.id.copy_host)
+        else if (id == R.id.copy_host)
             Utils.copyToClipboard(ctx, conn.info);
-        else if(id == R.id.copy_url)
+        else if (id == R.id.copy_url)
             Utils.copyToClipboard(ctx, conn.url);
-        else if(id == R.id.copy_http_request)
+        else if (id == R.id.copy_http_request)
             Utils.copyToClipboard(ctx, conn.getHttpRequest());
-        else if(id == R.id.copy_http_response)
+        else if (id == R.id.copy_http_response)
             Utils.copyToClipboard(ctx, conn.getHttpResponse());
         else
             return super.onContextItemSelected(item);
 
-        if(mask_changed) {
+        if (mask_changed) {
             mAdapter.mMask.save();
             mAdapter.mFilter.showMasked = false;
             refreshFilteredConnections();
-        } else if(whitelist_changed) {
+        } else if (whitelist_changed) {
             whitelist.save();
             CaptureService.reloadMalwareWhitelist();
-        } else if(firewall_wl_changed) {
+        } else if (firewall_wl_changed) {
             fwWhitelist.save();
-            if(CaptureService.isServiceActive())
+            if (CaptureService.isServiceActive())
                 CaptureService.requireInstance().reloadFirewallWhitelist();
-        } else if(decryption_list_changed) {
+        } else if (decryption_list_changed) {
             decryptionList.save();
             CaptureService.reloadDecryptionList();
-        } else if(blocklist_changed)
+        } else if (blocklist_changed)
             blocklist.saveAndReload();
 
         return true;
@@ -651,8 +650,8 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
         boolean reached_bottom = (last_visible_pos >= last_pos);
         boolean is_scrolling = (first_visibile_pos != 0) || (!reached_bottom);
 
-        if(is_scrolling) {
-            if(reached_bottom) {
+        if (is_scrolling) {
+            if (reached_bottom) {
                 autoScroll = true;
                 showFabDown(false);
             } else {
@@ -665,7 +664,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
 
     private void showFabDown(boolean visible) {
         // compared to setVisibility, .show/.hide provide animations and also properly clear the AnchorId
-        if(visible)
+        if (visible)
             mFabDown.show();
         else
             mFabDown.hide();
@@ -679,7 +678,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
     }
 
     private void refreshActiveFilter() {
-        if(mAdapter == null)
+        if (mAdapter == null)
             return;
 
         mActiveFilter.removeAllViews();
@@ -696,7 +695,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
 
     private void recheckUntrackedConnections() {
         ConnectionsRegister reg = CaptureService.requireConnsRegister();
-        if(reg.getUntrackedConnCount() > 0) {
+        if (reg.getUntrackedConnCount() > 0) {
             String info = String.format(getString(R.string.older_connections_notice), reg.getUntrackedConnCount());
             mOldConnectionsText.setText(info);
             mOldConnectionsText.setVisibility(View.VISIBLE);
@@ -716,27 +715,27 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
             mAdapter.connectionsChanges(num_connections);
 
             recheckScroll();
-            if(autoScroll)
+            if (autoScroll)
                 scrollToBottom();
             recheckUntrackedConnections();
         }, mHandler);
     }
 
     @Override
-    public void connectionsAdded(int start, ConnectionDescriptor []conns) {
+    public void connectionsAdded(int start, ConnectionDescriptor[] conns) {
         mHandler.post(() -> {
             Log.d(TAG, "Add " + conns.length + " connections at " + start);
 
             mAdapter.connectionsAdded(start, conns);
 
-            if(autoScroll)
+            if (autoScroll)
                 scrollToBottom();
             recheckUntrackedConnections();
         });
     }
 
     @Override
-    public void connectionsRemoved(int start, ConnectionDescriptor []conns) {
+    public void connectionsRemoved(int start, ConnectionDescriptor[] conns) {
         mHandler.post(() -> {
             Log.d(TAG, "Remove " + conns.length + " connections at " + start);
             mAdapter.connectionsRemoved(start, conns);
@@ -759,7 +758,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
         mSearchView = (SearchView) mMenuItemSearch.getActionView();
         mSearchView.setOnQueryTextListener(this);
 
-        if((mQueryToApply != null) && (!mQueryToApply.isEmpty())) {
+        if ((mQueryToApply != null) && (!mQueryToApply.isEmpty())) {
             String query = mQueryToApply;
             mQueryToApply = null;
             setQuery(query);
@@ -772,10 +771,10 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
     public boolean onMenuItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
 
-        if(id == R.id.save) {
+        if (id == R.id.save) {
             openFileSelector();
             return true;
-        } else if(id == R.id.edit_filter) {
+        } else if (id == R.id.edit_filter) {
             Intent intent = new Intent(requireContext(), EditFilterActivity.class);
             intent.putExtra(EditFilterActivity.FILTER_DESCRIPTOR, mAdapter.mFilter);
             filterLauncher.launch(intent);
@@ -786,7 +785,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
     }
 
     private void refreshMenuIcons() {
-        if(mSave == null)
+        if (mSave == null)
             return;
 
         boolean is_enabled = (CaptureService.getConnsRegister() != null);
@@ -799,21 +798,21 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
     private void dumpCsv() {
         String dump = mAdapter.dumpConnectionsCsv();
 
-        if(mCsvFname != null) {
+        if (mCsvFname != null) {
             Log.d(TAG, "Writing CSV file: " + mCsvFname);
             boolean error = true;
 
             try {
                 OutputStream stream = requireActivity().getContentResolver().openOutputStream(mCsvFname, "rwt");
 
-                if(stream != null) {
+                if (stream != null) {
                     stream.write(dump.getBytes());
                     stream.close();
                 }
 
                 Utils.UriStat stat = Utils.getUriStat(requireContext(), mCsvFname);
 
-                if(stat != null) {
+                if (stat != null) {
                     String msg = String.format(getString(R.string.file_saved_with_name), stat.name);
                     Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
                 } else
@@ -824,7 +823,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
                 e.printStackTrace();
             }
 
-            if(error)
+            if (error)
                 Utils.showToast(requireContext(), R.string.cannot_write_file);
         }
 
@@ -839,7 +838,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
         intent.setType("*/*");
         intent.putExtra(Intent.EXTRA_TITLE, fname);
 
-        if(Utils.supportsFileDialog(requireContext(), intent)) {
+        if (Utils.supportsFileDialog(requireContext(), intent)) {
             try {
                 csvFileLauncher.launch(intent);
             } catch (ActivityNotFoundException e) {
@@ -848,13 +847,13 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
         } else
             noFileDialog = true;
 
-        if(noFileDialog) {
+        if (noFileDialog) {
             Log.w(TAG, "No app found to handle file selection");
 
             // Pick default path
             Uri uri = Utils.getDownloadsUri(requireContext(), fname);
 
-            if(uri != null) {
+            if (uri != null) {
                 mCsvFname = uri;
                 dumpCsv();
             } else
@@ -872,9 +871,9 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
     }
 
     private void filterResult(final ActivityResult result) {
-        if(result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+        if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
             FilterDescriptor descriptor = Utils.getSerializableExtra(result.getData(), EditFilterActivity.FILTER_DESCRIPTOR, FilterDescriptor.class);
-            if(descriptor != null) {
+            if (descriptor != null) {
                 mAdapter.mFilter = descriptor;
                 mAdapter.refreshFilteredConnections();
                 refreshActiveFilter();
@@ -883,7 +882,9 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
     }
 
     @Override
-    public boolean onQueryTextSubmit(String query) { return true; }
+    public boolean onQueryTextSubmit(String query) {
+        return true;
+    }
 
     @Override
     public boolean onQueryTextChange(String newText) {

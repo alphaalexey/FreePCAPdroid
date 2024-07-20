@@ -20,6 +20,7 @@
 package com.emanuelef.remote_capture.activities;
 
 import android.os.Bundle;
+
 import com.emanuelef.remote_capture.R;
 import com.emanuelef.remote_capture.fragments.AppsFragment;
 

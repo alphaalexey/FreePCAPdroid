@@ -25,80 +25,80 @@
 /* ******************************************************* */
 
 static void usage() {
-  fprintf(stderr, "pcap_reader - test for PCAPdroid\n"
-    "Copyright 2022 Emanuele Faranda <black.silver@hotmail.it>\n\n"
-    "Usage: pcap_reader -i ifname\n"
-    " -i [ifname]    capture packets on the specified interface or PCAP file.\n"
-    "                The '@inet' keyword can be used to capture from the internet\n"
-    "                interface\n"
-  );
+    fprintf(stderr, "pcap_reader - test for PCAPdroid\n"
+                    "Copyright 2022 Emanuele Faranda <black.silver@hotmail.it>\n\n"
+                    "Usage: pcap_reader -i ifname\n"
+                    " -i [ifname]    capture packets on the specified interface or PCAP file.\n"
+                    "                The '@inet' keyword can be used to capture from the internet\n"
+                    "                interface\n"
+    );
 
-  exit(1);
+    exit(1);
 }
 
 /* ******************************************************* */
 
 static void sig_handler(int signo) {
-  if(running) {
-    running = false;
-    return;
-  }
+    if (running) {
+        running = false;
+        return;
+    }
 
-  fprintf(stderr, "exit now");
-  exit(1);
+    fprintf(stderr, "exit now");
+    exit(1);
 }
 
 /* ******************************************************* */
 
 static void dump_connections(pcapdroid_t *pd) {
-  char buf[256];
+    char buf[256];
 
-  for(int i=0; i < pd->new_conns.cur_items; i++) {
-    conn_and_tuple_t *conn = &pd->new_conns.items[i];
+    for (int i = 0; i < pd->new_conns.cur_items; i++) {
+        conn_and_tuple_t *conn = &pd->new_conns.items[i];
 
-    zdtun_5tuple2str(&conn->tuple, buf, sizeof(buf));
-    printf("%s [%s]\n", buf,
-      //pd_get_proto_name(pd, conn->data->l7proto, conn->tuple.ipproto),
-      conn->data->info ? conn->data->info : "");
-  }
+        zdtun_5tuple2str(&conn->tuple, buf, sizeof(buf));
+        printf("%s [%s]\n", buf,
+                //pd_get_proto_name(pd, conn->data->l7proto, conn->tuple.ipproto),
+               conn->data->info ? conn->data->info : "");
+    }
 }
 
 /* ******************************************************* */
 
 int main(int argc, char *argv[]) {
-  int c;
-  char *ifname = NULL;
-  uint8_t verbose = 0;
+    int c;
+    char *ifname = NULL;
+    uint8_t verbose = 0;
 
-  while((c = getopt(argc, argv, "hi:v")) != -1) {
-    switch(c) {
-      case 'i':
-        ifname = strdup(optarg);
-        break;
-      case 'v':
-        verbose = 1;
-        break;
-      default:
-        usage();
+    while ((c = getopt(argc, argv, "hi:v")) != -1) {
+        switch (c) {
+            case 'i':
+                ifname = strdup(optarg);
+                break;
+            case 'v':
+                verbose = 1;
+                break;
+            default:
+                usage();
+        }
     }
-  }
 
-  if(ifname == NULL)
-    usage();
+    if (ifname == NULL)
+        usage();
 
-  loglevel = verbose ? ANDROID_LOG_DEBUG : ANDROID_LOG_INFO;
+    loglevel = verbose ? ANDROID_LOG_DEBUG : ANDROID_LOG_INFO;
 
-  pcapdroid_t *pd = pd_init_test(ifname);
-  pd->cb.send_connections_dump = dump_connections;
+    pcapdroid_t *pd = pd_init_test(ifname);
+    pd->cb.send_connections_dump = dump_connections;
 
-  signal(SIGINT, sig_handler);
-  signal(SIGTERM, sig_handler);
-  signal(SIGHUP, sig_handler);
+    signal(SIGINT, sig_handler);
+    signal(SIGTERM, sig_handler);
+    signal(SIGHUP, sig_handler);
 
-  log_i("Capturing packets from %s", ifname);
-  pd_run(pd);
+    log_i("Capturing packets from %s", ifname);
+    pd_run(pd);
 
-  log_i("Cleanup...");
-  pd_free_test(pd);
-  free(ifname);
+    log_i("Cleanup...");
+    pd_free_test(pd);
+    free(ifname);
 }

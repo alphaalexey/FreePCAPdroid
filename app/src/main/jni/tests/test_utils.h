@@ -33,27 +33,33 @@
 #define PCAP_OUT_PATH "/tmp/pcapdroid_test_out.pcap"
 
 void add_test(const char *name, void (*test_cb)());
+
 void run_test(int argc, char **argv);
 
 typedef struct payload_chunk {
-  u_char *payload;
-  int size;
-  bool is_tx;
-  struct payload_chunk *next;
+    u_char *payload;
+    int size;
+    bool is_tx;
+    struct payload_chunk *next;
 } payload_chunk_t;
 
-pcapdroid_t* pd_init_test(const char *ifname);
+pcapdroid_t *pd_init_test(const char *ifname);
+
 void pd_free_test(pcapdroid_t *pd);
 
 // PCAP dump
 void pd_dump_to_file(pcapdroid_t *pd);
+
 void pd_done_dump();
+
 void assert_pcap_header(pcap_hdr_t *hdr);
-u_char* next_pcap_record(pcap_rec_t *rec);
+
+u_char *next_pcap_record(pcap_rec_t *rec);
 
 // Callbacks
 bool dump_cb_payload_chunk(pcapdroid_t *pd, const pkt_context_t *pctx, int dump_size);
 
-conn_and_tuple_t* assert_conn(pcapdroid_t *pd, int ipproto, const char *dst_ip, uint16_t dst_port, const char *info);
+conn_and_tuple_t *
+assert_conn(pcapdroid_t *pd, int ipproto, const char *dst_ip, uint16_t dst_port, const char *info);
 
 #endif

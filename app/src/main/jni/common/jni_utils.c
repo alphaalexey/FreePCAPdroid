@@ -40,7 +40,7 @@ int jniCheckException(JNIEnv *env) {
 // Dumps JNI reference tables to logcat to detect possible reference leaks
 void jniDumpReferences(JNIEnv *env) {
     jclass vm_class = jniFindClass(env, "dalvik/system/VMDebug");
-    jmethodID dump_mid = jniGetStaticMethodID(env, vm_class, "dumpReferenceTables", "()V" );
+    jmethodID dump_mid = jniGetStaticMethodID(env, vm_class, "dumpReferenceTables", "()V");
     (*env)->CallStaticVoidMethod(env, vm_class, dump_mid);
     (*env)->DeleteLocalRef(env, vm_class);
 }
@@ -84,7 +84,7 @@ jmethodID jniGetStaticMethodID(JNIEnv *env, jclass cls, const char *name, const 
 
 jfieldID jniFieldID(JNIEnv *env, jclass cls, const char *name, const char *type) {
     jfieldID field = (*env)->GetFieldID(env, cls, name, type);
-    if(field == NULL) {
+    if (field == NULL) {
         log_e("Field %s(%s) not found", name, type);
         jniCheckException(env);
     }
@@ -98,19 +98,19 @@ jobject jniEnumVal(JNIEnv *env, const char *class_name, const char *enum_key) {
     char buf[512];
 
     jclass cls = jniFindClass(env, class_name);
-    if(cls == NULL)
+    if (cls == NULL)
         return NULL;
 
     snprintf(buf, sizeof(buf), "L%s;", class_name);
     jfieldID field = (*env)->GetStaticFieldID(env, cls, enum_key, buf);
-    if(field == NULL) {
+    if (field == NULL) {
         log_e("Static field %s(%s) not found", enum_key, buf);
         jniCheckException(env);
         return NULL;
     }
 
     jobject val = (*env)->GetStaticObjectField(env, cls, field);
-    if(!val) {
+    if (!val) {
         log_e("Enum value %s not found in \"%s\"", enum_key, class_name);
         jniCheckException(env);
     }

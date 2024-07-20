@@ -24,22 +24,22 @@
 #include "fuzz_utils.c"
 
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
-  pcapd_conf_t conf;
-  char *pcap_path;
+    pcapd_conf_t conf;
+    char *pcap_path;
 
-  if(!(pcap_path = buffer_to_tmpfile(Data, Size)))
-    return -1;
+    if (!(pcap_path = buffer_to_tmpfile(Data, Size)))
+        return -1;
 
-  init_conf(&conf);
-  conf.ifnames[0] = strdup(pcap_path);
-  conf.num_interfaces = 1;
-  conf.no_client = 1;
-  conf.quiet = 1;
+    init_conf(&conf);
+    conf.ifnames[0] = strdup(pcap_path);
+    conf.num_interfaces = 1;
+    conf.no_client = 1;
+    conf.quiet = 1;
 
-  run_pcap_dump(&conf);
+    run_pcap_dump(&conf);
 
-  unlink(pcap_path);
-  free(pcap_path);
+    unlink(pcap_path);
+    free(pcap_path);
 
-  return 0;
+    return 0;
 }

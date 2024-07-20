@@ -49,26 +49,146 @@ import java.util.concurrent.TimeUnit;
  * A simple HTTP server which allows clients to download the PCAP dump over HTTP.
  */
 public class HTTPServer implements PcapDumper, Runnable {
+    public static final int MAX_CLIENTS = 8;
     private static final String TAG = "HTTPServer";
     private static final String PCAP_MIME = "application/vnd.tcpdump.pcap";
     private static final String PCAPNG_MIME = "application/x-pcapng";
-    public static final int MAX_CLIENTS = 8;
-    private ServerSocket mSocket;
-    private boolean mRunning;
-    private Thread mThread;
     private final int mPort;
     private final boolean mPcapngFormat;
     private final String mMimeType;
     private final Context mContext;
-
     // Shared state, must be synchronized
     private final ArrayList<ClientHandler> mClients = new ArrayList<>();
+    private ServerSocket mSocket;
+    private boolean mRunning;
+    private Thread mThread;
 
     public HTTPServer(Context context, int port, boolean pcapng_format) {
         mPort = port;
         mContext = context;
         mPcapngFormat = pcapng_format;
         mMimeType = pcapng_format ? PCAPNG_MIME : PCAP_MIME;
+    }
+
+    @Override
+    public void startDumper() throws IOException {
+        mSocket = new ServerSocket();
+        mSocket.setReuseAddress(true);
+        mSocket.bind(new InetSocketAddress(mPort));
+
+        mRunning = true;
+        mThread = new Thread(this);
+        mThread.start();
+    }
+
+    @Override
+    public void run() {
+        // NOTE: threads only handle the initial client communication.
+        // After isReadyForData, clients are handled in dumpData.
+        ExecutorService pool = Executors.newFixedThreadPool(MAX_CLIENTS);
+
+        while (mRunning) {
+            try {
+                Socket client = mSocket.accept();
+
+                synchronized (this) {
+                    if (mClients.size() >= MAX_CLIENTS) {
+                        Log.w(TAG, "Clients limit reached");
+                        Utils.safeClose(client);
+                        continue;
+                    }
+                }
+
+                Log.i(TAG, "New client: " + client.getInetAddress().getHostAddress() + ":" + client.getPort());
+                ClientHandler handler = new ClientHandler(client, mMimeType, Utils.getUniquePcapFileName(mContext, mPcapngFormat));
+
+                try {
+                    // will fail if pool is full
+                    pool.submit(handler);
+
+                    synchronized (this) {
+                        mClients.add(handler);
+                    }
+                } catch (RejectedExecutionException e) {
+                    Log.w(TAG, e.getLocalizedMessage());
+                    Utils.safeClose(client);
+                }
+            } catch (IOException e) {
+                if (!mRunning)
+                    Log.d(TAG, "Got termination request");
+                else
+                    Log.d(TAG, e.getLocalizedMessage());
+            }
+        }
+
+        Utils.safeClose(mSocket);
+
+        // Terminate the running clients threads
+        pool.shutdown();
+        synchronized (this) {
+            // Possibly wake clients blocked on read
+            for (ClientHandler client : mClients) {
+                if (!client.isReadyForData())
+                    client.stop();
+            }
+        }
+        while (true) {
+            try {
+                if (pool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS))
+                    break;
+            } catch (InterruptedException ignored) {
+            }
+        }
+
+        // Close the clients
+        synchronized (this) {
+            for (ClientHandler client : mClients) {
+                if (!client.isClosed())
+                    client.close(null);
+            }
+
+            mClients.clear();
+        }
+    }
+
+    @Override
+    public void stopDumper() throws IOException {
+        mRunning = false;
+
+        // Generate a socket exception
+        mSocket.close();
+
+        while ((mThread != null) && (mThread.isAlive())) {
+            try {
+                Log.d(TAG, "Joining HTTP thread...");
+                mThread.join();
+            } catch (InterruptedException ignored) {
+            }
+        }
+    }
+
+    @Override
+    public String getBpf() {
+        return "not (host " + Utils.getLocalIPAddress(mContext) + " and tcp port " + mPort + ")";
+    }
+
+    @Override
+    public void dumpData(byte[] data) throws IOException {
+        synchronized (this) {
+            Iterator<ClientHandler> it = mClients.iterator();
+
+            while (it.hasNext()) {
+                ClientHandler client = it.next();
+
+                if (client.isReadyForData())
+                    client.sendChunk(data);
+
+                if (client.isClosed()) {
+                    it.remove();
+                    Log.d(TAG, "Client closed, active clients: " + mClients.size());
+                }
+            }
+        }
     }
 
     private static class ChunkedOutputStream extends FilterOutputStream {
@@ -101,11 +221,11 @@ public class HTTPServer implements PcapDumper, Runnable {
      */
     private static class ClientHandler implements Runnable {
         static final int INPUT_BUFSIZE = 1024;
-        Socket mSocket;
         final InputStream mInputStream;
         final OutputStream mOutputStream;
         final String mFname;
         final String mMimeType;
+        Socket mSocket;
         ChunkedOutputStream mChunkedOutputStream;
         boolean mHasError;
         boolean mReadyForData;
@@ -121,17 +241,18 @@ public class HTTPServer implements PcapDumper, Runnable {
         }
 
         private void close(String error) {
-            if(isClosed())
+            if (isClosed())
                 return;
 
-            if(error != null) {
+            if (error != null) {
                 Log.i(TAG, "Client error: " + error);
                 mHasError = true;
             } else if (mReadyForData) {
                 try {
                     // Terminate the chunked stream
                     mChunkedOutputStream.finish();
-                } catch (IOException ignored) {}
+                } catch (IOException ignored) {
+                }
             }
 
             Utils.safeClose(mChunkedOutputStream);
@@ -153,7 +274,7 @@ public class HTTPServer implements PcapDumper, Runnable {
             int req_size = 0;
 
             try {
-                while(req_size <= 0) {
+                while (req_size <= 0) {
                     sofar += mInputStream.read(buf, sofar, buf.length - sofar);
                     req_size = Utils.getEndOfHTTPHeaders(buf);
                 }
@@ -161,9 +282,9 @@ public class HTTPServer implements PcapDumper, Runnable {
                 Log.d(TAG, "Request headers end at " + req_size);
                 //Log.d(TAG, "Req: " + new String(buf, 0, req_size, StandardCharsets.UTF_8));
 
-                try(BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(buf, 0, req_size)))) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(buf, 0, req_size)))) {
                     String line = reader.readLine();
-                    if(line == null) {
+                    if (line == null) {
                         close("Bad request");
                         return;
                     }
@@ -172,12 +293,12 @@ public class HTTPServer implements PcapDumper, Runnable {
                     String method = tk.nextToken();
                     String url = tk.nextToken();
 
-                    if(!method.equals("GET")) {
+                    if (!method.equals("GET")) {
                         close("Bad request method");
                         return;
                     }
 
-                    if(url.equals("/")) {
+                    if (url.equals("/")) {
                         redirectToPcap();
                         close(null);
                     } else {
@@ -223,9 +344,9 @@ public class HTTPServer implements PcapDumper, Runnable {
         }
 
         // Send a chunk of data
-        public void sendChunk(byte []data) {
+        public void sendChunk(byte[] data) {
             try {
-                if(!mHeaderSent) {
+                if (!mHeaderSent) {
                     mChunkedOutputStream.write(CaptureService.getPcapHeader());
                     mHeaderSent = true;
                 }
@@ -234,125 +355,6 @@ public class HTTPServer implements PcapDumper, Runnable {
                 mChunkedOutputStream.write(data);
             } catch (IOException e) {
                 close(e.getLocalizedMessage());
-            }
-        }
-    }
-
-    @Override
-    public void startDumper() throws IOException {
-        mSocket = new ServerSocket();
-        mSocket.setReuseAddress(true);
-        mSocket.bind(new InetSocketAddress(mPort));
-
-        mRunning = true;
-        mThread = new Thread(this);
-        mThread.start();
-    }
-
-    @Override
-    public void run() {
-        // NOTE: threads only handle the initial client communication.
-        // After isReadyForData, clients are handled in dumpData.
-        ExecutorService pool = Executors.newFixedThreadPool(MAX_CLIENTS);
-
-        while(mRunning) {
-            try {
-                Socket client = mSocket.accept();
-
-                synchronized(this) {
-                    if(mClients.size() >= MAX_CLIENTS) {
-                        Log.w(TAG, "Clients limit reached");
-                        Utils.safeClose(client);
-                        continue;
-                    }
-                }
-
-                Log.i(TAG, "New client: " + client.getInetAddress().getHostAddress() + ":" + client.getPort());
-                ClientHandler handler = new ClientHandler(client, mMimeType, Utils.getUniquePcapFileName(mContext, mPcapngFormat));
-
-                try {
-                    // will fail if pool is full
-                    pool.submit(handler);
-
-                    synchronized(this) {
-                      mClients.add(handler);
-                    }
-                } catch (RejectedExecutionException e) {
-                    Log.w(TAG, e.getLocalizedMessage());
-                    Utils.safeClose(client);
-                }
-            } catch (IOException e) {
-                if(!mRunning)
-                    Log.d(TAG, "Got termination request");
-                else
-                    Log.d(TAG, e.getLocalizedMessage());
-            }
-        }
-
-        Utils.safeClose(mSocket);
-
-        // Terminate the running clients threads
-        pool.shutdown();
-        synchronized(this) {
-            // Possibly wake clients blocked on read
-            for(ClientHandler client: mClients) {
-                if(!client.isReadyForData())
-                    client.stop();
-            }
-        }
-        while(true) {
-            try {
-                if(pool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS))
-                    break;
-            } catch (InterruptedException ignored) {}
-        }
-
-        // Close the clients
-        synchronized(this) {
-            for(ClientHandler client: mClients) {
-                if(!client.isClosed())
-                    client.close(null);
-            }
-
-            mClients.clear();
-        }
-    }
-
-    @Override
-    public void stopDumper() throws IOException {
-        mRunning = false;
-
-        // Generate a socket exception
-        mSocket.close();
-
-        while((mThread != null) && (mThread.isAlive())) {
-            try {
-                Log.d(TAG, "Joining HTTP thread...");
-                mThread.join();
-            } catch (InterruptedException ignored) {}
-        }
-    }
-
-    @Override
-    public String getBpf() {
-        return "not (host " + Utils.getLocalIPAddress(mContext) + " and tcp port " + mPort + ")";
-    }
-
-    @Override
-    public void dumpData(byte[] data) throws IOException {
-        synchronized(this) {
-            Iterator<ClientHandler> it = mClients.iterator();
-
-            while(it.hasNext()) {
-                ClientHandler client = it.next();
-
-                if(client.isReadyForData())
-                    client.sendChunk(data);
-
-                if(client.isClosed()) {
-                    it.remove();
-                    Log.d(TAG, "Client closed, active clients: " + mClients.size());
-                }
             }
         }
     }

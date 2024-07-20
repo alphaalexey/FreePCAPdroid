@@ -14,11 +14,14 @@ public class TestPCAPdroid extends PCAPdroid implements TestLifecycleApplication
     }
 
     @Override
-    public void beforeTest(Method method) {}
+    public void beforeTest(Method method) {
+    }
 
     @Override
-    public void prepareTest(Object test) {}
+    public void prepareTest(Object test) {
+    }
 
     @Override
-    public void afterTest(Method method) {}
+    public void afterTest(Method method) {
+    }
 }

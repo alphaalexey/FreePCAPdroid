@@ -31,25 +31,25 @@ import androidx.recyclerview.widget.SimpleItemAnimator;
 // Adapter from https://gist.github.com/AlexZhukovich/537eaa1e3c82ef9f5d5cd22efdc80c54#file-emptyrecyclerview-java
 public class EmptyRecyclerView extends RecyclerView {
     private View mEmptyView;
-
-    /* Workaround for crash "java.lang.IndexOutOfBoundsException: Inconsistency detected. Invalid item position 0(offset:-1)".
-     * See https://stackoverflow.com/questions/30220771/recyclerview-inconsistency-detected-invalid-item-position .
-     * It can be reproduced by setting CaptureService.CONNECTIONS_LOG_SIZE = 4 and triggering a rollover right after inserting
-     * item 3 in the register. It may take several tries to reproduce.
-     * Possibly related issues:
-     *  - https://issuetracker.google.com/issues?q=componentid:192731%2B%20IndexOutOfBoundsException%20Invalid%20item%20position
-     * Another way to fix the issue is to disable the item animations via setItemAnimator(null).
-     */
-    public static class MyLinearLayoutManager extends LinearLayoutManager {
-        public MyLinearLayoutManager(Context context) {
-            super(context);
+    final AdapterDataObserver observer = new AdapterDataObserver() {
+        @Override
+        public void onChanged() {
+            super.onChanged();
+            initEmptyView();
         }
 
         @Override
-        public boolean supportsPredictiveItemAnimations() {
-            return false;
+        public void onItemRangeInserted(int positionStart, int itemCount) {
+            super.onItemRangeInserted(positionStart, itemCount);
+            initEmptyView();
         }
-    }
+
+        @Override
+        public void onItemRangeRemoved(int positionStart, int itemCount) {
+            super.onItemRangeRemoved(positionStart, itemCount);
+            initEmptyView();
+        }
+    };
 
     public EmptyRecyclerView(Context context) {
         super(context);
@@ -71,8 +71,8 @@ public class EmptyRecyclerView extends RecyclerView {
         // to long click a continuously refreshed item.
         // https://stackoverflow.com/questions/58628885/handle-touch-events-for-recyclerview-with-frequently-changing-data
         ItemAnimator animator = getItemAnimator();
-        if(animator instanceof SimpleItemAnimator)
-            ((SimpleItemAnimator)animator).setSupportsChangeAnimations(false);
+        if (animator instanceof SimpleItemAnimator)
+            ((SimpleItemAnimator) animator).setSupportsChangeAnimations(false);
     }
 
     private void initEmptyView() {
@@ -83,26 +83,6 @@ public class EmptyRecyclerView extends RecyclerView {
                     getAdapter() == null || getAdapter().getItemCount() == 0 ? GONE : VISIBLE);
         }
     }
-
-    final AdapterDataObserver observer = new AdapterDataObserver() {
-        @Override
-        public void onChanged() {
-            super.onChanged();
-            initEmptyView();
-        }
-
-        @Override
-        public void onItemRangeInserted(int positionStart, int itemCount) {
-            super.onItemRangeInserted(positionStart, itemCount);
-            initEmptyView();
-        }
-
-        @Override
-        public void onItemRangeRemoved(int positionStart, int itemCount) {
-            super.onItemRangeRemoved(positionStart, itemCount);
-            initEmptyView();
-        }
-    };
 
     @Override
     public void setAdapter(Adapter adapter) {
@@ -123,5 +103,24 @@ public class EmptyRecyclerView extends RecyclerView {
     public void setEmptyView(View view) {
         this.mEmptyView = view;
         initEmptyView();
+    }
+
+    /* Workaround for crash "java.lang.IndexOutOfBoundsException: Inconsistency detected. Invalid item position 0(offset:-1)".
+     * See https://stackoverflow.com/questions/30220771/recyclerview-inconsistency-detected-invalid-item-position .
+     * It can be reproduced by setting CaptureService.CONNECTIONS_LOG_SIZE = 4 and triggering a rollover right after inserting
+     * item 3 in the register. It may take several tries to reproduce.
+     * Possibly related issues:
+     *  - https://issuetracker.google.com/issues?q=componentid:192731%2B%20IndexOutOfBoundsException%20Invalid%20item%20position
+     * Another way to fix the issue is to disable the item animations via setItemAnimator(null).
+     */
+    public static class MyLinearLayoutManager extends LinearLayoutManager {
+        public MyLinearLayoutManager(Context context) {
+            super(context);
+        }
+
+        @Override
+        public boolean supportsPredictiveItemAnimations() {
+            return false;
+        }
     }
 }

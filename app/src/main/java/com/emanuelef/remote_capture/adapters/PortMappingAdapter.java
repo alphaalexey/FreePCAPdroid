@@ -43,7 +43,7 @@ public class PortMappingAdapter extends ArrayAdapter<PortMap> {
 
     public PortMappingAdapter(Context context, PortMapping mappings) {
         super(context, R.layout.port_mapping_item);
-        mLayoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mLayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         mMappings = mappings;
         reload();
     }
@@ -52,15 +52,15 @@ public class PortMappingAdapter extends ArrayAdapter<PortMap> {
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        if(convertView == null)
+        if (convertView == null)
             convertView = mLayoutInflater.inflate(R.layout.port_mapping_item, parent, false);
 
         PortMap mapping = getItem(position);
         String redirect_to = getContext().getString(R.string.ip_and_port, mapping.redirect_ip, mapping.redirect_port);
 
-        ((TextView)convertView.findViewById(R.id.orig_port)).setText(Integer.toString(mapping.orig_port));
-        ((TextView)convertView.findViewById(R.id.proto)).setText(Utils.proto2str(mapping.ipproto));
-        ((TextView)convertView.findViewById(R.id.redirect_to)).setText(redirect_to);
+        ((TextView) convertView.findViewById(R.id.orig_port)).setText(Integer.toString(mapping.orig_port));
+        ((TextView) convertView.findViewById(R.id.proto)).setText(Utils.proto2str(mapping.ipproto));
+        ((TextView) convertView.findViewById(R.id.redirect_to)).setText(redirect_to);
 
         return convertView;
     }
@@ -70,7 +70,7 @@ public class PortMappingAdapter extends ArrayAdapter<PortMap> {
 
         Iterator<PortMap> iterator = mMappings.iter();
 
-        while(iterator.hasNext()) {
+        while (iterator.hasNext()) {
             PortMap item = iterator.next();
             add(item);
         }

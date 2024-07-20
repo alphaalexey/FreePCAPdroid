@@ -26,5 +26,6 @@ public interface MitmListener {
     void onMitmGetCaCertificateResult(@Nullable String ca_pem);
 
     void onMitmServiceConnect();
+
     void onMitmServiceDisconnect();
 }

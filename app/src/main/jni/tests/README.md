@@ -1,6 +1,7 @@
 Tests and fuzzers for the native code of PCAPdroid.
 
-The tests are built with the [AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html) to detect memory issues and leaks. They are run as part of the Github workflow.
+The tests are built with the [AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html)
+to detect memory issues and leaks. They are run as part of the Github workflow.
 
 The fuzzers use [LibFuzzer](https://llvm.org/docs/LibFuzzer.html).
 
@@ -21,7 +22,8 @@ make fuzz_pcapd
 make fuzz_capture
 ```
 
-Cmake `3.18.1` or newer is required. If that's not available for your distribution, you can install it as follows:
+Cmake `3.18.1` or newer is required. If that's not available for your distribution, you can install
+it as follows:
 
 ```
 apt purge cmake

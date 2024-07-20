@@ -46,26 +46,6 @@ public class Geolocation {
         openDb();
     }
 
-    @Override
-    public void finalize() {
-        Utils.safeClose(mCountryReader);
-        Utils.safeClose(mAsnReader);
-        mCountryReader = null;
-        mAsnReader = null;
-    }
-
-    private void openDb() {
-        try {
-            mCountryReader = new Reader(getCountryFile(mContext));
-            Log.d(TAG, "Country DB loaded: " + mCountryReader.getMetadata());
-
-            mAsnReader = new Reader(getAsnFile(mContext));
-            Log.d(TAG, "ASN DB loaded: " + mAsnReader.getMetadata());
-        } catch (IOException e) {
-            Log.i(TAG, "Geolocation is not available");
-        }
-    }
-
     private static File getCountryFile(Context ctx) {
         return new File(ctx.getFilesDir() + "/dbip_country_lite.mmdb");
     }
@@ -75,7 +55,7 @@ public class Geolocation {
     }
 
     public static Date getDbDate(File file) throws IOException {
-        try(Reader reader = new Reader(file)) {
+        try (Reader reader = new Reader(file)) {
             return reader.getMetadata().getBuildDate();
         }
     }
@@ -117,13 +97,13 @@ public class Geolocation {
         File tmp_file = new File(ctx.getCacheDir() + "/geoip_db.zip");
 
         boolean rv = Utils.downloadFile(url, tmp_file.getAbsolutePath());
-        if(!rv) {
-            Log.w(TAG, "Could not download " + label + " db from " +  url);
+        if (!rv) {
+            Log.w(TAG, "Could not download " + label + " db from " + url);
             return false;
         }
 
-        try(FileInputStream is = new FileInputStream(tmp_file.getAbsolutePath())) {
-            if(!Utils.ungzip(is, dst.getAbsolutePath())) {
+        try (FileInputStream is = new FileInputStream(tmp_file.getAbsolutePath())) {
+            if (!Utils.ungzip(is, dst.getAbsolutePath())) {
                 Log.w(TAG, "ungzip of " + tmp_file + " failed");
                 return false;
             }
@@ -138,8 +118,28 @@ public class Geolocation {
         }
     }
 
+    @Override
+    public void finalize() {
+        Utils.safeClose(mCountryReader);
+        Utils.safeClose(mAsnReader);
+        mCountryReader = null;
+        mAsnReader = null;
+    }
+
+    private void openDb() {
+        try {
+            mCountryReader = new Reader(getCountryFile(mContext));
+            Log.d(TAG, "Country DB loaded: " + mCountryReader.getMetadata());
+
+            mAsnReader = new Reader(getAsnFile(mContext));
+            Log.d(TAG, "ASN DB loaded: " + mAsnReader.getMetadata());
+        } catch (IOException e) {
+            Log.i(TAG, "Geolocation is not available");
+        }
+    }
+
     public String getCountryCode(InetAddress addr) {
-        if(mCountryReader != null) {
+        if (mCountryReader != null) {
             try {
                 Geomodel.CountryResult res = mCountryReader.get(addr, Geomodel.CountryResult.class);
                 if ((res != null) && (res.country != null))
@@ -154,7 +154,7 @@ public class Geolocation {
     }
 
     public Geomodel.ASN getASN(InetAddress addr) {
-        if(mAsnReader != null) {
+        if (mAsnReader != null) {
             try {
                 Geomodel.ASN res = mAsnReader.get(addr, Geomodel.ASN.class);
                 if (res != null)

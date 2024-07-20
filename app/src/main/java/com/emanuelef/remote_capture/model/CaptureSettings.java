@@ -100,7 +100,7 @@ public class CaptureSettings implements Serializable {
         Bundle bundle = intent.getExtras();
 
         String s = bundle.getString(key);
-        if(s != null)
+        if (s != null)
             return Integer.parseInt(s);
         return bundle.getInt(key, def_value);
     }
@@ -110,7 +110,7 @@ public class CaptureSettings implements Serializable {
         Bundle bundle = intent.getExtras();
 
         String s = bundle.getString(key);
-        if(s != null)
+        if (s != null)
             return Boolean.parseBoolean(s);
         return bundle.getBoolean(key, def_value);
     }
@@ -120,7 +120,7 @@ public class CaptureSettings implements Serializable {
         List<String> rv;
 
         String s = intent.getStringExtra(key);
-        if(s != null) {
+        if (s != null) {
             if (s.indexOf(',') < 0) {
                 rv = new ArrayList<>();
                 rv.add(s);

@@ -38,8 +38,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 public class LogviewFragment extends Fragment {
-    private static final String TAG = "LogviewFragment";
     public static final int MAX_LINES = 512;
+    private static final String TAG = "LogviewFragment";
     private String mLogPath;
     private String mLogText;
     private TextView mLogView;
@@ -63,9 +63,9 @@ public class LogviewFragment extends Fragment {
         Bundle args = getArguments();
         assert args != null;
         mLogPath = args.getString("path");
-        assert(mLogPath != null);
+        assert (mLogPath != null);
 
-        if(Utils.isTv(view.getContext())) {
+        if (Utils.isTv(view.getContext())) {
             // necessary to make scroll work on TV
             // but disables ability to select and copy the textview contents
             ViewGroup layout = view.findViewById(R.id.scrollView);
@@ -83,7 +83,7 @@ public class LogviewFragment extends Fragment {
             String line;
             int count = 0;
 
-            while(((line = reader.readLine()) != null) && (count < MAX_LINES)) {
+            while (((line = reader.readLine()) != null) && (count < MAX_LINES)) {
                 builder.insert(0, "\n");
                 builder.insert(0, line);
                 count += 1;

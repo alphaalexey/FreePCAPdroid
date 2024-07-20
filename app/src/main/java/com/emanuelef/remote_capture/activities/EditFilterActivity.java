@@ -39,17 +39,17 @@ import com.emanuelef.remote_capture.ConnectionsRegister;
 import com.emanuelef.remote_capture.GUIUtils;
 import com.emanuelef.remote_capture.R;
 import com.emanuelef.remote_capture.Utils;
-import com.emanuelef.remote_capture.model.ConnectionDescriptor.Status;
 import com.emanuelef.remote_capture.model.ConnectionDescriptor.DecryptionStatus;
 import com.emanuelef.remote_capture.model.ConnectionDescriptor.FilteringStatus;
+import com.emanuelef.remote_capture.model.ConnectionDescriptor.Status;
 import com.emanuelef.remote_capture.model.FilterDescriptor;
 import com.emanuelef.remote_capture.model.ListInfo;
 import com.emanuelef.remote_capture.model.Prefs;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class EditFilterActivity extends BaseActivity implements MenuProvider {
     public static final String FILTER_DESCRIPTOR = "filter";
@@ -71,18 +71,18 @@ public class EditFilterActivity extends BaseActivity implements MenuProvider {
         addMenuProvider(this);
 
         ActionBar actionBar = getSupportActionBar();
-        if(actionBar != null) {
+        if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
             actionBar.setHomeAsUpIndicator(R.drawable.ic_close);
         }
 
         Intent intent = getIntent();
-        if(intent != null) {
+        if (intent != null) {
             FilterDescriptor desc = Utils.getSerializableExtra(intent, FILTER_DESCRIPTOR, FilterDescriptor.class);
-            if(desc != null)
+            if (desc != null)
                 mFilter = desc;
         }
-        if(mFilter == null)
+        if (mFilter == null)
             mFilter = new FilterDescriptor();
 
         mHideMasked = findViewById(R.id.not_hidden);
@@ -114,7 +114,7 @@ public class EditFilterActivity extends BaseActivity implements MenuProvider {
                 new Pair<>(DecryptionStatus.ERROR, findViewById(R.id.dec_status_error))
         ));
 
-        if(CaptureService.isDecryptingTLS()) {
+        if (CaptureService.isDecryptingTLS()) {
             findViewById(R.id.decryption_status_label).setVisibility(View.VISIBLE);
             findViewById(R.id.decryption_status_group).setVisibility(View.VISIBLE);
             mOnlyCleartext.setVisibility(View.GONE);
@@ -123,20 +123,20 @@ public class EditFilterActivity extends BaseActivity implements MenuProvider {
         GUIUtils guiUtils = GUIUtils.newInstance(this);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-        if(!Prefs.isMalwareDetectionEnabled(prefs))
+        if (!Prefs.isMalwareDetectionEnabled(prefs))
             mOnlyBlacklisted.setVisibility(View.GONE);
 
-        if(guiUtils.isFirewallVisible()) {
+        if (guiUtils.isFirewallVisible()) {
             findViewById(R.id.firewall_label).setVisibility(View.VISIBLE);
             findViewById(R.id.firewall_group).setVisibility(View.VISIBLE);
         }
 
         ConnectionsRegister reg = CaptureService.getConnsRegister();
-        if((reg != null) && (reg.hasSeenMultipleInterfaces())) {
+        if ((reg != null) && (reg.hasSeenMultipleInterfaces())) {
             LayoutInflater inflater = getLayoutInflater();
 
             // Create the chips
-            for(String ifname: reg.getSeenInterfaces()) {
+            for (String ifname : reg.getSeenInterfaces()) {
                 Chip chip = (Chip) inflater.inflate(R.layout.choice_chip, mInterfaceGroup, false);
                 chip.setText(ifname);
                 mInterfaceGroup.addView(chip);
@@ -150,17 +150,17 @@ public class EditFilterActivity extends BaseActivity implements MenuProvider {
     }
 
     private <T> void setCheckedChip(ArrayList<Pair<T, Chip>> chipMap, T curValue) {
-        for(Pair<T, Chip> mapping: chipMap) {
+        for (Pair<T, Chip> mapping : chipMap) {
             Chip chip = mapping.second;
             chip.setChecked(mapping.first.equals(curValue));
         }
     }
 
     private <T> T getCheckedChip(ArrayList<Pair<T, Chip>> chipMap, T defaultValue) {
-        for(Pair<T, Chip> mapping: chipMap) {
+        for (Pair<T, Chip> mapping : chipMap) {
             Chip chip = mapping.second;
 
-            if(chip.isChecked())
+            if (chip.isChecked())
                 return mapping.first;
         }
 
@@ -176,11 +176,11 @@ public class EditFilterActivity extends BaseActivity implements MenuProvider {
         setCheckedChip(mDecChips, mFilter.decStatus);
         setCheckedChip(mFirewallChips, mFilter.filteringStatus);
 
-        if(mFilter.iface != null) {
+        if (mFilter.iface != null) {
             int num_chips = mInterfaceGroup.getChildCount();
-            for(int i=0; i<num_chips; i++) {
+            for (int i = 0; i < num_chips; i++) {
                 Chip chip = (Chip) mInterfaceGroup.getChildAt(i);
-                if(chip.getText().equals(mFilter.iface)) {
+                if (chip.getText().equals(mFilter.iface)) {
                     chip.setChecked(true);
                     break;
                 }
@@ -198,9 +198,9 @@ public class EditFilterActivity extends BaseActivity implements MenuProvider {
         mFilter.filteringStatus = getCheckedChip(mFirewallChips, FilteringStatus.INVALID);
 
         int num_chips = mInterfaceGroup.getChildCount();
-        for(int i=0; i<num_chips; i++) {
+        for (int i = 0; i < num_chips; i++) {
             Chip chip = (Chip) mInterfaceGroup.getChildAt(i);
-            if(chip.isChecked()) {
+            if (chip.isChecked()) {
                 mFilter.iface = chip.getText().toString();
                 break;
             }
@@ -235,7 +235,7 @@ public class EditFilterActivity extends BaseActivity implements MenuProvider {
 
     @Override
     public boolean onMenuItemSelected(@NonNull MenuItem item) {
-        if(item.getItemId() == R.id.reset_changes) {
+        if (item.getItemId() == R.id.reset_changes) {
             mFilter.clear();
             model2view();
             return true;

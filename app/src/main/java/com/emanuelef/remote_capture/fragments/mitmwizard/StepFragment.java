@@ -48,7 +48,8 @@ public class StepFragment extends Fragment {
     protected int mWarnColor;
     protected int mDangerColor;
 
-    public StepFragment() {}
+    public StepFragment() {
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -76,7 +77,7 @@ public class StepFragment extends Fragment {
     protected void gotoStep(int action_or_dest) {
         boolean is_last_step = (action_or_dest <= 0);
 
-        if(!is_last_step)
+        if (!is_last_step)
             mNavController.navigate(action_or_dest);
         else
             requireActivity().finish();

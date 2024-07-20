@@ -41,7 +41,7 @@ public class FileDumper implements PcapDumper {
 
     @Override
     public void dumpData(byte[] data) throws IOException {
-        if(mSendHeader) {
+        if (mSendHeader) {
             mSendHeader = false;
             mOutputStream.write(CaptureService.getPcapHeader());
         }

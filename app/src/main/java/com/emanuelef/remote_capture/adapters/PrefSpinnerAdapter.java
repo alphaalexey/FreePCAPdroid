@@ -32,18 +32,6 @@ public class PrefSpinnerAdapter extends BaseAdapter {
     private final LayoutInflater mInflater;
     private final ModeInfo[] mModes;
 
-    public static class ModeInfo {
-        public final String key;
-        public final String label;
-        public final String description;
-
-        public ModeInfo(String _key, String _label, String _descr) {
-            key = _key;
-            label = _label;
-            description = _descr;
-        }
-    }
-
     public PrefSpinnerAdapter(Context context, int keysRes, int labelsRes, int descrRes) {
         mInflater = LayoutInflater.from(context);
 
@@ -54,13 +42,13 @@ public class PrefSpinnerAdapter extends BaseAdapter {
         assert ((keys.length == labels.length) && (keys.length == descriptions.length));
         mModes = new ModeInfo[keys.length];
 
-        for(int i=0; i<keys.length; i++)
+        for (int i = 0; i < keys.length; i++)
             mModes[i] = new ModeInfo(keys[i], labels[i], descriptions[i]);
     }
 
     public int getModePos(String key) {
-        for(int i=0; i<mModes.length; i++) {
-            if(key.equals(mModes[i].key))
+        for (int i = 0; i < mModes.length; i++) {
+            if (key.equals(mModes[i].key))
                 return i;
         }
 
@@ -84,7 +72,7 @@ public class PrefSpinnerAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        if(convertView == null)
+        if (convertView == null)
             convertView = mInflater.inflate(R.layout.quick_settings_item, parent, false);
 
         ModeInfo mode = (ModeInfo) getItem(position);
@@ -96,5 +84,17 @@ public class PrefSpinnerAdapter extends BaseAdapter {
         description.setText(mode.description);
 
         return convertView;
+    }
+
+    public static class ModeInfo {
+        public final String key;
+        public final String label;
+        public final String description;
+
+        public ModeInfo(String _key, String _label, String _descr) {
+            key = _key;
+            label = _label;
+            description = _descr;
+        }
     }
 }

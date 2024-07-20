@@ -22,13 +22,13 @@ package com.emanuelef.remote_capture.fragments.mitmwizard;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.view.View;
 
-import com.emanuelef.remote_capture.R;
 import com.emanuelef.remote_capture.MitmAddon;
+import com.emanuelef.remote_capture.R;
 import com.emanuelef.remote_capture.Utils;
 
 public class InstallAddon extends StepFragment {
@@ -37,7 +37,7 @@ public class InstallAddon extends StepFragment {
         super.onViewCreated(view, savedInstanceState);
         Utils.setTextUrls(mStepLabel, R.string.install_the_mitm_addon, MitmAddon.REPOSITORY);
 
-        if(MitmAddon.isInstalled(requireContext()))
+        if (MitmAddon.isInstalled(requireContext()))
             addonOk();
         else
             installAddon();
@@ -47,7 +47,7 @@ public class InstallAddon extends StepFragment {
     public void onResume() {
         super.onResume();
 
-        if(MitmAddon.isInstalled(requireContext()))
+        if (MitmAddon.isInstalled(requireContext()))
             addonOk();
     }
 
@@ -58,10 +58,10 @@ public class InstallAddon extends StepFragment {
     private void installAddon() {
         long installed_ver = MitmAddon.getInstalledVersion(requireContext());
 
-        if(installed_ver < 0) {
+        if (installed_ver < 0) {
             mStepLabel.setText(R.string.install_the_mitm_addon);
             mStepButton.setText(R.string.install_action);
-        } else if(installed_ver < MitmAddon.PACKAGE_VERSION_CODE) {
+        } else if (installed_ver < MitmAddon.PACKAGE_VERSION_CODE) {
             mStepLabel.setText(R.string.mitm_addon_new_version);
             mStepButton.setText(R.string.upgrade_action);
         } else {

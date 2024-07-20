@@ -53,15 +53,38 @@ import com.emanuelef.remote_capture.model.CaptureSettings;
  */
 @RequiresApi(api = Build.VERSION_CODES.M)
 public class VpnReconnectService extends Service {
+    public static final int NOTIFY_ID_VPNRECONNECT = 10;
     private static final String TAG = "VpnReconnectService";
     private static final String NOTIFY_CHAN_VPNRECONNECT = "VPN Reconnection";
-    public static final int NOTIFY_ID_VPNRECONNECT = 10;
     private static final String STOP_ACTION = "stop";
 
     private static VpnReconnectService INSTANCE;
     private Handler mHandler;
     private ConnectivityManager.NetworkCallback mNetworkCallback;
     private Network mActiveVpnNetwork;
+
+    @SuppressLint("ObsoleteSdkInt")
+    @RequiresApi(api = Build.VERSION_CODES.BASE)
+    public static boolean isAvailable() {
+        return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M;
+    }
+
+    @SuppressWarnings("deprecation")
+    public static void stopService() {
+        Log.d(TAG, "stopService called");
+        VpnReconnectService service = INSTANCE;
+        if (service == null)
+            return;
+
+        service.unregisterNetworkCallback();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+            service.stopForeground(STOP_FOREGROUND_REMOVE);
+        else
+            service.stopForeground(true);
+
+        service.stopSelf();
+    }
 
     @Nullable
     @Override
@@ -116,7 +139,7 @@ public class VpnReconnectService extends Service {
     }
 
     private Notification buildNotification() {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
             NotificationChannel chan = new NotificationChannel(NOTIFY_CHAN_VPNRECONNECT,
@@ -227,40 +250,17 @@ public class VpnReconnectService extends Service {
     }
 
     private void unregisterNetworkCallback() {
-        if(mNetworkCallback != null) {
+        if (mNetworkCallback != null) {
             ConnectivityManager cm = (ConnectivityManager) getSystemService(Service.CONNECTIVITY_SERVICE);
 
             try {
                 Log.d(TAG, "unregisterNetworkCallback");
                 cm.unregisterNetworkCallback(mNetworkCallback);
-            } catch(IllegalArgumentException e) {
+            } catch (IllegalArgumentException e) {
                 Log.w(TAG, "unregisterNetworkCallback failed: " + e);
             }
 
             mNetworkCallback = null;
         }
-    }
-
-    @SuppressLint("ObsoleteSdkInt")
-    @RequiresApi(api = Build.VERSION_CODES.BASE)
-    public static boolean isAvailable() {
-        return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M;
-    }
-
-    @SuppressWarnings("deprecation")
-    public static void stopService() {
-        Log.d(TAG, "stopService called");
-        VpnReconnectService service = INSTANCE;
-        if (service == null)
-            return;
-
-        service.unregisterNetworkCallback();
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-            service.stopForeground(STOP_FOREGROUND_REMOVE);
-        else
-            service.stopForeground(true);
-
-        service.stopSelf();
     }
 }

@@ -43,22 +43,6 @@ public class CtrlPermissions {
     private final ArrayMap<String, Rule> mRules = new ArrayMap<>();
     private final SharedPreferences mPrefs;
 
-    public enum ConsentType {
-        UNSPECIFIED,
-        ALLOW,
-        DENY,
-    }
-
-    public static class Rule {
-        public final String package_name;
-        public final ConsentType consent;
-
-        public Rule(String _package_name, ConsentType tp) {
-            package_name = _package_name;
-            consent = tp;
-        }
-    }
-
     public CtrlPermissions(Context ctx) {
         mPrefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         reload();
@@ -68,7 +52,7 @@ public class CtrlPermissions {
         String serialized = mPrefs.getString(PREF_NAME, "");
         //Log.d(TAG, serialized);
 
-        if(!serialized.isEmpty()) {
+        if (!serialized.isEmpty()) {
             JsonObject obj = JsonParser.parseString(serialized).getAsJsonObject();
             deserialize(obj);
         } else
@@ -79,33 +63,19 @@ public class CtrlPermissions {
         mRules.clear();
 
         JsonObject rules = object.getAsJsonObject("rules");
-        if(rules == null)
+        if (rules == null)
             return;
 
-        for(Map.Entry<String, JsonElement> rule: rules.entrySet()) {
-            if(rule.getValue().isJsonPrimitive() && rule.getValue().getAsJsonPrimitive().isString()) {
+        for (Map.Entry<String, JsonElement> rule : rules.entrySet()) {
+            if (rule.getValue().isJsonPrimitive() && rule.getValue().getAsJsonPrimitive().isString()) {
                 String val = rule.getValue().getAsJsonPrimitive().getAsString();
 
                 try {
                     ConsentType tp = ConsentType.valueOf(val);
                     mRules.put(rule.getKey(), new Rule(rule.getKey(), tp));
-                } catch (IllegalArgumentException ignored) {}
+                } catch (IllegalArgumentException ignored) {
+                }
             }
-        }
-    }
-
-    private static class Serializer implements JsonSerializer<CtrlPermissions> {
-        @Override
-        public JsonElement serialize(CtrlPermissions src, Type typeOfSrc, JsonSerializationContext context) {
-            JsonObject result = new JsonObject();
-            JsonObject rulesObj = new JsonObject();
-
-            for(Rule rule: src.mRules.values()) {
-                rulesObj.add(rule.package_name, new JsonPrimitive(rule.consent.toString()));
-            }
-
-            result.add("rules", rulesObj);
-            return result;
         }
     }
 
@@ -146,8 +116,39 @@ public class CtrlPermissions {
 
     public ConsentType getConsent(String package_name) {
         Rule rule = mRules.get(package_name);
-        if(rule == null)
+        if (rule == null)
             return ConsentType.UNSPECIFIED;
         return rule.consent;
+    }
+
+    public enum ConsentType {
+        UNSPECIFIED,
+        ALLOW,
+        DENY,
+    }
+
+    public static class Rule {
+        public final String package_name;
+        public final ConsentType consent;
+
+        public Rule(String _package_name, ConsentType tp) {
+            package_name = _package_name;
+            consent = tp;
+        }
+    }
+
+    private static class Serializer implements JsonSerializer<CtrlPermissions> {
+        @Override
+        public JsonElement serialize(CtrlPermissions src, Type typeOfSrc, JsonSerializationContext context) {
+            JsonObject result = new JsonObject();
+            JsonObject rulesObj = new JsonObject();
+
+            for (Rule rule : src.mRules.values()) {
+                rulesObj.add(rule.package_name, new JsonPrimitive(rule.consent.toString()));
+            }
+
+            result.add("rules", rulesObj);
+            return result;
+        }
     }
 }

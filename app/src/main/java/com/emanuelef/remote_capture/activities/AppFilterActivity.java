@@ -77,7 +77,7 @@ public class AppFilterActivity extends BaseActivity implements MenuProvider {
     @Override
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
-        if(mFragment.onBackPressed())
+        if (mFragment.onBackPressed())
             return;
 
         super.onBackPressed();
@@ -101,7 +101,7 @@ public class AppFilterActivity extends BaseActivity implements MenuProvider {
             mSelectedApps.clear();
 
             Set<String> saved = Prefs.getStringSet(mPrefs, Prefs.PREF_APP_FILTER);
-            if(!saved.isEmpty()) {
+            if (!saved.isEmpty()) {
                 Log.d(TAG, "Loading " + saved.size() + " target apps");
                 mSelectedApps.addAll(saved);
             }
@@ -121,17 +121,17 @@ public class AppFilterActivity extends BaseActivity implements MenuProvider {
         @Override
         public void onAppToggled(AppDescriptor app, boolean checked) {
             String packageName = app.getPackageName();
-            if(mSelectedApps.contains(packageName) == checked)
+            if (mSelectedApps.contains(packageName) == checked)
                 return; // nothing to do
 
-            if(checked)
+            if (checked)
                 mSelectedApps.add(packageName);
             else
                 mSelectedApps.remove(packageName);
 
             Log.d(TAG, "Saving " + mSelectedApps.size() + " target apps");
 
-            if(mPrefs == null)
+            if (mPrefs == null)
                 return;
 
             mPrefs.edit()

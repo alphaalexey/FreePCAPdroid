@@ -25,31 +25,32 @@
 
 /* Tests that invalid/unsupported IP packets are still dumped by PCAPdroid */
 static void invalid_pkts() {
-  pcap_hdr_t hdr;
-  pcap_rec_t rec;
-  pcapdroid_t *pd = pd_init_test(PCAP_PATH "/invalid_or_unsupported.pcap");
-  int num_pkts = 0;
+    pcap_hdr_t hdr;
+    pcap_rec_t rec;
+    pcapdroid_t * pd = pd_init_test(PCAP_PATH
+    "/invalid_or_unsupported.pcap");
+    int num_pkts = 0;
 
-  // Run
-  pd_dump_to_file(pd);
-  pd_run(pd);
-  pd_done_dump();
+    // Run
+    pd_dump_to_file(pd);
+    pd_run(pd);
+    pd_done_dump();
 
-  // Verify
-  assert_pcap_header(&hdr);
+    // Verify
+    assert_pcap_header(&hdr);
 
-  while(next_pcap_record(&rec))
-    num_pkts++;
+    while (next_pcap_record(&rec))
+        num_pkts++;
 
-  assert(num_pkts == NUM_PKTS);
-  pd_free_test(pd);
+    assert(num_pkts == NUM_PKTS);
+    pd_free_test(pd);
 }
 
 /* ******************************************************* */
 
 int main(int argc, char **argv) {
-  add_test("invalid_pkts", invalid_pkts);
+    add_test("invalid_pkts", invalid_pkts);
 
-  run_test(argc, argv);
-  return 0;
+    run_test(argc, argv);
+    return 0;
 }

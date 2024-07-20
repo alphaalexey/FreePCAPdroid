@@ -18,6 +18,7 @@
  */
 
 package com.emanuelef.remote_capture.fragments.prefs;
+
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
@@ -61,15 +62,15 @@ public class GeoipSettings extends PreferenceFragmentCompat {
 
         requirePreference("download")
                 .setOnPreferenceClickListener(preference -> {
-            downloadDatabases();
-            return true;
-        });
+                    downloadDatabases();
+                    return true;
+                });
     }
 
     @Override
     public void onDestroyView() {
         // See https://stackoverflow.com/questions/22924825/view-not-attached-to-window-manager-crash
-        if(mAlertDialog != null)
+        if (mAlertDialog != null)
             mAlertDialog.dismiss();
 
         super.onDestroyView();
@@ -78,7 +79,7 @@ public class GeoipSettings extends PreferenceFragmentCompat {
     // NOTE: passing explicit context as this may be called when requireContext would return null
     private void refreshStatus(Context context) {
         Date builtDate = Geolocation.getDbDate(context);
-        if(builtDate != null) {
+        if (builtDate != null) {
             String dateStr = Utils.formatEpochFull(context, builtDate.getTime() / 1000);
             mStatus.setSummary("DB-IP Lite free\n" +
                     String.format(context.getString(R.string.built_on), dateStr) + "\n" +
@@ -116,20 +117,19 @@ public class GeoipSettings extends PreferenceFragmentCompat {
             boolean result = Geolocation.downloadDb(context);
 
             handler.post(() -> {
-                if(!result)
+                if (!result)
                     Utils.showToastLong(context, R.string.download_failed);
 
-                if(mAlertDialog != null)
+                if (mAlertDialog != null)
                     mAlertDialog.dismiss();
                 refreshStatus(context);
             });
         });
     }
 
-    private @NonNull
-    <T extends Preference> T requirePreference(String key) {
+    private @NonNull <T extends Preference> T requirePreference(String key) {
         T pref = findPreference(key);
-        if(pref == null)
+        if (pref == null)
             throw new IllegalStateException();
         return pref;
     }

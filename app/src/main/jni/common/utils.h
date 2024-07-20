@@ -26,7 +26,9 @@
 #include "memtrack.h"
 
 #ifdef ANDROID
+
 #include <android/log.h>
+
 #else
 
 #define ANDROID_LOG_DEBUG 1
@@ -46,7 +48,8 @@
 #endif
 
 extern int loglevel;
-extern const char* logtag;
+extern const char *logtag;
+
 extern void (*logcallback)(int lvl, const char *msg);
 
 #define log_d(...) log_android(ANDROID_LOG_DEBUG, __VA_ARGS__)
@@ -56,14 +59,23 @@ extern void (*logcallback)(int lvl, const char *msg);
 #define log_f(...) log_android(ANDROID_LOG_FATAL, __VA_ARGS__)
 
 void log_android(int lvl, const char *fmt, ...);
+
 ssize_t xwrite(int fd, const void *buf, size_t count);
+
 ssize_t xread(int fd, void *buf, size_t count);
+
 uint64_t timeval2ms(struct timeval *tv);
+
 void tupleSwapPeers(zdtun_5tuple_t *tuple);
+
 char loglvl2char(int lvl);
-char* humanSize(char *buf, int bufsize, double bytes);
+
+char *humanSize(char *buf, int bufsize, double bytes);
+
 void hexdump(const char *buf, size_t bufsize);
-int start_subprocess(const char *prog, const char *args, bool as_root, int* out_fd);
+
+int start_subprocess(const char *prog, const char *args, bool as_root, int *out_fd);
+
 int run_shell_cmd(const char *prog, const char *args, bool as_root, bool check_error);
 
 #endif // __LOG_UTILS_H__

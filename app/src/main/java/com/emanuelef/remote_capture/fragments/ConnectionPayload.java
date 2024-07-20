@@ -105,10 +105,10 @@ public class ConnectionPayload extends Fragment implements ConnectionDetailsActi
         assert args != null;
         ConnectionsRegister reg = CaptureService.requireConnsRegister();
         mode = Utils.getSerializable(args, "mode", PayloadChunk.ChunkType.class);
-        assert(mode != null);
+        assert (mode != null);
 
         mConn = reg.getConnById(args.getInt("conn_id"));
-        if(mConn == null) {
+        if (mConn == null) {
             Utils.showToast(requireContext(), R.string.connection_not_found);
             mActivity.finish();
             return;
@@ -120,11 +120,11 @@ public class ConnectionPayload extends Fragment implements ConnectionDetailsActi
 
         mTruncatedWarning = view.findViewById(R.id.truncated_warning);
         mTruncatedWarning.setText(String.format(getString(R.string.payload_truncated), getString(R.string.full_payload)));
-        if(mConn.isPayloadTruncated())
+        if (mConn.isPayloadTruncated())
             mTruncatedWarning.setVisibility(View.VISIBLE);
 
         mCurChunks = mConn.getNumPayloadChunks();
-        if(mCurChunks > 0)
+        if (mCurChunks > 0)
             mShowAsPrintable = guessDisplayAsPrintable();
         else
             mShowAsPrintable = false;
@@ -133,7 +133,7 @@ public class ConnectionPayload extends Fragment implements ConnectionDetailsActi
         mJustCreated = true;
 
         // only set adapter after acknowledged (see setMenuVisibility below)
-        if(payloadNoticeAcknowledged(PreferenceManager.getDefaultSharedPreferences(requireContext())))
+        if (payloadNoticeAcknowledged(PreferenceManager.getDefaultSharedPreferences(requireContext())))
             mRecyclerView.setAdapter(mAdapter);
     }
 
@@ -142,13 +142,13 @@ public class ConnectionPayload extends Fragment implements ConnectionDetailsActi
         super.setMenuVisibility(menuVisible);
 
         Context context = getContext();
-        if(context == null)
+        if (context == null)
             return;
 
         Log.d(TAG, "setMenuVisibility : " + menuVisible);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
-        if(menuVisible && !payloadNoticeAcknowledged(prefs)) {
+        if (menuVisible && !payloadNoticeAcknowledged(prefs)) {
             AlertDialog dialog = new AlertDialog.Builder(context)
                     .setTitle(R.string.warning)
                     .setMessage(R.string.payload_scams_notice)
@@ -173,7 +173,7 @@ public class ConnectionPayload extends Fragment implements ConnectionDetailsActi
     public void onCreateMenu(@NonNull Menu menu, MenuInflater menuInflater) {
         menuInflater.inflate(R.menu.connection_payload, menu);
         mMenu = menu;
-        if((mCurChunks > 0) && mJustCreated) {
+        if ((mCurChunks > 0) && mJustCreated) {
             mShowAsPrintable = guessDisplayAsPrintable();
             mAdapter.setDisplayAsPrintableText(mShowAsPrintable);
             mJustCreated = false;
@@ -185,12 +185,12 @@ public class ConnectionPayload extends Fragment implements ConnectionDetailsActi
     public boolean onMenuItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
 
-        if(id == R.id.printable_text) {
+        if (id == R.id.printable_text) {
             mShowAsPrintable = true;
             mAdapter.setDisplayAsPrintableText(true);
             refreshDisplayMode();
             return true;
-        } else if(id == R.id.hexdump) {
+        } else if (id == R.id.hexdump) {
             mShowAsPrintable = false;
             mAdapter.setDisplayAsPrintableText(false);
             refreshDisplayMode();
@@ -202,17 +202,17 @@ public class ConnectionPayload extends Fragment implements ConnectionDetailsActi
 
     private boolean guessDisplayAsPrintable() {
         // try to determine the best mode based on the current payload
-        if(mConn.getNumPayloadChunks() == 0)
+        if (mConn.getNumPayloadChunks() == 0)
             return mConn.l7proto.equals("HTTPS");
 
         PayloadChunk firstChunk = mConn.getPayloadChunk(0);
-        if((firstChunk == null) || (firstChunk.type == PayloadChunk.ChunkType.HTTP))
+        if ((firstChunk == null) || (firstChunk.type == PayloadChunk.ChunkType.HTTP))
             return true;
 
         // guess based on the actual data
         int maxLen = Math.min(firstChunk.payload.length, 16);
-        for(int i=0; i<maxLen; i++) {
-            if(!Utils.isPrintable(firstChunk.payload[i]))
+        for (int i = 0; i < maxLen; i++) {
+            if (!Utils.isPrintable(firstChunk.payload[i]))
                 return false;
         }
 
@@ -220,14 +220,14 @@ public class ConnectionPayload extends Fragment implements ConnectionDetailsActi
     }
 
     private void refreshDisplayMode() {
-        if(mMenu == null)
+        if (mMenu == null)
             return;
 
         MenuItem printableText = mMenu.findItem(R.id.printable_text);
         MenuItem hexdump = mMenu.findItem(R.id.hexdump);
 
         // important: the checked item must first be unchecked
-        if(mShowAsPrintable) {
+        if (mShowAsPrintable) {
             hexdump.setChecked(false);
             printableText.setChecked(true);
         } else {
@@ -238,17 +238,17 @@ public class ConnectionPayload extends Fragment implements ConnectionDetailsActi
 
     @Override
     public void connectionUpdated() {
-        if(mCurChunks == 0) {
+        if (mCurChunks == 0) {
             mShowAsPrintable = guessDisplayAsPrintable();
             mAdapter.setDisplayAsPrintableText(mShowAsPrintable);
         }
 
-        if(mConn.getNumPayloadChunks() > mCurChunks) {
+        if (mConn.getNumPayloadChunks() > mCurChunks) {
             mAdapter.handleChunksAdded(mConn.getNumPayloadChunks());
             mCurChunks = mConn.getNumPayloadChunks();
         }
 
-        if(mConn.isPayloadTruncated() && (mTruncatedWarning != null))
+        if (mConn.isPayloadTruncated() && (mTruncatedWarning != null))
             mTruncatedWarning.setVisibility(View.VISIBLE);
     }
 }

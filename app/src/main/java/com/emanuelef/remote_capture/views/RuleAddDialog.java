@@ -45,15 +45,6 @@ public class RuleAddDialog implements View.OnClickListener {
     private final RuleAddListener mAdapter;
     private ArrayAdapter<String> mComboAdapter;
 
-    private enum ViewMode {
-        RULE_DIALOG_SIMPLE_TEXT,
-        RULE_DIALOG_COMBO
-    }
-
-    public interface RuleAddListener {
-        boolean addRule(String value, TextView field);
-    }
-
     private RuleAddDialog(ViewMode viewMode, Context ctx, int title_res, RuleAddListener adapter) {
         mContext = ctx;
         mViewMode = viewMode;
@@ -70,8 +61,10 @@ public class RuleAddDialog implements View.OnClickListener {
         mDialog = new AlertDialog.Builder(ctx)
                 .setView(view)
                 .setTitle(title_res)
-                .setPositiveButton(R.string.add_action, (dialogInterface, i) -> {})
-                .setNegativeButton(R.string.cancel_action, (dialogInterface, i) -> {})
+                .setPositiveButton(R.string.add_action, (dialogInterface, i) -> {
+                })
+                .setNegativeButton(R.string.cancel_action, (dialogInterface, i) -> {
+                })
                 .show();
         mDialog.setCanceledOnTouchOutside(false);
         mDialog.getButton(AlertDialog.BUTTON_POSITIVE)
@@ -89,7 +82,7 @@ public class RuleAddDialog implements View.OnClickListener {
         dialog.mComboLayout.setVisibility(View.VISIBLE);
 
         dialog.mComboAdapter = new ArrayAdapter<>(ctx, R.layout.dropdown_item, values);
-        if(values.length > 0)
+        if (values.length > 0)
             dialog.mComboText.setText(values[0]);
         dialog.mComboText.setAdapter(dialog.mComboAdapter);
 
@@ -101,39 +94,48 @@ public class RuleAddDialog implements View.OnClickListener {
         TextView field = getField();
         String text = Objects.requireNonNull(field.getText()).toString();
 
-        if(text.isEmpty()) {
+        if (text.isEmpty()) {
             field.setError(mContext.getString(R.string.required));
             return;
         }
 
-        if(mComboAdapter != null) {
+        if (mComboAdapter != null) {
             // ensure that the value is in the selection list
             boolean found = false;
 
-            for(int i=0; i<mComboAdapter.getCount(); i++) {
+            for (int i = 0; i < mComboAdapter.getCount(); i++) {
                 String item = mComboAdapter.getItem(i);
-                if(item.equals(text)) {
+                if (item.equals(text)) {
                     found = true;
                     break;
                 }
             }
 
-            if(!found) {
+            if (!found) {
                 field.setError(mContext.getString(R.string.invalid));
                 return;
             }
         }
 
-        if(!mAdapter.addRule(text, field))
+        if (!mAdapter.addRule(text, field))
             return;
 
         mDialog.dismiss();
     }
 
     public TextView getField() {
-        if(mViewMode == ViewMode.RULE_DIALOG_SIMPLE_TEXT)
+        if (mViewMode == ViewMode.RULE_DIALOG_SIMPLE_TEXT)
             return mEditText;
         else
             return mComboText;
+    }
+
+    private enum ViewMode {
+        RULE_DIALOG_SIMPLE_TEXT,
+        RULE_DIALOG_COMBO
+    }
+
+    public interface RuleAddListener {
+        boolean addRule(String value, TextView field);
     }
 }

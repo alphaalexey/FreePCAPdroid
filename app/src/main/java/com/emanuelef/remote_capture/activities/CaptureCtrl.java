@@ -46,7 +46,6 @@ import com.emanuelef.remote_capture.AppsResolver;
 import com.emanuelef.remote_capture.BuildConfig;
 import com.emanuelef.remote_capture.CaptureHelper;
 import com.emanuelef.remote_capture.CaptureService;
-import com.emanuelef.remote_capture.GUIUtils;
 import com.emanuelef.remote_capture.Log;
 import com.emanuelef.remote_capture.PCAPdroid;
 import com.emanuelef.remote_capture.PersistableUriPermission;
@@ -54,11 +53,9 @@ import com.emanuelef.remote_capture.R;
 import com.emanuelef.remote_capture.Utils;
 import com.emanuelef.remote_capture.model.AppDescriptor;
 import com.emanuelef.remote_capture.model.CaptureSettings;
-import com.emanuelef.remote_capture.model.CtrlPermissions;
 import com.emanuelef.remote_capture.model.CaptureStats;
+import com.emanuelef.remote_capture.model.CtrlPermissions;
 import com.emanuelef.remote_capture.model.Prefs;
-
-import java.util.HashSet;
 
 public class CaptureCtrl extends AppCompatActivity {
     public static final String ACTION_START = "start";
@@ -72,6 +69,41 @@ public class CaptureCtrl extends AppCompatActivity {
     private CtrlPermissions mPermissions;
 
     private PersistableUriPermission persistableUriPermission;
+
+    public static void notifyCaptureStopped(Context ctx, CaptureStats stats) {
+        if (stats != null)
+            Log.d(TAG, "notifyCaptureStopped: " + (stats.pkts_sent + stats.pkts_rcvd) + " pkts");
+
+        if ((mStarterApp != null) && (mReceiverClass != null)) {
+            Log.d(TAG, "Notifying receiver");
+
+            Intent intent = new Intent(ACTION_NOTIFY_STATUS);
+            intent.putExtra("running", false);
+            if (stats != null)
+                putStats(intent, stats);
+            intent.setComponent(new ComponentName(mStarterApp.getPackageName(), mReceiverClass));
+
+            try {
+                ctx.sendBroadcast(intent);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        mStarterApp = null;
+        mReceiverClass = null;
+    }
+
+    private static void putStats(Intent intent, CaptureStats stats) {
+        intent.putExtra("bytes_sent", stats.bytes_sent);
+        intent.putExtra("bytes_rcvd", stats.bytes_rcvd);
+        intent.putExtra("ipv6_bytes_sent", stats.ipv6_bytes_sent);
+        intent.putExtra("ipv6_bytes_rcvd", stats.ipv6_bytes_rcvd);
+        intent.putExtra("bytes_dumped", stats.pcap_dump_size);
+        intent.putExtra("pkts_sent", stats.pkts_sent);
+        intent.putExtra("pkts_rcvd", stats.pkts_rcvd);
+        intent.putExtra("pkts_dropped", stats.pkts_dropped);
+    }
 
     @Override
     @SuppressWarnings("deprecation")
@@ -106,7 +138,7 @@ public class CaptureCtrl extends AppCompatActivity {
         Intent intent = getIntent();
         String action = intent.getStringExtra("action");
 
-        if(action == null) {
+        if (action == null) {
             Log.e(TAG, "no action provided");
             abort();
             return;
@@ -115,19 +147,19 @@ public class CaptureCtrl extends AppCompatActivity {
         // Check if a control permission rule was set
         mPermissions = PCAPdroid.getInstance().getCtrlPermissions();
         AppDescriptor app = getCallingApp();
-        if(app != null) {
+        if (app != null) {
             CtrlPermissions.ConsentType consent = mPermissions.getConsent(app.getPackageName());
 
-            if(consent == CtrlPermissions.ConsentType.ALLOW) {
+            if (consent == CtrlPermissions.ConsentType.ALLOW) {
                 processRequest(intent, action);
                 return;
-            } else if(consent == CtrlPermissions.ConsentType.DENY) {
+            } else if (consent == CtrlPermissions.ConsentType.DENY) {
                 abort();
                 return;
             }
         }
 
-        if(isControlApp(action)) {
+        if (isControlApp(action)) {
             processRequest(intent, action);
             return;
         }
@@ -136,18 +168,18 @@ public class CaptureCtrl extends AppCompatActivity {
         findViewById(R.id.allow_btn).setOnClickListener(v -> controlAction(intent, action, true));
         findViewById(R.id.deny_btn).setOnClickListener(v -> controlAction(intent, action, false));
 
-        if(app != null) {
-            ((TextView)findViewById(R.id.app_name)).setText(app.getName());
-            ((TextView)findViewById(R.id.app_package)).setText(app.getPackageName());
-            ((ImageView)findViewById(R.id.app_icon)).setImageDrawable(app.getIcon());
+        if (app != null) {
+            ((TextView) findViewById(R.id.app_name)).setText(app.getName());
+            ((TextView) findViewById(R.id.app_package)).setText(app.getPackageName());
+            ((ImageView) findViewById(R.id.app_icon)).setImageDrawable(app.getIcon());
         } else
             findViewById(R.id.caller_app).setVisibility(View.GONE);
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    Button btn = findViewById(R.id.allow_btn);
-                    btn.setTextColor(0xFF0099CC);
-                    btn.setEnabled(true);
-                }, 1500);
+            Button btn = findViewById(R.id.allow_btn);
+            btn.setTextColor(0xFF0099CC);
+            btn.setEnabled(true);
+        }, 1500);
     }
 
     private AppDescriptor getCallingApp() {
@@ -157,15 +189,15 @@ public class CaptureCtrl extends AppCompatActivity {
 
     private void controlAction(Intent intent, String action, boolean allow) {
         AppDescriptor app = getCallingApp();
-        if(app != null) {
-            boolean is_forever = ((RadioButton)findViewById(R.id.choice_forever)).isChecked();
-            if(is_forever) {
+        if (app != null) {
+            boolean is_forever = ((RadioButton) findViewById(R.id.choice_forever)).isChecked();
+            if (is_forever) {
                 Log.d(TAG, (allow ? "Grant" : "Deny") + " forever to " + app.getPackageName());
                 mPermissions.add(app.getPackageName(), allow ? CtrlPermissions.ConsentType.ALLOW : CtrlPermissions.ConsentType.DENY);
             }
         }
 
-        if(!allow)
+        if (!allow)
             abort();
         else
             processRequest(intent, action);
@@ -197,7 +229,7 @@ public class CaptureCtrl extends AppCompatActivity {
     }
 
     private void abort(boolean show_toast) {
-        if(show_toast)
+        if (show_toast)
             Utils.showToast(this, R.string.ctrl_consent_denied);
         setResult(RESULT_CANCELED, null);
         finish();
@@ -214,12 +246,12 @@ public class CaptureCtrl extends AppCompatActivity {
     private String checkRemoteServerNotAllowed(CaptureSettings settings) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-        if((settings.dump_mode == Prefs.DumpMode.UDP_EXPORTER) &&
+        if ((settings.dump_mode == Prefs.DumpMode.UDP_EXPORTER) &&
                 !Utils.isLocalNetworkAddress(settings.collector_address) &&
                 !Prefs.getCollectorIp(prefs).equals(settings.collector_address))
             return settings.collector_address;
 
-        if(settings.socks5_enabled &&
+        if (settings.socks5_enabled &&
                 !Utils.isLocalNetworkAddress(settings.socks5_proxy_address) &&
                 !Prefs.getSocks5ProxyHost(prefs).equals(settings.socks5_proxy_address))
             return settings.socks5_proxy_address;
@@ -232,24 +264,24 @@ public class CaptureCtrl extends AppCompatActivity {
         Intent res = new Intent();
         Utils.showToast(this, R.string.ctrl_consent_allowed);
 
-        if(action.equals(ACTION_START)) {
+        if (action.equals(ACTION_START)) {
             mStarterApp = getCallingApp();
             mReceiverClass = req_intent.getStringExtra("broadcast_receiver");
             Log.d(TAG, "Starting capture, caller=" + mStarterApp);
 
             CaptureSettings settings = new CaptureSettings(req_intent);
             String disallowedServer = checkRemoteServerNotAllowed(settings);
-            if(disallowedServer != null) {
+            if (disallowedServer != null) {
                 Utils.showToastLong(this, R.string.remote_server_warning, disallowedServer);
                 abort();
                 return;
             }
 
-            if(!settings.pcap_uri.isEmpty()) {
+            if (!settings.pcap_uri.isEmpty()) {
                 persistableUriPermission.checkPermission(settings.pcap_uri, settings.pcapng_format, granted_uri -> {
                     Log.d(TAG, "persistable uri granted? " + granted_uri);
 
-                    if(granted_uri != null) {
+                    if (granted_uri != null) {
                         settings.pcap_uri = granted_uri.toString();
                         mCapHelper.startCapture(settings);
                     } else
@@ -259,7 +291,7 @@ public class CaptureCtrl extends AppCompatActivity {
                 // will call the mCapHelper listener
                 mCapHelper.startCapture(settings);
             return;
-        } else if(action.equals(ACTION_STOP)) {
+        } else if (action.equals(ACTION_STOP)) {
             Log.d(TAG, "Stopping capture");
 
             CaptureService.stopService();
@@ -269,7 +301,7 @@ public class CaptureCtrl extends AppCompatActivity {
             CaptureService.waitForCaptureStop();
 
             putStats(res, CaptureService.getStats());
-        } else if(action.equals(ACTION_STATUS)) {
+        } else if (action.equals(ACTION_STATUS)) {
             Log.d(TAG, "Returning status");
 
             res.putExtra("running", CaptureService.isServiceActive());
@@ -285,40 +317,5 @@ public class CaptureCtrl extends AppCompatActivity {
 
         setResult(RESULT_OK, res);
         finish();
-    }
-
-    public static void notifyCaptureStopped(Context ctx, CaptureStats stats) {
-        if(stats != null)
-            Log.d(TAG, "notifyCaptureStopped: " + (stats.pkts_sent + stats.pkts_rcvd) + " pkts");
-
-        if((mStarterApp != null) && (mReceiverClass != null)) {
-            Log.d(TAG, "Notifying receiver");
-
-            Intent intent = new Intent(ACTION_NOTIFY_STATUS);
-            intent.putExtra("running", false);
-            if(stats != null)
-                putStats(intent, stats);
-            intent.setComponent(new ComponentName(mStarterApp.getPackageName(), mReceiverClass));
-
-            try {
-                ctx.sendBroadcast(intent);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        mStarterApp = null;
-        mReceiverClass = null;
-    }
-
-    private static void putStats(Intent intent, CaptureStats stats) {
-        intent.putExtra("bytes_sent", stats.bytes_sent);
-        intent.putExtra("bytes_rcvd", stats.bytes_rcvd);
-        intent.putExtra("ipv6_bytes_sent", stats.ipv6_bytes_sent);
-        intent.putExtra("ipv6_bytes_rcvd", stats.ipv6_bytes_rcvd);
-        intent.putExtra("bytes_dumped", stats.pcap_dump_size);
-        intent.putExtra("pkts_sent", stats.pkts_sent);
-        intent.putExtra("pkts_rcvd", stats.pkts_rcvd);
-        intent.putExtra("pkts_dropped", stats.pkts_dropped);
     }
 }

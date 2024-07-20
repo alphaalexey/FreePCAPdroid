@@ -22,7 +22,6 @@ package com.emanuelef.remote_capture.activities.prefs;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -48,9 +47,9 @@ public class VpnExemptionsActivity extends BaseActivity {
         setContentView(R.layout.fragment_activity);
         displayBackAction();
 
-        if(savedInstanceState != null)
+        if (savedInstanceState != null)
             mFragment = (VpnExceptionsFragment) getSupportFragmentManager().getFragment(savedInstanceState, "fragment");
-        if(mFragment == null)
+        if (mFragment == null)
             mFragment = new VpnExceptionsFragment();
 
         getSupportFragmentManager().beginTransaction()
@@ -67,7 +66,7 @@ public class VpnExemptionsActivity extends BaseActivity {
     @Override
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
-        if(mFragment.onBackPressed())
+        if (mFragment.onBackPressed())
             return;
 
         super.onBackPressed();
@@ -86,7 +85,7 @@ public class VpnExemptionsActivity extends BaseActivity {
 
             mExcludedApps.clear();
             Set<String> saved = mPrefs.getStringSet(Prefs.PREF_VPN_EXCEPTIONS, null);
-            if(saved != null) {
+            if (saved != null) {
                 Log.d(TAG, "Loading " + saved.size() + " exceptions");
                 mExcludedApps.addAll(saved);
             }
@@ -106,17 +105,17 @@ public class VpnExemptionsActivity extends BaseActivity {
         @Override
         public void onAppToggled(AppDescriptor app, boolean checked) {
             String packageName = app.getPackageName();
-            if(mExcludedApps.contains(packageName) == checked)
+            if (mExcludedApps.contains(packageName) == checked)
                 return; // nothing to do
 
-            if(checked)
+            if (checked)
                 mExcludedApps.add(packageName);
             else
                 mExcludedApps.remove(packageName);
 
             Log.d(TAG, "Saving " + mExcludedApps.size() + " exceptions");
 
-            if(mPrefs == null)
+            if (mPrefs == null)
                 return;
 
             mPrefs.edit()

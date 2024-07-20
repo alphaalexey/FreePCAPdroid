@@ -38,10 +38,10 @@ struct ip_lru {
 
 /* ******************************************************* */
 
-ip_lru_t* ip_lru_init(int max_size) {
-    ip_lru_t *lru = (ip_lru_t*) pd_malloc(sizeof(ip_lru_t));
+ip_lru_t *ip_lru_init(int max_size) {
+    ip_lru_t *lru = (ip_lru_t *) pd_malloc(sizeof(ip_lru_t));
 
-    if(!lru)
+    if (!lru)
         return NULL;
 
     lru->max_size = max_size;
@@ -66,17 +66,17 @@ void ip_lru_destroy(ip_lru_t *lru) {
 
 /* ******************************************************* */
 
-static struct cache_entry* ip_lru_find_entry(ip_lru_t *lru, const zdtun_ip_t *ip) {
+static struct cache_entry *ip_lru_find_entry(ip_lru_t *lru, const zdtun_ip_t *ip) {
     struct cache_entry *entry;
 
     HASH_FIND(hh, lru->cache, ip, sizeof(zdtun_ip_t), entry);
 
-    if(entry) {
+    if (entry) {
         // Bring the entry to the front of the list
         HASH_DELETE(hh, lru->cache, entry);
         HASH_ADD(hh, lru->cache, key, sizeof(zdtun_ip_t), entry);
 
-        return(entry);
+        return (entry);
     }
 
     return NULL;
@@ -88,13 +88,13 @@ void ip_lru_add(ip_lru_t *lru, const zdtun_ip_t *ip, const char *hostname) {
     struct cache_entry *entry, *tmp;
     char *host = pd_strdup(hostname);
 
-    if(!host)
+    if (!host)
         return;
 
     // guarantee key uniqueness
     entry = ip_lru_find_entry(lru, ip);
 
-    if(entry != NULL) {
+    if (entry != NULL) {
         // update existing
         pd_free(entry->host);
         entry->host = host;
@@ -103,7 +103,7 @@ void ip_lru_add(ip_lru_t *lru, const zdtun_ip_t *ip, const char *hostname) {
 
     entry = pd_malloc(sizeof(struct cache_entry));
 
-    if(!entry) {
+    if (!entry) {
         pd_free(host);
         return;
     }
@@ -113,7 +113,7 @@ void ip_lru_add(ip_lru_t *lru, const zdtun_ip_t *ip, const char *hostname) {
 
     HASH_ADD(hh, lru->cache, key, sizeof(zdtun_ip_t), entry);
 
-    if(HASH_COUNT(lru->cache) > lru->max_size) {
+    if (HASH_COUNT(lru->cache) > lru->max_size) {
         // uthash guarantees that iteration order is same as insertion order
         // see https://troydhanson.github.io/uthash/userguide.html#_sorting
         HASH_ITER(hh, lru->cache, entry, tmp) {
@@ -128,10 +128,10 @@ void ip_lru_add(ip_lru_t *lru, const zdtun_ip_t *ip, const char *hostname) {
 
 /* ******************************************************* */
 
-char* ip_lru_find(ip_lru_t *lru, const zdtun_ip_t *ip) {
+char *ip_lru_find(ip_lru_t *lru, const zdtun_ip_t *ip) {
     struct cache_entry *entry = ip_lru_find_entry(lru, ip);
 
-    return(entry ? pd_strdup(entry->host) : NULL);
+    return (entry ? pd_strdup(entry->host) : NULL);
 }
 
 /* ******************************************************* */

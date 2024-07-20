@@ -39,6 +39,7 @@ import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Lifecycle;
 
+import com.emanuelef.remote_capture.Blacklists;
 import com.emanuelef.remote_capture.CaptureService;
 import com.emanuelef.remote_capture.Log;
 import com.emanuelef.remote_capture.PCAPdroid;
@@ -46,7 +47,6 @@ import com.emanuelef.remote_capture.R;
 import com.emanuelef.remote_capture.Utils;
 import com.emanuelef.remote_capture.adapters.BlacklistsAdapter;
 import com.emanuelef.remote_capture.interfaces.BlacklistsStateListener;
-import com.emanuelef.remote_capture.Blacklists;
 import com.emanuelef.remote_capture.model.BlacklistDescriptor;
 
 public class BlacklistsFragment extends Fragment implements BlacklistsStateListener, MenuProvider {
@@ -109,7 +109,7 @@ public class BlacklistsFragment extends Fragment implements BlacklistsStateListe
     public boolean onMenuItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
 
-        if(id == R.id.update) {
+        if (id == R.id.update) {
             CaptureService.requestBlacklistsUpdate();
             return true;
         }
@@ -118,10 +118,10 @@ public class BlacklistsFragment extends Fragment implements BlacklistsStateListe
     }
 
     private void refreshStatus() {
-        if(mAdapter != null)
+        if (mAdapter != null)
             mAdapter.notifyDataSetChanged();
 
-        if(mUpdateItem != null) {
+        if (mUpdateItem != null) {
             mUpdateItem.setVisible(CaptureService.isServiceActive());
             mUpdateItem.setEnabled(!mBlacklists.isUpdateInProgress());
         }

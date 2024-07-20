@@ -38,10 +38,10 @@ struct uid_lru {
 
 /* ******************************************************* */
 
-uid_lru_t* uid_lru_init(int max_size) {
-    uid_lru_t *lru = (uid_lru_t*) pd_malloc(sizeof(uid_lru_t));
+uid_lru_t *uid_lru_init(int max_size) {
+    uid_lru_t *lru = (uid_lru_t *) pd_malloc(sizeof(uid_lru_t));
 
-    if(!lru)
+    if (!lru)
         return NULL;
 
     lru->max_size = max_size;
@@ -65,17 +65,17 @@ void uid_lru_destroy(uid_lru_t *lru) {
 
 /* ******************************************************* */
 
-static struct cache_entry* uid_lru_find_entry(uid_lru_t *lru, const zdtun_5tuple_t *tuple) {
+static struct cache_entry *uid_lru_find_entry(uid_lru_t *lru, const zdtun_5tuple_t *tuple) {
     struct cache_entry *entry;
 
     HASH_FIND(hh, lru->cache, tuple, sizeof(zdtun_5tuple_t), entry);
 
-    if(entry) {
+    if (entry) {
         // Bring the entry to the front of the list
         HASH_DELETE(hh, lru->cache, entry);
         HASH_ADD(hh, lru->cache, key, sizeof(zdtun_5tuple_t), entry);
 
-        return(entry);
+        return (entry);
     }
 
     return NULL;
@@ -88,7 +88,7 @@ void uid_lru_add(uid_lru_t *lru, const zdtun_5tuple_t *tuple, int uid) {
 
     entry = pd_malloc(sizeof(struct cache_entry));
 
-    if(!entry)
+    if (!entry)
         return;
 
     entry->key = *tuple;
@@ -96,7 +96,7 @@ void uid_lru_add(uid_lru_t *lru, const zdtun_5tuple_t *tuple, int uid) {
 
     HASH_ADD(hh, lru->cache, key, sizeof(zdtun_5tuple_t), entry);
 
-    if(HASH_COUNT(lru->cache) > lru->max_size) {
+    if (HASH_COUNT(lru->cache) > lru->max_size) {
         // uthash guarantees that iteration order is same as insertion order
         // see https://troydhanson.github.io/uthash/userguide.html#_sorting
         HASH_ITER(hh, lru->cache, entry, tmp) {
@@ -113,7 +113,7 @@ void uid_lru_add(uid_lru_t *lru, const zdtun_5tuple_t *tuple, int uid) {
 int uid_lru_find(uid_lru_t *lru, const zdtun_5tuple_t *tuple) {
     struct cache_entry *entry = uid_lru_find_entry(lru, tuple);
 
-    return(entry ? entry->uid : -2);
+    return (entry ? entry->uid : -2);
 }
 
 /* ******************************************************* */

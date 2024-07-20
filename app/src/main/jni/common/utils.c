@@ -28,6 +28,7 @@
 memtrack_t memtrack = {0};
 int loglevel = 0;
 const char *logtag = "pcapdroid-native";
+
 void (*logcallback)(int lvl, const char *msg) = NULL;
 
 // Needed for local compilation, don't remove
@@ -42,7 +43,7 @@ void set_log_level(int lvl) {
 /* ******************************************************* */
 
 void log_android(int lvl, const char *fmt, ...) {
-    if(lvl >= loglevel) {
+    if (lvl >= loglevel) {
         char line[1024];
         va_list argptr;
 
@@ -68,7 +69,7 @@ void log_android(int lvl, const char *fmt, ...) {
         }
 #endif
 
-        if(logcallback != NULL)
+        if (logcallback != NULL)
             logcallback(lvl, line);
     }
 }
@@ -77,12 +78,18 @@ void log_android(int lvl, const char *fmt, ...) {
 
 char loglvl2char(int lvl) {
     switch (lvl) {
-        case ANDROID_LOG_DEBUG: return 'D';
-        case ANDROID_LOG_INFO:  return 'I';
-        case ANDROID_LOG_WARN:  return 'W';
-        case ANDROID_LOG_ERROR: return 'E';
-        case ANDROID_LOG_FATAL: return 'F';
-        default:                return '?';
+        case ANDROID_LOG_DEBUG:
+            return 'D';
+        case ANDROID_LOG_INFO:
+            return 'I';
+        case ANDROID_LOG_WARN:
+            return 'W';
+        case ANDROID_LOG_ERROR:
+            return 'E';
+        case ANDROID_LOG_FATAL:
+            return 'F';
+        default:
+            return '?';
     }
 }
 
@@ -93,19 +100,19 @@ ssize_t xwrite(int fd, const void *buf, size_t count) {
     ssize_t ret;
 
     do {
-        ret = write(fd, (u_char*)buf + sofar, count - sofar);
+        ret = write(fd, (u_char *) buf + sofar, count - sofar);
 
-        if(ret < 0) {
-            if(errno == EINTR)
+        if (ret < 0) {
+            if (errno == EINTR)
                 continue;
 
             return ret;
         }
 
         sofar += ret;
-    } while((sofar != count) && (ret != 0));
+    } while ((sofar != count) && (ret != 0));
 
-    if(sofar != count)
+    if (sofar != count)
         return -1;
 
     return 0;
@@ -119,18 +126,18 @@ ssize_t xread(int fd, void *buf, size_t count) {
     ssize_t rv;
 
     do {
-        rv = read(fd, (char*)buf + sofar, count - sofar);
+        rv = read(fd, (char *) buf + sofar, count - sofar);
 
-        if(rv < 0) {
-            if(errno == EINTR)
+        if (rv < 0) {
+            if (errno == EINTR)
                 continue;
             return rv;
         }
 
         sofar += rv;
-    } while((sofar != count) && (rv != 0));
+    } while ((sofar != count) && (rv != 0));
 
-    if(sofar != count)
+    if (sofar != count)
         return (rv == 0) ? 0 : -1;
 
     return count;
@@ -150,12 +157,12 @@ void tupleSwapPeers(zdtun_5tuple_t *tuple) {
 
 /* ******************************************************* */
 
-char* humanSize(char *buf, int bufsize, double bytes) {
+char *humanSize(char *buf, int bufsize, double bytes) {
     static char *suffix[] = {"B", "KB", "MB", "GB", "TB"};
     int num_suffix = sizeof(suffix) / sizeof(suffix[0]);
     int i;
 
-    for(i = 0; (bytes >= 1024) && (i < num_suffix); i++)
+    for (i = 0; (bytes >= 1024) && (i < num_suffix); i++)
         bytes /= 1024;
 
     snprintf(buf, bufsize, "%.02f %s", bytes, suffix[i]);
@@ -172,9 +179,9 @@ void hexdump(const char *buf, size_t bufsize) {
     int idx = 0;
     static const char hex[] = "0123456789abcdef";
 
-    while(off < bufsize) {
-        if((off % 16) == 0) {
-            if(off > 0) {
+    while (off < bufsize) {
+        if ((off % 16) == 0) {
+            if (off > 0) {
                 out[idx] = '\0';
                 log_d("%s", out);
             }
@@ -187,7 +194,7 @@ void hexdump(const char *buf, size_t bufsize) {
         off++;
     }
 
-    if((off % 16) != 0) {
+    if ((off % 16) != 0) {
         out[idx] = '\0';
         log_d("%s", out);
         idx = sprintf(out, "%06zx", off);
@@ -204,23 +211,23 @@ void hexdump(const char *buf, size_t bufsize) {
 // to read the command output.
 // Returns the pid of the child process, or -1 on failure
 // NOTE: the caller MUST call waitpid or equivalent to prevent process zombification and close the out_fd
-int start_subprocess(const char *prog, const char *args, bool as_root, int* out_fd) {
+int start_subprocess(const char *prog, const char *args, bool as_root, int *out_fd) {
     int in_p[2], out_p[2];
     pid_t pid;
 
-    if((pipe(in_p) != 0) || (out_fd && (pipe(out_p) != 0))) {
+    if ((pipe(in_p) != 0) || (out_fd && (pipe(out_p) != 0))) {
         log_f("pipe failed[%d]: %s", errno, strerror(errno));
         return -1;
     }
 
-    if((pid = fork()) == 0) {
+    if ((pid = fork()) == 0) {
         // child
         char *argp[] = {"sh", "-c", as_root ? "su" : "sh", NULL};
 
         close(in_p[1]);
         dup2(in_p[0], STDIN_FILENO);
 
-        if(out_fd) {
+        if (out_fd) {
             close(out_p[0]);
 
             dup2(out_p[1], STDOUT_FILENO);
@@ -230,9 +237,9 @@ int start_subprocess(const char *prog, const char *args, bool as_root, int* out_
         execve(_PATH_BSHELL, argp, environ);
         fprintf(stderr, "execve failed[%d]: %s", errno, strerror(errno));
         exit(1);
-    } else if(pid > 0) {
+    } else if (pid > 0) {
         // parent
-        if(out_fd) {
+        if (out_fd) {
             *out_fd = out_p[0];
             close(out_p[1]);
         }
@@ -251,7 +258,7 @@ int start_subprocess(const char *prog, const char *args, bool as_root, int* out_
         close(in_p[0]);
         close(in_p[1]);
 
-        if(out_fd) {
+        if (out_fd) {
             close(out_p[0]);
             close(out_p[1]);
         }
@@ -266,16 +273,16 @@ int start_subprocess(const char *prog, const char *args, bool as_root, int* out_
 int run_shell_cmd(const char *prog, const char *args, bool as_root, bool check_error) {
     int out_fd;
     int pid = start_subprocess(prog, args, as_root, &out_fd);
-    if(pid <= 0)
+    if (pid <= 0)
         return -1;
 
     int rv;
-    if(waitpid(pid, &rv, 0) <= 0) {
+    if (waitpid(pid, &rv, 0) <= 0) {
         log_f("waitpid %d failed[%d]: %s", pid, errno, strerror(errno));
         return -1;
     }
 
-    if(check_error && (rv != 0)) {
+    if (check_error && (rv != 0)) {
         char buf[128];
         struct timeval timeout = {0};
         fd_set fds;

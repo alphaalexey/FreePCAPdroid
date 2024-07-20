@@ -4,29 +4,29 @@
 
     <item
         android:id="@+id/action_start"
-        android:title="@string/start_button"
-        android:orderInCategory="10"
         android:icon="@drawable/ic_play_arrow"
+        android:orderInCategory="10"
+        android:title="@string/start_button"
         app:showAsAction="always" />
 
     <item
         android:id="@+id/action_stop"
-        android:title="@string/stop_button"
-        android:orderInCategory="20"
         android:icon="@drawable/ic_media_stop"
+        android:orderInCategory="20"
+        android:title="@string/stop_button"
         android:visible="false"
         app:showAsAction="always" />
 
     <item
         android:id="@+id/action_settings"
-        android:title="@string/title_activity_settings"
-        android:orderInCategory="30"
         android:icon="@drawable/ic_settings"
+        android:orderInCategory="30"
+        android:title="@string/title_activity_settings"
         app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/open_pcap"
-        android:title="@string/open_pcap_file"
         android:enabled="true"
+        android:title="@string/open_pcap_file"
         app:showAsAction="never" />
 </menu>

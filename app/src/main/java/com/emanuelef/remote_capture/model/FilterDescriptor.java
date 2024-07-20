@@ -25,9 +25,9 @@ import android.view.LayoutInflater;
 import com.emanuelef.remote_capture.CaptureService;
 import com.emanuelef.remote_capture.PCAPdroid;
 import com.emanuelef.remote_capture.R;
-import com.emanuelef.remote_capture.model.ConnectionDescriptor.Status;
 import com.emanuelef.remote_capture.model.ConnectionDescriptor.DecryptionStatus;
 import com.emanuelef.remote_capture.model.ConnectionDescriptor.FilteringStatus;
+import com.emanuelef.remote_capture.model.ConnectionDescriptor.Status;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
@@ -45,7 +45,7 @@ public class FilterDescriptor implements Serializable {
 
     public FilterDescriptor() {
         clear();
-        assert(!isSet());
+        assert (!isSet());
     }
 
     public boolean isSet() {
@@ -80,43 +80,43 @@ public class FilterDescriptor implements Serializable {
     public void toChips(LayoutInflater inflater, ChipGroup group) {
         Context ctx = inflater.getContext();
 
-        if(!showMasked)
+        if (!showMasked)
             addChip(inflater, group, R.id.not_hidden, ctx.getString(R.string.not_hidden_filter));
-        if(onlyBlacklisted)
+        if (onlyBlacklisted)
             addChip(inflater, group, R.id.blacklisted, ctx.getString(R.string.malicious_connection_filter));
-        if(onlyCleartext)
+        if (onlyCleartext)
             addChip(inflater, group, R.id.only_cleartext, ctx.getString(R.string.cleartext_connection));
-        if(status != Status.STATUS_INVALID) {
+        if (status != Status.STATUS_INVALID) {
             String label = String.format(ctx.getString(R.string.status_filter), ConnectionDescriptor.getStatusLabel(status, ctx));
             addChip(inflater, group, R.id.status_ind, label);
         }
-        if(decStatus != DecryptionStatus.INVALID) {
+        if (decStatus != DecryptionStatus.INVALID) {
             String label = String.format(ctx.getString(R.string.decryption_filter), ConnectionDescriptor.getDecryptionStatusLabel(decStatus, ctx));
             addChip(inflater, group, R.id.decryption_status, label);
         }
-        if(filteringStatus != FilteringStatus.INVALID) {
+        if (filteringStatus != FilteringStatus.INVALID) {
             String label = ctx.getString(R.string.firewall_filter, ctx.getString((filteringStatus == FilteringStatus.BLOCKED) ?
                     R.string.blocked_connection_filter : R.string.allowed_connection_filter));
             addChip(inflater, group, R.id.firewall, label);
         }
-        if(iface != null)
+        if (iface != null)
             addChip(inflater, group, R.id.capture_interface, String.format(ctx.getString(R.string.interface_filter), iface));
     }
 
     public void clear(int filter_id) {
-        if(filter_id == R.id.not_hidden)
+        if (filter_id == R.id.not_hidden)
             showMasked = true;
-        else if(filter_id == R.id.blacklisted)
+        else if (filter_id == R.id.blacklisted)
             onlyBlacklisted = false;
-        else if(filter_id == R.id.only_cleartext)
+        else if (filter_id == R.id.only_cleartext)
             onlyCleartext = false;
-        else if(filter_id == R.id.status_ind)
+        else if (filter_id == R.id.status_ind)
             status = Status.STATUS_INVALID;
-        else if(filter_id == R.id.decryption_status)
+        else if (filter_id == R.id.decryption_status)
             decStatus = DecryptionStatus.INVALID;
-        else if(filter_id == R.id.firewall)
+        else if (filter_id == R.id.firewall)
             filteringStatus = FilteringStatus.INVALID;
-        else if(filter_id == R.id.capture_interface)
+        else if (filter_id == R.id.capture_interface)
             iface = null;
     }
 

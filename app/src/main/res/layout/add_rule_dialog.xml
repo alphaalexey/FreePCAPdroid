@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:padding="8dp"
-    android:paddingTop="12dp"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:padding="8dp"
+    android:paddingTop="12dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -14,38 +13,38 @@
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/combo_field"
+            style="@style/TextInputLayoutOutlinedDropdown"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:visibility="gone"
-            tools:visibility="visible"
             android:theme="@style/Theme.TextInputLayoutOutlined"
-            style="@style/TextInputLayoutOutlinedDropdown">
+            android:visibility="gone"
+            tools:visibility="visible">
 
             <androidx.appcompat.widget.AppCompatAutoCompleteTextView
                 android:id="@+id/combo_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="text"
                 android:imeOptions="actionNext"
+                android:inputType="text"
                 tools:text="Combo" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/text_field"
+            style="@style/TextInputLayoutOutlined"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:visibility="gone"
-            tools:visibility="visible"
-            tools:hint="Text"
             android:theme="@style/Theme.TextInputLayoutOutlined"
-            style="@style/TextInputLayoutOutlined" >
+            android:visibility="gone"
+            tools:hint="Text"
+            tools:visibility="visible">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/text_value"
-                android:imeOptions="actionNext"
-                android:inputType="text"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:imeOptions="actionNext"
+                android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
 </ScrollView>

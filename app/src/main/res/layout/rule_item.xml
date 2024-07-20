@@ -4,8 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?android:attr/activatedBackgroundIndicator"
-    android:orientation="horizontal"
     android:gravity="center_vertical"
+    android:orientation="horizontal"
     android:padding="10dp">
 
     <ImageView
@@ -14,13 +14,13 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="10dp"
         android:adjustViewBounds="true"
-        tools:tint="@color/colorTabText"
-        tools:src="@drawable/ic_short_text" />
+        tools:src="@drawable/ic_short_text"
+        tools:tint="@color/colorTabText" />
 
     <TextView
         android:id="@+id/item_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:text="App: example app"
-        android:gravity="center_vertical" />
+        android:gravity="center_vertical"
+        tools:text="App: example app" />
 </LinearLayout>

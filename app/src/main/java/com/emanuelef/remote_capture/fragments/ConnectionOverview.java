@@ -138,7 +138,7 @@ public class ConnectionOverview extends Fragment implements ConnectionDetailsAct
         ConnectionsRegister reg = CaptureService.requireConnsRegister();
 
         mConn = reg.getConnById(args.getInt("conn_id"));
-        if(mConn == null) {
+        if (mConn == null) {
             Utils.showToast(requireContext(), R.string.connection_not_found);
             mActivity.finish();
             return;
@@ -149,17 +149,17 @@ public class ConnectionOverview extends Fragment implements ConnectionDetailsAct
             Utils.startActivity(mActivity, intent);
         });
 
-        if(mConn != null) {
+        if (mConn != null) {
             String l4proto = Utils.proto2str(mConn.ipproto);
             //if(l4proto.equals("TCP"))
             //    view.findViewById(R.id.tcp_flags_row).setVisibility(View.VISIBLE);
 
-            if(!mConn.l7proto.equals(l4proto))
+            if (!mConn.l7proto.equals(l4proto))
                 proto.setText(String.format(getResources().getString(R.string.app_and_proto), mConn.l7proto, l4proto));
             else
                 proto.setText(mConn.l7proto);
 
-            if(l4proto.equals("ICMP")) {
+            if (l4proto.equals("ICMP")) {
                 source.setText(mConn.src_ip);
                 destination.setText(mConn.dst_ip);
             } else {
@@ -172,10 +172,10 @@ public class ConnectionOverview extends Fragment implements ConnectionDetailsAct
                 }
             }
 
-            if((mConn.info != null) && (!mConn.info.isEmpty())) {
-                if(mConn.l7proto.equals("DNS"))
+            if ((mConn.info != null) && (!mConn.info.isEmpty())) {
+                if (mConn.l7proto.equals("DNS"))
                     info_label.setText(R.string.query);
-                else if(mConn.l7proto.equals("HTTP"))
+                else if (mConn.l7proto.equals("HTTP"))
                     info_label.setText(R.string.host);
                 info.setText(mConn.info);
             } else
@@ -183,7 +183,7 @@ public class ConnectionOverview extends Fragment implements ConnectionDetailsAct
 
             String uid_str = Integer.toString(mConn.uid);
             AppDescriptor app = (new AppsResolver(mActivity)).getAppByUid(mConn.uid, 0);
-            if(app != null)
+            if (app != null)
                 appLabel.setText(String.format(getResources().getString(R.string.app_and_proto), app.getName(), uid_str));
             else
                 appLabel.setText(uid_str);
@@ -194,29 +194,29 @@ public class ConnectionOverview extends Fragment implements ConnectionDetailsAct
             boolean has_scripts = (mConn.js_injected_scripts != null) && !mConn.js_injected_scripts.isEmpty();
             view.findViewById(R.id.injected_scripts_row)
                     .setVisibility(has_scripts ? View.VISIBLE : View.GONE);
-            if(has_scripts)
-                ((TextView)view.findViewById(R.id.injected_scripts)).setText(mConn.js_injected_scripts);
+            if (has_scripts)
+                ((TextView) view.findViewById(R.id.injected_scripts)).setText(mConn.js_injected_scripts);
 
-            if(!mConn.url.isEmpty())
+            if (!mConn.url.isEmpty())
                 url.setText(mConn.url);
             else
                 url_row.setVisibility(View.GONE);
 
-            if(!mConn.country.isEmpty()) {
+            if (!mConn.country.isEmpty()) {
                 country.setText(Utils.getCountryName(mActivity, mConn.country));
                 country_flag.setCountryCode(mConn.country);
             } else
                 view.findViewById(R.id.country_row).setVisibility(View.GONE);
 
-            if(mConn.asn.isKnown())
+            if (mConn.asn.isKnown())
                 asn.setText(mConn.asn.toString());
             else
                 view.findViewById(R.id.asn_row).setVisibility(View.GONE);
 
-            if(mConn.ifidx > 0) {
+            if (mConn.ifidx > 0) {
                 String ifname = CaptureService.getInterfaceName(mConn.ifidx);
 
-                if(!ifname.isEmpty()) {
+                if (!ifname.isEmpty()) {
                     view.findViewById(R.id.interface_row).setVisibility(View.VISIBLE);
                     ((TextView) view.findViewById(R.id.capture_interface)).setText(ifname);
                 }
@@ -235,14 +235,14 @@ public class ConnectionOverview extends Fragment implements ConnectionDetailsAct
     public boolean onMenuItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
 
-        if(id == R.id.copy_to_clipboard) {
+        if (id == R.id.copy_to_clipboard) {
             ClipboardManager clipboard = (ClipboardManager) mActivity.getSystemService(Context.CLIPBOARD_SERVICE);
             ClipData clip = ClipData.newPlainText(getString(R.string.connection_details), getContents());
             clipboard.setPrimaryClip(clip);
 
             Utils.showToast(mActivity, R.string.copied);
             return true;
-        } else if(id == R.id.share) {
+        } else if (id == R.id.share) {
             Utils.shareText(mActivity, getString(R.string.connection_details), getContents());
             return true;
         }
@@ -251,7 +251,7 @@ public class ConnectionOverview extends Fragment implements ConnectionDetailsAct
     }
 
     private String getContents() {
-        if(mTable == null)
+        if (mTable == null)
             return "";
 
         return Utils.table2Text(mTable);
@@ -265,7 +265,7 @@ public class ConnectionOverview extends Fragment implements ConnectionDetailsAct
         mBytesView.setText(String.format(getResources().getString(R.string.rcvd_and_sent), Utils.formatBytes(mConn.rcvd_bytes), Utils.formatBytes(mConn.sent_bytes)));
         mPacketsView.setText(String.format(getResources().getString(R.string.rcvd_and_sent), Utils.formatIntShort(mConn.rcvd_pkts), Utils.formatIntShort(mConn.sent_pkts)));
 
-        if(mConn.blocked_pkts > 0) {
+        if (mConn.blocked_pkts > 0) {
             mBlockedPkts.setText(String.format(getResources().getString(R.string.n_pkts), Utils.formatIntShort(mConn.blocked_pkts)));
             mBlockedPktsRow.setVisibility(View.VISIBLE);
         }
@@ -280,35 +280,35 @@ public class ConnectionOverview extends Fragment implements ConnectionDetailsAct
         mBlacklistedIp.setVisibility(mConn.isBlacklistedIp() ? View.VISIBLE : View.GONE);
         mBlacklistedHost.setVisibility(mConn.isBlacklistedHost() ? View.VISIBLE : View.GONE);
 
-        if(mConn.decryption_error != null) {
+        if (mConn.decryption_error != null) {
             mError.setTextColor(ContextCompat.getColor(context, R.color.danger));
             mError.setText(mConn.decryption_error);
             mError.setVisibility(View.VISIBLE);
-        } else if(mConn.is_blocked) {
+        } else if (mConn.is_blocked) {
             mError.setTextColor(ContextCompat.getColor(context, R.color.warning));
             mError.setText(context.getString(R.string.connection_blocked));
             mError.setVisibility(View.VISIBLE);
-        } else if(!mConn.hasSeenStart()) {
+        } else if (!mConn.hasSeenStart()) {
             mError.setTextColor(ContextCompat.getColor(context, R.color.warning));
             mError.setText(context.getString(R.string.connection_start_not_seen));
             mError.setVisibility(View.VISIBLE);
-        } else if(mConn.isPortMappingApplied()) {
+        } else if (mConn.isPortMappingApplied()) {
             mError.setTextColor(ContextCompat.getColor(context, R.color.colorTabText));
             mError.setText(context.getString(R.string.connection_redirected_port_map));
             mError.setVisibility(View.VISIBLE);
-        } else if(mConn.payload_length == 0) {
+        } else if (mConn.payload_length == 0) {
             mError.setTextColor(ContextCompat.getColor(context, R.color.warning));
             mError.setText(context.getString(R.string.warn_no_app_data));
             mError.setVisibility(View.VISIBLE);
-        } else if(mConn.netd_block_missed) {
+        } else if (mConn.netd_block_missed) {
             mError.setTextColor(ContextCompat.getColor(context, R.color.warning));
             mError.setText(context.getString(R.string.netd_block_missed));
             mError.setVisibility(View.VISIBLE);
-        } else if(mConn.getDecryptionStatus() == ConnectionDescriptor.DecryptionStatus.ENCRYPTED) {
+        } else if (mConn.getDecryptionStatus() == ConnectionDescriptor.DecryptionStatus.ENCRYPTED) {
             mError.setTextColor(ContextCompat.getColor(context, R.color.colorTabText));
             mError.setText(R.string.decryption_info_no_rule);
             mError.setVisibility(View.VISIBLE);
-        } else if((mConn.getDecryptionStatus() == ConnectionDescriptor.DecryptionStatus.NOT_DECRYPTABLE)
+        } else if ((mConn.getDecryptionStatus() == ConnectionDescriptor.DecryptionStatus.NOT_DECRYPTABLE)
                 && mConn.l7proto.equals("QUIC")) {
             mError.setTextColor(ContextCompat.getColor(context, R.color.warning));
             mError.setText(R.string.decrypt_quic_notice);

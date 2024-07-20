@@ -37,7 +37,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.Signature;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -62,7 +61,6 @@ import android.os.Looper;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
-import android.provider.Settings;
 import android.text.SpannableString;
 import android.text.SpannedString;
 import android.text.TextUtils;
@@ -123,7 +121,6 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -142,42 +139,25 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import javax.net.ssl.HttpsURLConnection;
 
 public class Utils {
-    static final String TAG = "Utils";
     public static final String INTERACT_ACROSS_USERS = "android.permission.INTERACT_ACROSS_USERS";
     public static final String PCAPDROID_WEBSITE = "https://pcapdroid.org";
     public static final int PER_USER_RANGE = 100000;
     public static final int UID_UNKNOWN = -1;
     public static final int UID_NO_FILTER = -2;
     public static final int LOW_HEAP_THRESHOLD = 10485760 /* 10 MB */;
+    static final String TAG = "Utils";
+    // https://stackoverflow.com/questions/9655181/how-to-convert-a-byte-array-to-a-hex-string-in-java
+    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+    // https://mkyong.com/regular-expressions/how-to-validate-ip-address-with-regular-expression/
+    private static final Pattern IPV4_PATTERN = Pattern.compile(
+            "^(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\\.(?!$)|$)){4}$");
     private static Boolean rootAvailable = null;
     private static Locale primaryLocale = null;
     private static String[] l7Protocols = null;
-
-    public enum BuildType {
-        UNKNOWN,
-        DEBUG,
-        GITHUB,     // Github release
-        FDROID,     // F-droid release
-        PLAYSTORE,  // Google play release
-    }
-
-    public enum PrivateDnsMode {
-        DISABLED,
-        OPPORTUNISTIC,
-        STRICT;
-
-        @NonNull
-        @Override
-        public String toString() {
-            return super.toString().toLowerCase();
-        }
-    }
 
     public static String[] list2array(List<String> l) {
         return l.toArray(new String[0]);
@@ -186,30 +166,44 @@ public class Utils {
     public static String formatBytes(long bytes) {
         long divisor;
         String suffix;
-        if(bytes < 1024) return bytes + " B";
+        if (bytes < 1024) return bytes + " B";
 
-        if(bytes < 1024*1024)               { divisor = 1024;           suffix = "KB"; }
-        else if(bytes < 1024*1024*1024)     { divisor = 1024*1024;      suffix = "MB"; }
-        else                                { divisor = 1024*1024*1024; suffix = "GB"; }
+        if (bytes < 1024 * 1024) {
+            divisor = 1024;
+            suffix = "KB";
+        } else if (bytes < 1024 * 1024 * 1024) {
+            divisor = 1024 * 1024;
+            suffix = "MB";
+        } else {
+            divisor = 1024 * 1024 * 1024;
+            suffix = "GB";
+        }
 
-        return String.format("%.1f %s", ((float)bytes) / divisor, suffix);
+        return String.format("%.1f %s", ((float) bytes) / divisor, suffix);
     }
 
     public static String formatIntShort(long val) {
         long divisor;
         String suffix;
-        if(val < 1000) return Long.toString(val);
+        if (val < 1000) return Long.toString(val);
 
-        if(val < 1000*1000)                { divisor = 1000;           suffix = "K"; }
-        else if(val < 1000*1000*1000)      { divisor = 1000*1000;      suffix = "M"; }
-        else                               { divisor = 1000*1000*1000; suffix = "G"; }
+        if (val < 1000 * 1000) {
+            divisor = 1000;
+            suffix = "K";
+        } else if (val < 1000 * 1000 * 1000) {
+            divisor = 1000 * 1000;
+            suffix = "M";
+        } else {
+            divisor = 1000 * 1000 * 1000;
+            suffix = "G";
+        }
 
-        return String.format("%.1f %s", ((float)val) / divisor, suffix);
+        return String.format("%.1f %s", ((float) val) / divisor, suffix);
     }
 
     @SuppressWarnings("deprecation")
     public static Locale getPrimaryLocale(Context context) {
-        if(primaryLocale == null) {
+        if (primaryLocale == null) {
             Configuration config = context.getResources().getConfiguration();
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
@@ -225,7 +219,7 @@ public class Utils {
     public static int getSmallerDisplayDimension(Context ctx) {
         WindowManager manager = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             WindowMetrics windowMetrics = manager.getCurrentWindowMetrics();
             return Math.min(windowMetrics.getBounds().width(), windowMetrics.getBounds().width());
         } else {
@@ -238,12 +232,12 @@ public class Utils {
 
     public static String getCountryName(Context context, String country_code) {
         Locale cur_locale = getPrimaryLocale(context);
-        return(new Locale(cur_locale.getCountry(), country_code)).getDisplayCountry();
+        return (new Locale(cur_locale.getCountry(), country_code)).getDisplayCountry();
     }
 
     public static boolean isRTL(Context ctx) {
         String locale_name = getPrimaryLocale(ctx).getDisplayName();
-        if(locale_name.isEmpty())
+        if (locale_name.isEmpty())
             return false;
 
         final int direction = Character.getDirectionality(locale_name.charAt(0));
@@ -257,24 +251,24 @@ public class Utils {
     }
 
     public static String formatDuration(long seconds) {
-        if(seconds == 0)
+        if (seconds == 0)
             return "< 1 s";
-        else if(seconds < 60)
+        else if (seconds < 60)
             return String.format("%d s", seconds);
-        else if(seconds < 3600)
+        else if (seconds < 3600)
             return String.format("> %d m", seconds / 60);
         else
             return String.format("> %d h", seconds / 3600);
     }
 
     public static String formatEpochShort(Context context, long epoch) {
-        if(epoch == 0)
+        if (epoch == 0)
             return "-";
 
         long now = Utils.now();
         Locale locale = getPrimaryLocale(context);
 
-        if((now - epoch) < (24 * 3600)) {
+        if ((now - epoch) < (24 * 3600)) {
             final DateFormat fmt = new SimpleDateFormat("HH:mm:ss", locale);
             return fmt.format(new Date(epoch * 1000));
         }
@@ -284,13 +278,13 @@ public class Utils {
     }
 
     public static String formatEpochMin(Context context, long epoch) {
-        if(epoch == 0)
+        if (epoch == 0)
             return "-";
 
         long now = Utils.now();
         Locale locale = getPrimaryLocale(context);
 
-        if((now - epoch) < (24 * 3600)) {
+        if ((now - epoch) < (24 * 3600)) {
             final DateFormat fmt = new SimpleDateFormat("HH:mm", locale);
             return fmt.format(new Date(epoch * 1000));
         }
@@ -344,7 +338,7 @@ public class Utils {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         Configuration config = context.getResources().getConfiguration();
 
-        if(!Prefs.useEnglishLanguage(prefs))
+        if (!Prefs.useEnglishLanguage(prefs))
             return config;
 
         Locale locale = new Locale("en");
@@ -355,25 +349,29 @@ public class Utils {
     }
 
     public static void setAppTheme(String theme) {
-        if(theme.equals("light"))
+        if (theme.equals("light"))
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-        else if(theme.equals("dark"))
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        else if (theme.equals("dark"))
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         else
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
     }
 
     public static String proto2str(int proto) {
-        switch(proto) {
-            case 6:     return "TCP";
-            case 17:    return "UDP";
-            case 1:     return "ICMP";
-            default:    return(Integer.toString(proto));
+        switch (proto) {
+            case 6:
+                return "TCP";
+            case 17:
+                return "UDP";
+            case 1:
+                return "ICMP";
+            default:
+                return (Integer.toString(proto));
         }
     }
 
     public static String[] getL7Protocols() {
-        if(l7Protocols == null) {
+        if (l7Protocols == null) {
             List<String> protos = CaptureService.getL7Protocols();
             Collections.sort(protos, String.CASE_INSENSITIVE_ORDER);
             l7Protocols = protos.toArray(new String[0]);
@@ -385,12 +383,12 @@ public class Utils {
     public static String getDnsServer(ConnectivityManager cm, Network net) {
         LinkProperties props = cm.getLinkProperties(net);
 
-        if(props != null) {
+        if (props != null) {
             List<InetAddress> dns_servers = props.getDnsServers();
 
-            for(InetAddress addr : dns_servers) {
+            for (InetAddress addr : dns_servers) {
                 // Get the first IPv4 DNS server
-                if(addr instanceof Inet4Address) {
+                if (addr instanceof Inet4Address) {
                     return addr.getHostAddress();
                 }
             }
@@ -406,15 +404,15 @@ public class Utils {
     @SuppressWarnings("deprecation")
     public static String getLocalWifiIpAddress(Context context) {
         WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        if(wifiManager == null)
-            return(null);
+        if (wifiManager == null)
+            return (null);
 
         WifiInfo connInfo = wifiManager.getConnectionInfo();
-        if(connInfo != null) {
+        if (connInfo != null) {
             int ipAddress = connInfo.getIpAddress();
 
-            if(ipAddress == 0)
-                return(null);
+            if (ipAddress == 0)
+                return (null);
 
             if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
                 ipAddress = Integer.reverseBytes(ipAddress);
@@ -426,13 +424,13 @@ public class Utils {
             try {
                 ipAddressString = InetAddress.getByAddress(ipByteArray).getHostAddress();
             } catch (UnknownHostException ex) {
-                return(null);
+                return (null);
             }
 
             return ipAddressString;
         }
 
-        return(null);
+        return (null);
     }
 
     public static String getLocalIPAddress(Context context) {
@@ -447,7 +445,7 @@ public class Utils {
         // try to get the WiFi IP address first
         String wifi_ip = getLocalWifiIpAddress(context);
 
-        if((wifi_ip != null) && (!wifi_ip.equals("0.0.0.0"))) {
+        if ((wifi_ip != null) && (!wifi_ip.equals("0.0.0.0"))) {
             Log.d("getLocalIPAddress", "Using WiFi IP: " + wifi_ip);
             return wifi_ip;
         }
@@ -457,7 +455,7 @@ public class Utils {
         try {
             List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
             for (NetworkInterface intf : interfaces) {
-                if(!intf.isVirtual()) {
+                if (!intf.isVirtual()) {
                     List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
                     for (InetAddress addr : addrs) {
                         if (!addr.isLoopbackAddress()
@@ -473,7 +471,8 @@ public class Utils {
                     }
                 }
             }
-        } catch (Exception ignored) { }
+        } catch (Exception ignored) {
+        }
 
         // Fallback
         Log.d("getLocalIPAddress", "Using fallback IP");
@@ -484,7 +483,7 @@ public class Utils {
         int addrlen = subnet.getAddress().length;
         ByteBuffer maskBuf = ByteBuffer.allocate(addrlen);
 
-        for(int i=0; i<addrlen / 4; i++)
+        for (int i = 0; i < addrlen / 4; i++)
             maskBuf.putInt(-1);
 
         // 0xFFFFF...0000000
@@ -494,7 +493,7 @@ public class Utils {
         BigInteger end = start.add(mask.not());
         BigInteger toCheck = new BigInteger(1, address.getAddress());
 
-        return((toCheck.compareTo(start) >= 0) && (toCheck.compareTo(end) <= 0));
+        return ((toCheck.compareTo(start) >= 0) && (toCheck.compareTo(end) <= 0));
     }
 
     public static boolean subnetContains(String subnet, int prefix, String address) {
@@ -509,10 +508,10 @@ public class Utils {
         try {
             List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
             for (NetworkInterface intf : interfaces) {
-                if(!intf.isVirtual()) {
+                if (!intf.isVirtual()) {
                     List<InterfaceAddress> addrs = intf.getInterfaceAddresses();
                     for (InterfaceAddress addr : addrs) {
-                        if(subnetContains(addr.getAddress(), addr.getNetworkPrefixLength(), checkAddress))
+                        if (subnetContains(addr.getAddress(), addr.getNetworkPrefixLength(), checkAddress))
                             return true;
                     }
                 }
@@ -526,7 +525,7 @@ public class Utils {
 
     public static boolean isLocalNetworkAddress(String checkAddress) {
         // this check is necessary as otherwise host resolution would be triggered on the main thread
-        if(!validateIpAddress(checkAddress))
+        if (!validateIpAddress(checkAddress))
             return false;
 
         try {
@@ -539,7 +538,7 @@ public class Utils {
     // returns current timestamp in seconds
     public static long now() {
         Calendar calendar = Calendar.getInstance();
-        return(calendar.getTimeInMillis() / 1000);
+        return (calendar.getTimeInMillis() / 1000);
     }
 
     public static byte[] hexStringToByteArray(String s) {
@@ -547,13 +546,11 @@ public class Utils {
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {
             data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i+1), 16));
+                    + Character.digit(s.charAt(i + 1), 16));
         }
         return data;
     }
 
-    // https://stackoverflow.com/questions/9655181/how-to-convert-a-byte-array-to-a-hex-string-in-java
-    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
     public static String byteArrayToHex(byte[] bytes, int size) {
         char[] hexChars = new char[size * 2];
 
@@ -574,7 +571,7 @@ public class Utils {
 
         for (int rowOffset = offset; rowOffset < offset + length; rowOffset += width) {
             for (int index = 0; index < width; index++) {
-                if(index == half)
+                if (index == half)
                     builder.append(" ");
 
                 if (rowOffset + index < length)
@@ -607,13 +604,13 @@ public class Utils {
         final ByteBuffer buf = ByteBuffer.wrap(data);
         buf.order(ByteOrder.nativeOrder());
 
-        if(pcapng_format) {
+        if (pcapng_format) {
             // PCAPNG
             return new Iterator<Integer>() {
                 @Override
                 public boolean hasNext() {
                     // 12: min block size
-                    return(buf.remaining() >= 12);
+                    return (buf.remaining() >= 12);
                 }
 
                 @Override
@@ -629,7 +626,7 @@ public class Utils {
                 @Override
                 public boolean hasNext() {
                     // 16: sizeof(pcap_rec)
-                    return(buf.remaining() > 16);
+                    return (buf.remaining() > 16);
                 }
 
                 @Override
@@ -648,11 +645,11 @@ public class Utils {
     @SuppressWarnings("deprecation")
     public static Network getRunningVpn(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        if(cm != null) {
+        if (cm != null) {
             try {
                 Network[] networks = cm.getAllNetworks();
 
-                for(Network net : networks) {
+                for (Network net : networks) {
                     NetworkCapabilities cap = cm.getNetworkCapabilities(net);
 
                     if ((cap != null) && cap.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
@@ -679,7 +676,7 @@ public class Utils {
         Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
     }
 
-    public static void showHelpDialog(Context context, int id){
+    public static void showHelpDialog(Context context, int id) {
         String msg = context.getResources().getString(id);
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(R.string.hint);
@@ -695,15 +692,15 @@ public class Utils {
     public static String getUniqueFileName(Context context, String ext) {
         Locale locale = getPrimaryLocale(context);
         final DateFormat fmt = new SimpleDateFormat("dd_MMM_HH_mm_ss", locale);
-        return  "PCAPdroid_" + fmt.format(new Date()) + "." + ext;
+        return "PCAPdroid_" + fmt.format(new Date()) + "." + ext;
     }
 
     public static String getUniquePcapFileName(Context context, boolean pcapng_format) {
-        return(Utils.getUniqueFileName(context, pcapng_format ? "pcapng" : "pcap"));
+        return (Utils.getUniqueFileName(context, pcapng_format ? "pcapng" : "pcap"));
     }
 
     public static @Nullable BitmapDrawable scaleDrawable(Resources res, Drawable drawable, int new_x, int new_y) {
-        if((new_x <= 0) || (new_y <= 0))
+        if ((new_x <= 0) || (new_y <= 0))
             return null;
 
         try {
@@ -734,20 +731,20 @@ public class Utils {
                 View label = ((TableRow) v).getChildAt(0);
                 View value = ((TableRow) v).getChildAt(1);
 
-                if(value instanceof ViewGroup) {
+                if (value instanceof ViewGroup) {
                     // Try to find first TextView child
                     ViewGroup group = (ViewGroup) value;
-                    for(int c=0; c<group.getChildCount(); c++) {
+                    for (int c = 0; c < group.getChildCount(); c++) {
                         View view = group.getChildAt(c);
 
-                        if(view instanceof TextView) {
+                        if (view instanceof TextView) {
                             value = view;
                             break;
                         }
                     }
                 }
 
-                if((label instanceof TextView) && (value instanceof TextView)) {
+                if ((label instanceof TextView) && (value instanceof TextView)) {
                     builder.append(((TextView) label).getText());
                     builder.append(": ");
                     builder.append(((TextView) value).getText());
@@ -762,7 +759,7 @@ public class Utils {
     public static String adapter2Text(TextAdapter adapter) {
         StringBuilder builder = new StringBuilder();
 
-        for(int i=0; i< adapter.getCount(); i++) {
+        for (int i = 0; i < adapter.getCount(); i++) {
             String text = adapter.getItemText(i);
 
             builder.append(text);
@@ -775,10 +772,10 @@ public class Utils {
     public static boolean isTv(Context context) {
         UiModeManager uiModeManager = (UiModeManager) context.getSystemService(Context.UI_MODE_SERVICE);
 
-        if(uiModeManager == null)
+        if (uiModeManager == null)
             return false;
 
-        return(uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION);
+        return (uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION);
     }
 
     public static String getAppVersion(Context context) {
@@ -802,7 +799,7 @@ public class Utils {
         // https://commonsware.com/blog/2017/12/27/storage-access-framework-missing-action.html
         ComponentName comp = intent.resolveActivity(context.getPackageManager());
 
-        return((comp != null) && (!"com.google.android.tv.frameworkpackagestubs".equals(comp.getPackageName())));
+        return ((comp != null) && (!"com.google.android.tv.frameworkpackagestubs".equals(comp.getPackageName())));
     }
 
     public static boolean supportsFileDialog(Context context) {
@@ -813,11 +810,12 @@ public class Utils {
     }
 
     public static boolean launchFileDialog(Context context, Intent intent, ActivityResultLauncher<Intent> launcher) {
-        if(Utils.supportsFileDialog(context, intent)) {
+        if (Utils.supportsFileDialog(context, intent)) {
             try {
                 launcher.launch(intent);
                 return true;
-            } catch (ActivityNotFoundException ignored) {}
+            } catch (ActivityNotFoundException ignored) {
+            }
         }
 
         Utils.showToastLong(context, R.string.no_activity_file_selection);
@@ -838,13 +836,13 @@ public class Utils {
             // Important: trailing "/" required for the selectQuery
             String relPath = Environment.DIRECTORY_DOWNLOADS + "/PCAPdroid/";
             selectQuery = MediaStore.MediaColumns.RELATIVE_PATH + "='" + relPath + "' AND " +
-                MediaStore.MediaColumns.DISPLAY_NAME + "='" + fname + "'";
+                    MediaStore.MediaColumns.DISPLAY_NAME + "='" + fname + "'";
             values.put(MediaStore.MediaColumns.RELATIVE_PATH, relPath);
         } else {
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if(context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                     Utils.showToastLong(context, R.string.external_storage_perm_required);
-                    return(null);
+                    return (null);
                 }
             }
 
@@ -853,8 +851,9 @@ public class Utils {
             File folder = new File(downloadsDir + "/PCAPdroid");
             try {
                 folder.mkdirs();
-            } catch (Exception ignored) {}
-            if(!folder.exists())
+            } catch (Exception ignored) {
+            }
+            if (!folder.exists())
                 folder = downloadsDir;
 
             String path = folder + "/" + fname;
@@ -874,7 +873,8 @@ public class Utils {
                 Log.d(TAG, "getDownloadsUri: overwriting file " + existingUri);
                 return existingUri;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         try {
             Uri newUri = context.getContentResolver().insert(externalUri, values);
@@ -884,22 +884,22 @@ public class Utils {
             // On some devices, it may trigger "IllegalArgumentException: Volume external_primary not found"
             Log.e(TAG, "getDownloadsUri failed:" + e.getMessage());
             Utils.showToastLong(context, R.string.write_ext_storage_failed);
-            return(null);
+            return (null);
         }
     }
 
     public static boolean isRootAvailable() {
-        if(rootAvailable == null) {
+        if (rootAvailable == null) {
             String path = System.getenv("PATH");
             rootAvailable = false;
 
-            if(path != null) {
+            if (path != null) {
                 Log.d("isRootAvailable", "PATH = " + path);
 
-                for(String part : path.split(":")) {
+                for (String part : path.split(":")) {
                     File f = new File(part + "/su");
 
-                    if(f.exists()) {
+                    if (f.exists()) {
                         Log.d("isRootAvailable", "'su' binary found at " + f.getAbsolutePath());
                         rootAvailable = true;
                         break;
@@ -942,7 +942,7 @@ public class Utils {
         SpannableString s = new SpannableString(textAndValue);
         int valOffset = fmt.length() - 4;
 
-        if(!isRTL(ctx)) {
+        if (!isRTL(ctx)) {
             if (textStyle != null)
                 s.setSpan(textStyle, 0, valOffset, 0);
             if (valStyle != null)
@@ -959,7 +959,7 @@ public class Utils {
 
     // www.example.org -> example.org
     public static String cleanDomain(String domain) {
-        if(domain.startsWith("www."))
+        if (domain.startsWith("www."))
             domain = domain.substring(4);
         return domain;
     }
@@ -968,25 +968,25 @@ public class Utils {
     public static String getSecondLevelDomain(String domain) {
         int tldPos = domain.lastIndexOf(".");
 
-        if(tldPos <= 0)
+        if (tldPos <= 0)
             return domain;
 
         int rootPos = domain.substring(0, tldPos).lastIndexOf(".");
 
-        if(rootPos <= 0)
+        if (rootPos <= 0)
             return domain;
 
         return domain.substring(rootPos + 1);
     }
 
     public static String tcpFlagsToStr(int flags) {
-        final String []flags_s = {"FIN", "SYN", "RST", "PSH", "ACK", "URG", "ECN", "CWR"};
+        final String[] flags_s = {"FIN", "SYN", "RST", "PSH", "ACK", "URG", "ECN", "CWR"};
         final StringBuilder builder = new StringBuilder();
         boolean first = true;
 
-        for(int i=0; i<flags_s.length; i++) {
-            if((flags & (1 << i)) != 0) {
-                if(!first)
+        for (int i = 0; i < flags_s.length; i++) {
+            if ((flags & (1 << i)) != 0) {
+                if (!first)
                     builder.append(" ");
                 builder.append(flags_s[i]);
                 first = false;
@@ -1003,8 +1003,8 @@ public class Utils {
     }
 
     public static boolean ungzip(InputStream is, String dst) {
-        try(GZIPInputStream gis = new GZIPInputStream(is)) {
-            try(BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(dst))) {
+        try (GZIPInputStream gis = new GZIPInputStream(is)) {
+            try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(dst))) {
                 byte[] bytesIn = new byte[4096];
                 int read;
                 while ((read = gis.read(bytesIn)) != -1)
@@ -1031,7 +1031,7 @@ public class Utils {
                     con.setConnectTimeout(5000);
                     con.setReadTimeout(5000);
 
-                    try(InputStream in = new BufferedInputStream(con.getInputStream())) {
+                    try (InputStream in = new BufferedInputStream(con.getInputStream())) {
                         byte[] bytesIn = new byte[4096];
                         int read;
                         while ((read = in.read(bytesIn)) != -1) {
@@ -1049,7 +1049,7 @@ public class Utils {
             e.printStackTrace();
         }
 
-        if(!has_contents) {
+        if (!has_contents) {
             try {
                 //noinspection ResultOfMethodCallIgnored
                 (new File(path + ".tmp")).delete(); // if exists
@@ -1064,7 +1064,7 @@ public class Utils {
     }
 
     public static String shorten(String s, int maxlen) {
-        if(s.length() > maxlen)
+        if (s.length() > maxlen)
             s = s.substring(0, maxlen - 1) + "…";
 
         return s;
@@ -1078,32 +1078,32 @@ public class Utils {
         int bitsRemaining = 8;
         byte curByte = 0;
 
-        for(int k=0; k<s.length(); k++) {
+        for (int k = 0; k < s.length(); k++) {
             int val;
             char c = s.charAt(k);
 
-            if((c >= '2') && (c <= '7'))
+            if ((c >= '2') && (c <= '7'))
                 val = 26 + (c - '2');
-            else if((c >= 'A') && (c <= 'Z'))
+            else if ((c >= 'A') && (c <= 'Z'))
                 val = (c - 'A');
             else
                 throw new IllegalArgumentException("invalid BASE32 string or unsupported padding");
 
             // https://stackoverflow.com/questions/641361/base32-decoding
-            if(bitsRemaining > 5) {
+            if (bitsRemaining > 5) {
                 int mask = val << (bitsRemaining - 5);
-                curByte = (byte)(curByte | mask);
+                curByte = (byte) (curByte | mask);
                 bitsRemaining -= 5;
             } else {
                 int mask = val >> (5 - bitsRemaining);
-                curByte = (byte)(curByte | mask);
+                curByte = (byte) (curByte | mask);
                 rv[i++] = curByte;
-                curByte = (byte)(val << (3 + bitsRemaining));
+                curByte = (byte) (val << (3 + bitsRemaining));
                 bitsRemaining += 3;
             }
         }
 
-        if(i < rv.length)
+        if (i < rv.length)
             rv[i] = curByte;
 
         return rv;
@@ -1119,14 +1119,14 @@ public class Utils {
 
     // Runs the specified runnable now if on the UI thread, otherwise enqueue it to the Handler
     public static void runOnUi(Runnable r, Handler h) {
-        if(Looper.getMainLooper().getThread() == Thread.currentThread())
+        if (Looper.getMainLooper().getThread() == Thread.currentThread())
             r.run();
         else
             h.post(r);
     }
 
     public static void safeClose(Closeable obj) {
-        if(obj == null)
+        if (obj == null)
             return;
 
         try {
@@ -1140,7 +1140,7 @@ public class Utils {
         int begin = pem.indexOf('\n') + 1;
         int end = pem.indexOf('-', begin);
 
-        if((begin > 0) && (end > begin)) {
+        if ((begin > 0) && (end > begin)) {
             String cert64 = pem.substring(begin, end);
             //Log.d(TAG, "Cert: " + cert64);
             try {
@@ -1160,18 +1160,19 @@ public class Utils {
             KeyStore ks = KeyStore.getInstance("AndroidCAStore");
             ks.load(null, null);
             return ks.getCertificateAlias(ca_cert) != null;
-        } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
+        } catch (KeyStoreException | CertificateException | IOException |
+                 NoSuchAlgorithmException e) {
             e.printStackTrace();
             return false;
         }
     }
 
     public static boolean isCAInstalled(String ca_pem) {
-        if(ca_pem == null)
+        if (ca_pem == null)
             return false;
 
         X509Certificate ca_cert = x509FromPem(ca_pem);
-        if(ca_cert == null)
+        if (ca_cert == null)
             return false;
 
         return isCAInstalled(ca_cert);
@@ -1179,46 +1180,46 @@ public class Utils {
 
     // Like Files.copy(src.toPath(), out);
     public static void copy(File src, OutputStream out) throws IOException {
-        try(FileInputStream in = new FileInputStream(src)) {
+        try (FileInputStream in = new FileInputStream(src)) {
             byte[] bytesIn = new byte[4096];
             int read;
-            while((read = in.read(bytesIn)) != -1)
+            while ((read = in.read(bytesIn)) != -1)
                 out.write(bytesIn, 0, read);
         }
     }
 
     public static void copy(InputStream in, File dst) throws IOException {
-        try(FileOutputStream out = new FileOutputStream(dst)) {
+        try (FileOutputStream out = new FileOutputStream(dst)) {
             byte[] bytesIn = new byte[4096];
             int read;
-            while((read = in.read(bytesIn)) != -1)
+            while ((read = in.read(bytesIn)) != -1)
                 out.write(bytesIn, 0, read);
         }
     }
 
     public static boolean hasEncryptedPayload(AppDescriptor app, ConnectionDescriptor conn) {
-        return(
-            // Telegram
-            app.getPackageName().equals("org.telegram.messenger") ||
+        return (
+                // Telegram
+                app.getPackageName().equals("org.telegram.messenger") ||
 
-            // Whatsapp
-            ((conn.info != null) && conn.info.equals("g.whatsapp.net") && !conn.l7proto.equals("DNS")) ||
+                        // Whatsapp
+                        ((conn.info != null) && conn.info.equals("g.whatsapp.net") && !conn.l7proto.equals("DNS")) ||
 
-            // Google GCM
-            // https://stackoverflow.com/questions/15571576/which-port-and-protocol-does-google-cloud-messaging-gcm-use
-            ((app.getUid() == 1000) && (conn.dst_port >= 5228) && (conn.dst_port <= 5230)) ||
+                        // Google GCM
+                        // https://stackoverflow.com/questions/15571576/which-port-and-protocol-does-google-cloud-messaging-gcm-use
+                        ((app.getUid() == 1000) && (conn.dst_port >= 5228) && (conn.dst_port <= 5230)) ||
 
-            // Google APN
-            // https://keabird.com/blogs/2014/09/19/ports-to-be-whitelisted-for-iosandroid-push-notification/
-            ((app.getUid() == 1000) && ((conn.dst_port == 2195) || (conn.dst_port == 2196) || (conn.dst_port == 5223)))
+                        // Google APN
+                        // https://keabird.com/blogs/2014/09/19/ports-to-be-whitelisted-for-iosandroid-push-notification/
+                        ((app.getUid() == 1000) && ((conn.dst_port == 2195) || (conn.dst_port == 2196) || (conn.dst_port == 5223)))
         );
     }
 
     /* Detects and returns the end of the HTTP request/response headers. 0 is returned if not found. */
     public static int getEndOfHTTPHeaders(byte[] buf) {
-        for(int i = 0; i <= (buf.length - 4); i++) {
-            if((buf[i] == '\r') && (buf[i+1] == '\n') && (buf[i+2] == '\r') && (buf[i+3] == '\n'))
-                return i+4;
+        for (int i = 0; i <= (buf.length - 4); i++) {
+            if ((buf[i] == '\r') && (buf[i + 1] == '\n') && (buf[i + 2] == '\r') && (buf[i + 3] == '\n'))
+                return i + 4;
         }
         return 0;
     }
@@ -1228,7 +1229,7 @@ public class Utils {
         StringBuilder sb = new StringBuilder(length);
         Random rnd = new Random();
 
-        for(int i = 0; i < length; i++)
+        for (int i = 0; i < length; i++)
             sb.append(charset.charAt(rnd.nextInt(charset.length())));
 
         return sb.toString();
@@ -1237,7 +1238,7 @@ public class Utils {
     public static void setDecryptionIcon(ImageView icon, ConnectionDescriptor conn) {
         int color;
 
-        switch(conn.getDecryptionStatus()) {
+        switch (conn.getDecryptionStatus()) {
             case DECRYPTED:
                 color = R.color.ok;
                 break;
@@ -1266,7 +1267,7 @@ public class Utils {
     // string resource with the provided args. See setTextUrls
     // https://stackoverflow.com/questions/23503642/how-to-use-formatted-strings-together-with-placeholders-in-android
     public static CharSequence getText(Context context, int resid, String... args) {
-        for(int i = 0; i < args.length; ++i)
+        for (int i = 0; i < args.length; ++i)
             args[i] = TextUtils.htmlEncode(args[i]);
 
         String htmlOnly = String.format(HtmlCompat.toHtml(new SpannedString(context.getText(resid)),
@@ -1285,14 +1286,14 @@ public class Utils {
     public static int getPCAPdroidUid(Context context) {
         // NOTE: when called from a work profile, it correctly returns the work profile UID
         AppDescriptor app = AppsResolver.resolveInstalledApp(context.getPackageManager(), BuildConfig.APPLICATION_ID, 0);
-        if(app != null)
+        if (app != null)
             return app.getUid();
         return Utils.UID_UNKNOWN;
     }
 
     // returns the user ID of a given app uid
     public static int getUserId(int uid) {
-        return  uid / PER_USER_RANGE;
+        return uid / PER_USER_RANGE;
     }
 
     @SuppressLint("DefaultLocale")
@@ -1314,14 +1315,22 @@ public class Utils {
 
     public static String trimlvl2str(int lvl) {
         switch (lvl) {
-            case ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN:         return "TRIM_MEMORY_UI_HIDDEN";
-            case ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE:  return "TRIM_MEMORY_RUNNING_MODERATE";
-            case ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW:       return "TRIM_MEMORY_RUNNING_LOW";
-            case ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL:  return "TRIM_MEMORY_RUNNING_CRITICAL";
-            case ComponentCallbacks2.TRIM_MEMORY_BACKGROUND:        return "TRIM_MEMORY_BACKGROUND";
-            case ComponentCallbacks2.TRIM_MEMORY_MODERATE:          return "TRIM_MEMORY_MODERATE";
-            case ComponentCallbacks2.TRIM_MEMORY_COMPLETE:          return "TRIM_MEMORY_COMPLETE";
-            default:                                                return "TRIM_UNKNOWN";
+            case ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN:
+                return "TRIM_MEMORY_UI_HIDDEN";
+            case ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE:
+                return "TRIM_MEMORY_RUNNING_MODERATE";
+            case ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW:
+                return "TRIM_MEMORY_RUNNING_LOW";
+            case ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL:
+                return "TRIM_MEMORY_RUNNING_CRITICAL";
+            case ComponentCallbacks2.TRIM_MEMORY_BACKGROUND:
+                return "TRIM_MEMORY_BACKGROUND";
+            case ComponentCallbacks2.TRIM_MEMORY_MODERATE:
+                return "TRIM_MEMORY_MODERATE";
+            case ComponentCallbacks2.TRIM_MEMORY_COMPLETE:
+                return "TRIM_MEMORY_COMPLETE";
+            default:
+                return "TRIM_UNKNOWN";
         }
     }
 
@@ -1348,7 +1357,7 @@ public class Utils {
     public static void sendImportantNotification(Context context, int id, Notification notification) {
         NotificationManagerCompat man = NotificationManagerCompat.from(context);
 
-        if(!man.areNotificationsEnabled()) {
+        if (!man.areNotificationsEnabled()) {
             String title = notification.extras.getString(Notification.EXTRA_TITLE);
             String description = notification.extras.getString(Notification.EXTRA_TEXT);
             String text = title + " - " + description;
@@ -1374,7 +1383,7 @@ public class Utils {
     }
 
     public static boolean backHandleSearchview(SearchView searchView) {
-        if((searchView != null) && !searchView.isIconified()) {
+        if ((searchView != null) && !searchView.isIconified()) {
             // Required to close the SearchView when the search submit button was not pressed
             searchView.setIconified(true);
             return true;
@@ -1384,7 +1393,7 @@ public class Utils {
     }
 
     public static String getDeviceModel() {
-        if(Build.MODEL.startsWith(Build.MANUFACTURER))
+        if (Build.MODEL.startsWith(Build.MANUFACTURER))
             return Build.MANUFACTURER;
         else
             return Build.MANUFACTURER + " " + Build.MODEL;
@@ -1411,11 +1420,11 @@ public class Utils {
 
     @SuppressWarnings({"unchecked", "deprecation"})
     public static @Nullable <T extends Serializable> T getSerializableExtra(Intent intent, String key, Class<T> clazz) {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
             return intent.getSerializableExtra(key, clazz);
         else {
             try {
-                return (T)intent.getSerializableExtra(key);
+                return (T) intent.getSerializableExtra(key);
             } catch (ClassCastException unused) {
                 return null;
             }
@@ -1424,11 +1433,11 @@ public class Utils {
 
     @SuppressWarnings({"unchecked", "deprecation"})
     public static @Nullable <T extends Serializable> T getSerializable(Bundle bundle, String key, Class<T> clazz) {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
             return bundle.getSerializable(key, clazz);
         else {
             try {
-                return (T)bundle.getSerializable(key);
+                return (T) bundle.getSerializable(key);
             } catch (ClassCastException unused) {
                 return null;
             }
@@ -1445,9 +1454,9 @@ public class Utils {
 
     @SuppressWarnings({"deprecation"})
     public static int getPackageUid(PackageManager pm, String package_name, int flags) throws PackageManager.NameNotFoundException {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
             return pm.getPackageUid(package_name, PackageManager.PackageInfoFlags.of(flags));
-        else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+        else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
             return pm.getPackageUid(package_name, 0);
         else
             return pm.getApplicationInfo(package_name, 0).uid;
@@ -1465,8 +1474,8 @@ public class Utils {
     public static boolean validatePort(String value) {
         try {
             int val = Integer.parseInt(value);
-            return((val > 0) && (val < 65535));
-        } catch(NumberFormatException e) {
+            return ((val > 0) && (val < 65535));
+        } catch (NumberFormatException e) {
             return false;
         }
     }
@@ -1485,11 +1494,11 @@ public class Utils {
         boolean doubleColonFound = false;
 
         int pos = 0, end;
-        while (pos < temp.length() && (end = temp.indexOf(':', pos)) >= pos)  {
+        while (pos < temp.length() && (end = temp.indexOf(':', pos)) >= pos) {
             if (segmentCount == 8)
                 return false;
 
-            if (pos != end)  {
+            if (pos != end) {
                 String value = temp.substring(pos, end);
 
                 if (end == temp.length() - 1 && value.indexOf('.') > 0) {
@@ -1498,8 +1507,7 @@ public class Utils {
                         return false;
                     if (!validateIpv4Address(value))
                         return false;
-                }
-                else if (!isParseableIPv6Segment(temp, pos, end))
+                } else if (!isParseableIPv6Segment(temp, pos, end))
                     return false;
             } else {
                 if (end != 1 && end != temp.length() - 1 && doubleColonFound)
@@ -1533,8 +1541,7 @@ public class Utils {
         while (pos < end) {
             char c = s.charAt(pos++);
             int d = Character.digit(c, radix);
-            if (d < 0)
-            {
+            if (d < 0) {
                 return false;
             }
 
@@ -1551,13 +1558,9 @@ public class Utils {
             return (InetAddresses.isNumericAddress(value));
         else {
             Matcher matcher = Patterns.IP_ADDRESS.matcher(value);
-            return(matcher.matches());
+            return (matcher.matches());
         }
     }
-
-    // https://mkyong.com/regular-expressions/how-to-validate-ip-address-with-regular-expression/
-    private static final Pattern IPV4_PATTERN = Pattern.compile(
-            "^(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\\.(?!$)|$)){4}$");
 
     public static boolean validateIpv4Address(String s) {
         Matcher matcher = IPV4_PATTERN.matcher(s);
@@ -1571,11 +1574,11 @@ public class Utils {
     // rough validation
     public static boolean validateHost(String host) {
         int len = host.length();
-        if((len < 2) || (len > 67))
+        if ((len < 2) || (len > 67))
             return false;
-        if((host.charAt(0) == '-') || (host.charAt(len-1) == '-'))
+        if ((host.charAt(0) == '-') || (host.charAt(len - 1) == '-'))
             return false;
-        if(host.matches(".*[A-Z\\s?!=`@].*"))
+        if (host.matches(".*[A-Z\\s?!=`@].*"))
             return false;
         return true;
     }
@@ -1589,9 +1592,9 @@ public class Utils {
 
             if ("primary".equalsIgnoreCase(type))
                 return Environment.getExternalStorageDirectory() + "/" + split[1];
-        } else if(isDownloadsDocument(uri)) {
+        } else if (isDownloadsDocument(uri)) {
             return downloadsUriToPath(ctx, uri);
-        } else if("content".equalsIgnoreCase(uri.getScheme()))
+        } else if ("content".equalsIgnoreCase(uri.getScheme()))
             return mediastoreUriToPath(ctx, uri);
         else if ("file".equalsIgnoreCase(uri.getScheme()))
             return uri.getPath();
@@ -1599,19 +1602,20 @@ public class Utils {
     }
 
     private static String mediastoreUriToPath(Context ctx, Uri uri) {
-        String[] proj = { MediaStore.Files.FileColumns.DATA };
-        try(Cursor cursor = ctx.getContentResolver().query(uri, proj, null, null, null)) {
+        String[] proj = {MediaStore.Files.FileColumns.DATA};
+        try (Cursor cursor = ctx.getContentResolver().query(uri, proj, null, null, null)) {
             int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            if(cursor.moveToFirst())
+            if (cursor.moveToFirst())
                 return cursor.getString(column_index);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         return null;
     }
 
     private static String downloadsUriToPath(Context ctx, Uri uri) {
         final String id = DocumentsContract.getDocumentId(uri);
-        if(id == null)
+        if (id == null)
             return null;
 
         // Starting with Android O, this "id" is not necessarily a long (row number),
@@ -1634,7 +1638,7 @@ public class Utils {
                 final Uri contentUri = ContentUris.withAppendedId(
                         Uri.parse(contentUriPrefix), id_long);
                 String path = mediastoreUriToPath(ctx, contentUri);
-                if(path != null)
+                if (path != null)
                     return path;
             }
         }
@@ -1650,11 +1654,6 @@ public class Utils {
         return "com.android.providers.downloads.documents".equals(uri.getAuthority());
     }
 
-    public static class UriStat {
-        public String name;
-        public long size;
-    }
-
     // NOTE: in Android 7, the file size of a newly written file can be 0/less than actual size
     public static UriStat getUriStat(Context ctx, Uri uri) {
         String uri_str = uri.toString();
@@ -1663,13 +1662,13 @@ public class Utils {
         // in some devices, cursor.isNull(sizeIndex) is true, which causes size to be 0
         // try to resolve the original path and access it as a file
         String fpath = uriToFilePath(ctx, uri);
-        if(fpath != null) {
+        if (fpath != null) {
             Log.d(TAG, "getUriStat: resolved to file " + fpath);
             uriFile = new File(fpath);
-        } else if(uri_str.startsWith("file://"))
+        } else if (uri_str.startsWith("file://"))
             uriFile = new File(uri_str.substring(7));
 
-        if((uriFile != null) && (uriFile.exists())) {
+        if ((uriFile != null) && (uriFile.exists())) {
             // retrieve via file
             UriStat info = new UriStat();
             info.name = uriFile.getName();
@@ -1679,8 +1678,8 @@ public class Utils {
 
         // retrieve via content uri
         // https://developer.android.com/training/secure-file-sharing/retrieve-info.html#RetrieveFileInfo
-        try(Cursor cursor = ctx.getContentResolver().query(uri, null, null, null, null)) {
-            if((cursor == null) || !cursor.moveToFirst())
+        try (Cursor cursor = ctx.getContentResolver().query(uri, null, null, null, null)) {
+            if ((cursor == null) || !cursor.moveToFirst())
                 return null;
 
             UriStat info = new UriStat();
@@ -1698,9 +1697,9 @@ public class Utils {
 
     @RequiresApi(api = Build.VERSION_CODES.P)
     public static PrivateDnsMode getPrivateDnsMode(@NonNull LinkProperties linkProperties) {
-        if(linkProperties.getPrivateDnsServerName() != null)
+        if (linkProperties.getPrivateDnsServerName() != null)
             return PrivateDnsMode.STRICT;
-        else if(linkProperties.isPrivateDnsActive())
+        else if (linkProperties.isPrivateDnsActive())
             return PrivateDnsMode.OPPORTUNISTIC;
         else
             return PrivateDnsMode.DISABLED;
@@ -1709,7 +1708,7 @@ public class Utils {
     public static @NonNull Enumeration<NetworkInterface> getNetworkInterfaces() {
         try {
             Enumeration<NetworkInterface> ifs = NetworkInterface.getNetworkInterfaces();
-            if(ifs != null)
+            if (ifs != null)
                 return ifs;
         } catch (SocketException | NullPointerException e) {
             // NullPointerException can be thrown on Android < 31 with virtual interface without a
@@ -1721,10 +1720,35 @@ public class Utils {
     }
 
     public static boolean isReadable(String path) {
-        try(FileInputStream ignored = new FileInputStream(path)) {
+        try (FileInputStream ignored = new FileInputStream(path)) {
             return true;
         } catch (Exception ignored) {
             return false;
         }
+    }
+
+    public enum BuildType {
+        UNKNOWN,
+        DEBUG,
+        GITHUB,     // Github release
+        FDROID,     // F-droid release
+        PLAYSTORE,  // Google play release
+    }
+
+    public enum PrivateDnsMode {
+        DISABLED,
+        OPPORTUNISTIC,
+        STRICT;
+
+        @NonNull
+        @Override
+        public String toString() {
+            return super.toString().toLowerCase();
+        }
+    }
+
+    public static class UriStat {
+        public String name;
+        public long size;
     }
 }

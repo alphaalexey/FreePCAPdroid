@@ -49,7 +49,7 @@ public class ListEditAdapter extends ArrayAdapter<MatchList.Rule> implements Tex
 
     public ListEditAdapter(Context context) {
         super(context, R.layout.rule_item);
-        mLayoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mLayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         mApps = new AppsResolver(context);
         mUnknownIcon = ContextCompat.getDrawable(context, R.drawable.ic_image);
         mDefaultIcon = ContextCompat.getDrawable(context, R.drawable.ic_short_text);
@@ -60,15 +60,15 @@ public class ListEditAdapter extends ArrayAdapter<MatchList.Rule> implements Tex
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        if(convertView == null)
+        if (convertView == null)
             convertView = mLayoutInflater.inflate(R.layout.rule_item, parent, false);
 
         MatchList.Rule rule = getItem(position);
-        ((TextView)convertView.findViewById(R.id.item_label)).setText(rule.getLabel());
+        ((TextView) convertView.findViewById(R.id.item_label)).setText(rule.getLabel());
         ImageView icon = convertView.findViewById(R.id.icon);
 
-        if(rule.getType() == MatchList.RuleType.APP) {
-            String package_name = (String)rule.getValue();
+        if (rule.getType() == MatchList.RuleType.APP) {
+            String package_name = (String) rule.getValue();
             AppDescriptor app = mApps.getAppByPackage(package_name, 0);
             Drawable drawable = ((app != null) && (app.getIcon() != null)) ? app.getIcon() : mUnknownIcon;
             icon.setImageDrawable(drawable);
@@ -86,7 +86,7 @@ public class ListEditAdapter extends ArrayAdapter<MatchList.Rule> implements Tex
     public void reload(Iterator<MatchList.Rule> items) {
         clear();
 
-        while(items.hasNext()) {
+        while (items.hasNext()) {
             MatchList.Rule item = items.next();
             add(item);
         }

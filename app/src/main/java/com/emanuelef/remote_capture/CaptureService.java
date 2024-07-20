@@ -63,20 +63,20 @@ import com.emanuelef.remote_capture.activities.ConnectionsActivity;
 import com.emanuelef.remote_capture.activities.FirewallActivity;
 import com.emanuelef.remote_capture.activities.MainActivity;
 import com.emanuelef.remote_capture.fragments.ConnectionsFragment;
+import com.emanuelef.remote_capture.interfaces.PcapDumper;
 import com.emanuelef.remote_capture.model.AppDescriptor;
 import com.emanuelef.remote_capture.model.BlacklistDescriptor;
 import com.emanuelef.remote_capture.model.Blocklist;
 import com.emanuelef.remote_capture.model.CaptureSettings;
+import com.emanuelef.remote_capture.model.CaptureStats;
 import com.emanuelef.remote_capture.model.ConnectionDescriptor;
 import com.emanuelef.remote_capture.model.ConnectionUpdate;
 import com.emanuelef.remote_capture.model.FilterDescriptor;
 import com.emanuelef.remote_capture.model.MatchList;
 import com.emanuelef.remote_capture.model.PortMapping;
 import com.emanuelef.remote_capture.model.Prefs;
-import com.emanuelef.remote_capture.model.CaptureStats;
 import com.emanuelef.remote_capture.pcap_dump.FileDumper;
 import com.emanuelef.remote_capture.pcap_dump.HTTPServer;
-import com.emanuelef.remote_capture.interfaces.PcapDumper;
 import com.emanuelef.remote_capture.pcap_dump.UDPDumper;
 import com.pcapdroid.mitm.MitmAPI;
 
@@ -97,19 +97,44 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class CaptureService extends VpnService implements Runnable {
+    public static final int NOTIFY_ID_VPNSERVICE = 1;
+    public static final int NOTIFY_ID_LOW_MEMORY = 2;
+    public static final int NOTIFY_ID_APP_BLOCKED = 3;
+    /* The maximum connections to log into the ConnectionsRegister. Older connections are dropped.
+     * Max estimated memory usage: less than 4 MB (+8 MB with payload mode minimal). */
+    public static final int CONNECTIONS_LOG_SIZE = 8192;
+    /* The IP address of the virtual network interface */
+    public static final String VPN_IP_ADDRESS = "10.215.173.1";
+    public static final String VPN_IP6_ADDRESS = "fd00:2:fd00:1:fd00:1:fd00:1";
+    /* The DNS server IP address to use to internally analyze the DNS requests.
+     * It must be in the same subnet of the VPN network interface.
+     * After the analysis, requests will be routed to the primary DNS server. */
+    public static final String VPN_VIRTUAL_DNS_SERVER = "10.215.173.2";
     private static final String TAG = "CaptureService";
     private static final String VpnSessionName = "PCAPdroid VPN";
     private static final String NOTIFY_CHAN_VPNSERVICE = "VPNService";
     private static final String NOTIFY_CHAN_MALWARE_DETECTION = "Malware detection";
     private static final String NOTIFY_CHAN_OTHER = "Other";
     private static final int VPN_MTU = 10000;
-    public static final int NOTIFY_ID_VPNSERVICE = 1;
-    public static final int NOTIFY_ID_LOW_MEMORY = 2;
-    public static final int NOTIFY_ID_APP_BLOCKED = 3;
+    private static final MutableLiveData<CaptureStats> lastStats = new MutableLiveData<>();
+    private static final MutableLiveData<ServiceStatus> serviceStatus = new MutableLiveData<>();
     private static CaptureService INSTANCE;
     private static boolean HAS_ERROR = false;
+
+    static {
+        /* Load native library */
+        try {
+            System.loadLibrary("capture");
+            CaptureService.initPlatformInfo(Utils.getAppVersionString(), Utils.getDeviceModel(), Utils.getOsVersion());
+        } catch (UnsatisfiedLinkError e) {
+            // This should only happen while running tests
+            //e.printStackTrace();
+        }
+    }
+
     final ReentrantLock mLock = new ReentrantLock();
     final Condition mCaptureStopped = mLock.newCondition();
+    private final LinkedBlockingDeque<Pair<ConnectionDescriptor[], ConnectionUpdate[]>> mPendingUpdates = new LinkedBlockingDeque<>(32);
     private ParcelFileDescriptor mParcelFileDescriptor;
     private boolean mIsAlwaysOnVPN;
     private boolean mRevoked;
@@ -122,7 +147,6 @@ public class CaptureService extends VpnService implements Runnable {
     private Thread mConnUpdateThread;
     private Thread mDumperThread;
     private MitmReceiver mMitmReceiver;
-    private final LinkedBlockingDeque<Pair<ConnectionDescriptor[], ConnectionUpdate[]>> mPendingUpdates = new LinkedBlockingDeque<>(32);
     private LinkedBlockingDeque<byte[]> mDumpQueue;
     private String vpn_ipv4;
     private String vpn_dns;
@@ -157,40 +181,276 @@ public class CaptureService extends VpnService implements Runnable {
     private String mSocks5Address;
     private int mSocks5Port;
     private String mSocks5Auth;
-    private static final MutableLiveData<CaptureStats> lastStats = new MutableLiveData<>();
-    private static final MutableLiveData<ServiceStatus> serviceStatus = new MutableLiveData<>();
     private boolean mLowMemory;
     private BroadcastReceiver mNewAppsInstallReceiver;
     private Utils.PrivateDnsMode mPrivateDnsMode;
 
-    /* The maximum connections to log into the ConnectionsRegister. Older connections are dropped.
-     * Max estimated memory usage: less than 4 MB (+8 MB with payload mode minimal). */
-    public static final int CONNECTIONS_LOG_SIZE = 8192;
+    /* Stops the running Service. The SERVICE_STATUS_STOPPED notification is sent asynchronously
+     * when mCaptureThread terminates. */
+    @SuppressWarnings("deprecation")
+    public static void stopService() {
+        CaptureService captureService = INSTANCE;
+        Log.d(TAG, "stopService called (instance? " + (captureService != null) + ")");
 
-    /* The IP address of the virtual network interface */
-    public static final String VPN_IP_ADDRESS = "10.215.173.1";
-    public static final String VPN_IP6_ADDRESS = "fd00:2:fd00:1:fd00:1:fd00:1";
+        if (captureService == null)
+            return;
 
-    /* The DNS server IP address to use to internally analyze the DNS requests.
-     * It must be in the same subnet of the VPN network interface.
-     * After the analysis, requests will be routed to the primary DNS server. */
-    public static final String VPN_VIRTUAL_DNS_SERVER = "10.215.173.2";
+        captureService.mStopping = true;
+        stopPacketLoop();
 
-    public enum ServiceStatus {
-        STOPPED,
-        STARTED
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+            captureService.stopForeground(STOP_FOREGROUND_REMOVE);
+        else
+            captureService.stopForeground(true);
+
+        captureService.stopSelf();
     }
 
-    static {
-        /* Load native library */
-        try {
-            System.loadLibrary("capture");
-            CaptureService.initPlatformInfo(Utils.getAppVersionString(), Utils.getDeviceModel(), Utils.getOsVersion());
-        } catch (UnsatisfiedLinkError e) {
-            // This should only happen while running tests
-            //e.printStackTrace();
+    /* Check if the VPN service was launched */
+    public static boolean isServiceActive() {
+        return ((INSTANCE != null) &&
+                (INSTANCE.mCaptureThread != null));
+    }
+
+    public static MitmReceiver.Status getMitmProxyStatus() {
+        if ((INSTANCE == null) || (INSTANCE.mMitmReceiver == null))
+            return MitmReceiver.Status.NOT_STARTED;
+
+        return INSTANCE.mMitmReceiver.getProxyStatus();
+    }
+
+    public static boolean isLowMemory() {
+        return ((INSTANCE != null) && (INSTANCE.mLowMemory));
+    }
+
+    public static boolean isAlwaysOnVPN() {
+        return ((INSTANCE != null) && INSTANCE.mIsAlwaysOnVPN);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.Q)
+    public static boolean isLockdownVPN() {
+        return ((INSTANCE != null) && INSTANCE.isLockdownEnabled());
+    }
+
+    public static Set<String> getAppFilter() {
+        return ((INSTANCE != null) ? INSTANCE.mSettings.app_filter : null);
+    }
+
+    public static Uri getPcapUri() {
+        return ((INSTANCE != null) ? INSTANCE.mPcapUri : null);
+    }
+
+    public static String getPcapFname() {
+        return ((INSTANCE != null) ? INSTANCE.mPcapFname : null);
+    }
+
+    public static boolean isUserDefinedPcapUri() {
+        return (INSTANCE == null || !INSTANCE.mSettings.pcap_uri.isEmpty());
+    }
+
+    public static long getBytes() {
+        return ((INSTANCE != null) ? INSTANCE.last_bytes : 0);
+    }
+
+    public static String getCollectorAddress() {
+        return ((INSTANCE != null) ? INSTANCE.mSettings.collector_address : "");
+    }
+
+    public static int getCollectorPort() {
+        return ((INSTANCE != null) ? INSTANCE.mSettings.collector_port : 0);
+    }
+
+    public static int getHTTPServerPort() {
+        return ((INSTANCE != null) ? INSTANCE.mSettings.http_server_port : 0);
+    }
+
+    public static Prefs.DumpMode getDumpMode() {
+        return ((INSTANCE != null) ? INSTANCE.mSettings.dump_mode : Prefs.DumpMode.NONE);
+    }
+
+    public static String getDNSServer() {
+        return ((INSTANCE != null) ? INSTANCE.getDnsServer() : "");
+    }
+
+    public static boolean isDNSEncrypted() {
+        return ((INSTANCE != null) && INSTANCE.mDnsEncrypted);
+    }
+
+    public static @NonNull CaptureService requireInstance() {
+        CaptureService inst = INSTANCE;
+        assert (inst != null);
+        return (inst);
+    }
+
+    public static @Nullable ConnectionsRegister getConnsRegister() {
+        return ((INSTANCE != null) ? INSTANCE.conn_reg : null);
+    }
+
+    public static @NonNull ConnectionsRegister requireConnsRegister() {
+        ConnectionsRegister reg = getConnsRegister();
+
+        assert (reg != null);
+
+        return reg;
+    }
+
+    public static boolean isCapturingAsRoot() {
+        return ((INSTANCE != null) &&
+                (INSTANCE.isRootCapture() == 1));
+    }
+
+    public static boolean isDecryptingTLS() {
+        return ((INSTANCE != null) &&
+                (INSTANCE.isTlsDecryptionEnabled() == 1));
+    }
+
+    public static boolean isReadingFromPcapFile() {
+        return ((INSTANCE != null) &&
+                (INSTANCE.isPcapFileCapture() == 1));
+    }
+
+    public static boolean isIPv6Enabled() {
+        return ((INSTANCE != null) &&
+                (INSTANCE.getIPv6Enabled() == 1));
+    }
+
+    public static boolean isDecryptionListEnabled() {
+        return (INSTANCE != null && (INSTANCE.mDecryptionList != null));
+    }
+
+    public static Prefs.PayloadMode getCurPayloadMode() {
+        if (INSTANCE == null)
+            return Prefs.PayloadMode.MINIMAL;
+
+        return INSTANCE.mSettings.full_payload ? Prefs.PayloadMode.FULL : Prefs.PayloadMode.MINIMAL;
+    }
+
+    public static void requestBlacklistsUpdate() {
+        if (INSTANCE != null) {
+            INSTANCE.mBlacklistsUpdateRequested = true;
+
+            // Wake the update thread to run the blacklist thread
+            INSTANCE.mPendingUpdates.offer(new Pair<>(new ConnectionDescriptor[0], new ConnectionUpdate[0]));
         }
     }
+
+    public static String getInterfaceName(int ifidx) {
+        String ifname = null;
+
+        if (INSTANCE != null)
+            ifname = INSTANCE.getIfname(ifidx);
+        return (ifname != null) ? ifname : "";
+    }
+
+    public static void reloadMalwareWhitelist() {
+        if ((INSTANCE == null) || !INSTANCE.mMalwareDetectionEnabled)
+            return;
+
+        Log.i(TAG, "reloading malware whitelist");
+        reloadMalwareWhitelist(INSTANCE.mMalwareWhitelist.toListDescriptor());
+    }
+
+    public static void reloadDecryptionList() {
+        if ((INSTANCE == null) || (INSTANCE.mDecryptionList == null))
+            return;
+
+        Log.i(TAG, "reloading TLS decryption whitelist");
+        reloadDecryptionList(INSTANCE.mDecryptionList.toListDescriptor());
+    }
+
+    public static void setFirewallEnabled(boolean enabled) {
+        if (INSTANCE == null)
+            return;
+
+        INSTANCE.mFirewallEnabled = enabled;
+        nativeSetFirewallEnabled(enabled);
+    }
+
+    public static @NonNull CaptureStats getStats() {
+        CaptureStats stats = lastStats.getValue();
+        return ((stats != null) ? stats : new CaptureStats());
+    }
+
+    public static void observeStats(LifecycleOwner lifecycleOwner, Observer<CaptureStats> observer) {
+        lastStats.observe(lifecycleOwner, observer);
+    }
+
+    public static void observeStatus(LifecycleOwner lifecycleOwner, Observer<ServiceStatus> observer) {
+        serviceStatus.observe(lifecycleOwner, observer);
+    }
+
+    public static void waitForCaptureStop() {
+        if (INSTANCE == null)
+            return;
+
+        Log.d(TAG, "waitForCaptureStop " + Thread.currentThread().getName());
+        INSTANCE.mLock.lock();
+        try {
+            while (INSTANCE.mCaptureThread != null) {
+                try {
+                    INSTANCE.mCaptureStopped.await();
+                } catch (InterruptedException ignored) {
+                }
+            }
+        } finally {
+            INSTANCE.mLock.unlock();
+        }
+        Log.d(TAG, "waitForCaptureStop done " + Thread.currentThread().getName());
+    }
+
+    public static boolean hasError() {
+        return HAS_ERROR;
+    }
+
+    public static @Nullable Utils.PrivateDnsMode getPrivateDnsMode() {
+        return isServiceActive() ? INSTANCE.mPrivateDnsMode : null;
+    }
+
+    public static native int initLogger(String path, int level);
+
+    public static native int writeLog(int logger, int lvl, String message);
+
+    private static native void initPlatformInfo(String appver, String device, String os);
+
+    private static native void runPacketLoop(int fd, CaptureService vpn, int sdk);
+
+    private static native void stopPacketLoop();
+
+    private static native int getFdSetSize();
+
+    private static native void setPrivateDnsBlocked(boolean to_block);
+
+    private static native void addPortMapping(int ipproto, int orig_port, int redirect_port, String redirect_ip);
+
+    private static native void reloadBlacklists();
+
+    private static native boolean reloadBlocklist(MatchList.ListDescriptor blocklist);
+
+    private static native boolean reloadFirewallWhitelist(MatchList.ListDescriptor whitelist);
+
+    private static native boolean reloadMalwareWhitelist(MatchList.ListDescriptor whitelist);
+
+    private static native boolean reloadDecryptionList(MatchList.ListDescriptor whitelist);
+
+    public static native void askStatsDump();
+
+    public static native byte[] getPcapHeader();
+
+    public static native void nativeSetFirewallEnabled(boolean enabled);
+
+    public static native int getNumCheckedMalwareConnections();
+
+    /* The following methods are called from native code */
+
+    public static native int getNumCheckedFirewallConnections();
+
+    public static native int rootCmd(String prog, String args);
+
+    public static native List<String> getL7Protocols();
+
+    public static native void dumpMasterSecret(byte[] secret);
+
+    public static native boolean hasSeenPcapdroidTrailer();
 
     @Override
     protected void attachBaseContext(Context base) {
@@ -230,7 +490,7 @@ public class CaptureService extends VpnService implements Runnable {
 
         // NOTE: onStartCommand may be called when the capture is already running, e.g. if the user
         // turns on the always-on VPN while the capture is running in root mode
-        if(mCaptureThread != null) {
+        if (mCaptureThread != null) {
             // Restarting the capture requires calling stopAndJoinThreads, which is blocking.
             // Choosing not to support this right now.
             Log.e(TAG, "Restarting the capture is not supported");
@@ -249,7 +509,7 @@ public class CaptureService extends VpnService implements Runnable {
         // It can be simulated by starting the capture, putting PCAPdroid in the background and then running:
         //  adb shell ps | grep remote_capture | awk '{print $2}' | xargs adb shell run-as com.emanuelef.remote_capture.debug kill
         CaptureSettings settings = ((intent == null) ? null : Utils.getSerializableExtra(intent, "settings", CaptureSettings.class));
-        if(settings == null) {
+        if (settings == null) {
             // Use the settings from mPrefs
 
             // An Intent without extras is delivered in case of always on VPN
@@ -262,16 +522,16 @@ public class CaptureService extends VpnService implements Runnable {
             mIsAlwaysOnVPN = false;
         }
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
             mIsAlwaysOnVPN |= isAlwaysOn();
 
         Log.d(TAG, "alwaysOn? " + mIsAlwaysOnVPN);
-        if(mIsAlwaysOnVPN) {
+        if (mIsAlwaysOnVPN) {
             mSettings.root_capture = false;
             mSettings.input_pcap_path = null;
         }
 
-        if(mSettings.readFromPcap()) {
+        if (mSettings.readFromPcap()) {
             // Disable incompatible settings
             mSettings.dump_mode = Prefs.DumpMode.NONE;
             mSettings.app_filter.clear();
@@ -294,21 +554,21 @@ public class CaptureService extends VpnService implements Runnable {
         mIfIndexToName = new SparseArray<>();
 
         Enumeration<NetworkInterface> ifaces = Utils.getNetworkInterfaces();
-        while(ifaces.hasMoreElements()) {
+        while (ifaces.hasMoreElements()) {
             NetworkInterface iface = ifaces.nextElement();
 
             Log.d(TAG, "ifidx " + iface.getIndex() + " -> " + iface.getName());
             mIfIndexToName.put(iface.getIndex(), iface.getName());
         }
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             ConnectivityManager cm = (ConnectivityManager) getSystemService(Service.CONNECTIVITY_SERVICE);
             Network net = cm.getActiveNetwork();
 
-            if(net != null) {
+            if (net != null) {
                 handleLinkProperties(cm.getLinkProperties(net));
 
-                if(Prefs.useSystemDns(mPrefs) || mSettings.root_capture) {
+                if (Prefs.useSystemDns(mPrefs) || mSettings.root_capture) {
                     dns_server = Utils.getDnsServer(cm, net);
                     if (dns_server == null)
                         dns_server = fallbackDnsV4;
@@ -334,21 +594,21 @@ public class CaptureService extends VpnService implements Runnable {
         HAS_ERROR = false;
 
         // Possibly allocate the dumper
-        if(mSettings.dump_mode == Prefs.DumpMode.HTTP_SERVER)
+        if (mSettings.dump_mode == Prefs.DumpMode.HTTP_SERVER)
             mDumper = new HTTPServer(this, mSettings.http_server_port, mSettings.pcapng_format);
-        else if(mSettings.dump_mode == Prefs.DumpMode.PCAP_FILE) {
+        else if (mSettings.dump_mode == Prefs.DumpMode.PCAP_FILE) {
             mPcapFname = !mSettings.pcap_name.isEmpty() ? mSettings.pcap_name : Utils.getUniquePcapFileName(this, mSettings.pcapng_format);
 
-            if(!mSettings.pcap_uri.isEmpty())
+            if (!mSettings.pcap_uri.isEmpty())
                 mPcapUri = Uri.parse(mSettings.pcap_uri);
             else
                 mPcapUri = Utils.getDownloadsUri(this, mPcapFname);
 
-            if(mPcapUri == null)
+            if (mPcapUri == null)
                 return abortStart();
 
             mDumper = new FileDumper(this, mPcapUri);
-        } else if(mSettings.dump_mode == Prefs.DumpMode.UDP_EXPORTER) {
+        } else if (mSettings.dump_mode == Prefs.DumpMode.UDP_EXPORTER) {
             InetAddress addr;
 
             try {
@@ -362,7 +622,7 @@ public class CaptureService extends VpnService implements Runnable {
             mDumper = new UDPDumper(new InetSocketAddress(addr, mSettings.collector_port), mSettings.pcapng_format);
         }
 
-        if(mDumper != null) {
+        if (mDumper != null) {
             // Max memory usage = (JAVA_PCAP_BUFFER_SIZE * 64) = 32 MB
             mDumpQueue = new LinkedBlockingDeque<>(64);
 
@@ -378,8 +638,8 @@ public class CaptureService extends VpnService implements Runnable {
 
         mSocks5Address = "";
         mSocks5Enabled = mSettings.socks5_enabled || mSettings.tls_decryption;
-        if(mSocks5Enabled) {
-            if(mSettings.tls_decryption) {
+        if (mSocks5Enabled) {
+            if (mSettings.tls_decryption) {
                 // Built-in decryption
                 mSocks5Address = "127.0.0.1";
                 mSocks5Port = MitmReceiver.TLS_DECRYPTION_PROXY_PORT;
@@ -387,7 +647,7 @@ public class CaptureService extends VpnService implements Runnable {
 
                 mMitmReceiver = new MitmReceiver(this, mSettings, mSocks5Auth);
                 try {
-                    if(!mMitmReceiver.start())
+                    if (!mMitmReceiver.start())
                         return abortStart();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -398,14 +658,14 @@ public class CaptureService extends VpnService implements Runnable {
                 mSocks5Address = mSettings.socks5_proxy_address;
                 mSocks5Port = mSettings.socks5_proxy_port;
 
-                if(!mSettings.socks5_username.isEmpty() && !mSettings.socks5_password.isEmpty())
+                if (!mSettings.socks5_username.isEmpty() && !mSettings.socks5_password.isEmpty())
                     mSocks5Auth = mSettings.socks5_username + ":" + mSettings.socks5_password;
                 else
                     mSocks5Auth = null;
             }
         }
 
-        if(mSettings.tls_decryption && !mSettings.root_capture && !mSettings.readFromPcap())
+        if (mSettings.tls_decryption && !mSettings.root_capture && !mSettings.readFromPcap())
             mDecryptionList = PCAPdroid.getInstance().getDecryptionList();
         else
             mDecryptionList = null;
@@ -413,7 +673,7 @@ public class CaptureService extends VpnService implements Runnable {
         if ((mSettings.app_filter != null) && (!mSettings.app_filter.isEmpty())) {
             ArrayList<Integer> uids = new ArrayList<>();
 
-            for (String package_name: mSettings.app_filter) {
+            for (String package_name : mSettings.app_filter) {
                 int uid;
 
                 try {
@@ -430,7 +690,7 @@ public class CaptureService extends VpnService implements Runnable {
             mAppFilterUids = new int[uids.size()];
 
             int i = 0;
-            for (Integer uid: uids)
+            for (Integer uid : uids)
                 mAppFilterUids[i++] = uid;
         } else
             mAppFilterUids = new int[0];
@@ -438,7 +698,7 @@ public class CaptureService extends VpnService implements Runnable {
         mMalwareDetectionEnabled = Prefs.isMalwareDetectionEnabled(mPrefs);
         mFirewallEnabled = Prefs.isFirewallEnabled(this, mPrefs);
 
-        if(!mSettings.root_capture && !mSettings.readFromPcap()) {
+        if (!mSettings.root_capture && !mSettings.readFromPcap()) {
             Log.i(TAG, "Using DNS server " + dns_server);
 
             // VPN
@@ -478,7 +738,7 @@ public class CaptureService extends VpnService implements Runnable {
                     // NOTE: the API requires a package name, however it is converted to a UID
                     // (see Vpn.java addUserToRanges). This means that vpn routing happens on a UID basis,
                     // not on a package-name basis!
-                    for (String package_name: mSettings.app_filter)
+                    for (String package_name : mSettings.app_filter)
                         builder.addAllowedApplication(package_name);
                 } catch (PackageManager.NameNotFoundException e) {
                     String msg = String.format(getResources().getString(R.string.app_not_found), mSettings.app_filter);
@@ -488,7 +748,7 @@ public class CaptureService extends VpnService implements Runnable {
             } else {
                 // VPN exceptions
                 Set<String> exceptions = mPrefs.getStringSet(Prefs.PREF_VPN_EXCEPTIONS, new HashSet<>());
-                for(String packageName: exceptions) {
+                for (String packageName : exceptions) {
                     try {
                         builder.addDisallowedApplication(packageName);
                     } catch (PackageManager.NameNotFoundException e) {
@@ -496,7 +756,7 @@ public class CaptureService extends VpnService implements Runnable {
                     }
                 }
 
-                if(mSettings.tls_decryption) {
+                if (mSettings.tls_decryption) {
                     // Exclude the mitm addon traffic in case system-wide decryption is performed
                     // Important: cannot call addDisallowedApplication with addAllowedApplication
                     try {
@@ -507,7 +767,7 @@ public class CaptureService extends VpnService implements Runnable {
                 }
             }
 
-            if(Prefs.isPortMappingEnabled(mPrefs)) {
+            if (Prefs.isPortMappingEnabled(mPrefs)) {
                 PortMapping portMap = new PortMapping(this);
                 Iterator<PortMapping.PortMap> it = portMap.iter();
                 while (it.hasNext()) {
@@ -526,7 +786,7 @@ public class CaptureService extends VpnService implements Runnable {
 
         mMalwareWhitelist = PCAPdroid.getInstance().getMalwareWhitelist();
         mBlacklists = PCAPdroid.getInstance().getBlacklists();
-        if(mMalwareDetectionEnabled && !mBlacklists.needsUpdate(true))
+        if (mMalwareDetectionEnabled && !mBlacklists.needsUpdate(true))
             reloadBlacklists();
         checkBlacklistsUpdates(true);
 
@@ -536,12 +796,12 @@ public class CaptureService extends VpnService implements Runnable {
         mConnUpdateThread = new Thread(this::connUpdateWork, "UpdateListener");
         mConnUpdateThread.start();
 
-        if(mDumper != null) {
+        if (mDumper != null) {
             mDumperThread = new Thread(this::dumpWork, "DumperThread");
             mDumperThread.start();
         }
 
-        if(mFirewallEnabled) {
+        if (mFirewallEnabled) {
             mNewAppsInstallReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
@@ -550,8 +810,8 @@ public class CaptureService extends VpnService implements Runnable {
                         boolean newInstall = !intent.getBooleanExtra(Intent.EXTRA_REPLACING, false);
                         String packageName = intent.getData().getSchemeSpecificPart();
 
-                        if(newInstall && Prefs.blockNewApps(mPrefs)) {
-                            if(!mBlocklist.addApp(packageName))
+                        if (newInstall && Prefs.blockNewApps(mPrefs)) {
+                            if (!mBlocklist.addApp(packageName))
                                 return;
 
                             mBlocklist.save();
@@ -571,7 +831,7 @@ public class CaptureService extends VpnService implements Runnable {
 
                             // Notify the user
                             NotificationManagerCompat man = NotificationManagerCompat.from(context);
-                            if(man.areNotificationsEnabled()) {
+                            if (man.areNotificationsEnabled()) {
                                 Notification notification = new NotificationCompat.Builder(CaptureService.this, NOTIFY_CHAN_OTHER)
                                         .setContentIntent(pi)
                                         .setSmallIcon(R.drawable.ic_logo)
@@ -624,15 +884,15 @@ public class CaptureService extends VpnService implements Runnable {
 
         unregisterNetworkCallbacks();
 
-        if(mBlacklists != null)
+        if (mBlacklists != null)
             mBlacklists.abortUpdate();
 
-        if(mCaptureThread != null)
+        if (mCaptureThread != null)
             mCaptureThread.interrupt();
-        if(mBlacklistsUpdateThread != null)
+        if (mBlacklistsUpdateThread != null)
             mBlacklistsUpdateThread.interrupt();
 
-        if(mNewAppsInstallReceiver != null) {
+        if (mNewAppsInstallReceiver != null) {
             unregisterReceiver(mNewAppsInstallReceiver);
             mNewAppsInstallReceiver = null;
         }
@@ -641,7 +901,7 @@ public class CaptureService extends VpnService implements Runnable {
     }
 
     private void setupNotifications() {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
             // VPN running notification channel
@@ -694,7 +954,7 @@ public class CaptureService extends VpnService implements Runnable {
     }
 
     private void updateNotification() {
-        if(mStopping)
+        if (mStopping)
             return;
 
         Notification notification = getStatusNotification();
@@ -706,7 +966,7 @@ public class CaptureService extends VpnService implements Runnable {
 
         AppsResolver resolver = new AppsResolver(this);
         AppDescriptor app = resolver.getAppByUid(conn.uid, 0);
-        if(app == null)
+        if (app == null)
             return;
 
         FilterDescriptor filter = new FilterDescriptor();
@@ -719,7 +979,7 @@ public class CaptureService extends VpnService implements Runnable {
                 intent, Utils.getIntentFlags(PendingIntent.FLAG_UPDATE_CURRENT));
 
         String rule_label;
-        if(conn.isBlacklistedHost())
+        if (conn.isBlacklistedHost())
             rule_label = MatchList.getRuleLabel(this, MatchList.RuleType.HOST, conn.info);
         else
             rule_label = MatchList.getRuleLabel(this, MatchList.RuleType.IP, conn.dst_ip);
@@ -752,7 +1012,7 @@ public class CaptureService extends VpnService implements Runnable {
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void registerNetworkCallbacks() {
-        if(mNetworkCallback != null)
+        if (mNetworkCallback != null)
             return;
 
         String fallbackDns = Prefs.getDnsServerV4(mPrefs);
@@ -764,7 +1024,7 @@ public class CaptureService extends VpnService implements Runnable {
 
                 // If the network goes offline we roll back to the fallback DNS server to
                 // avoid possibly using a private IP DNS server not reachable anymore
-                if(network.getNetworkHandle() == mMonitoredNetwork) {
+                if (network.getNetworkHandle() == mMonitoredNetwork) {
                     Log.i(TAG, "Main network " + network + " lost, using fallback DNS " + fallbackDns);
                     dns_server = fallbackDns;
                     mMonitoredNetwork = 0;
@@ -780,7 +1040,7 @@ public class CaptureService extends VpnService implements Runnable {
             public void onLinkPropertiesChanged(@NonNull Network network, @NonNull LinkProperties linkProperties) {
                 Log.d(TAG, "onLinkPropertiesChanged " + network);
 
-                if(network.getNetworkHandle() == mMonitoredNetwork)
+                if (network.getNetworkHandle() == mMonitoredNetwork)
                     handleLinkProperties(linkProperties);
             }
         };
@@ -802,13 +1062,13 @@ public class CaptureService extends VpnService implements Runnable {
     }
 
     private void unregisterNetworkCallbacks() {
-        if(mNetworkCallback != null) {
+        if (mNetworkCallback != null) {
             ConnectivityManager cm = (ConnectivityManager) getSystemService(Service.CONNECTIVITY_SERVICE);
 
             try {
                 Log.d(TAG, "unregisterNetworkCallback");
                 cm.unregisterNetworkCallback(mNetworkCallback);
-            } catch(IllegalArgumentException e) {
+            } catch (IllegalArgumentException e) {
                 Log.w(TAG, "unregisterNetworkCallback failed: " + e);
             }
 
@@ -817,17 +1077,17 @@ public class CaptureService extends VpnService implements Runnable {
     }
 
     private void handleLinkProperties(LinkProperties linkProperties) {
-        if(linkProperties == null)
+        if (linkProperties == null)
             return;
 
-        if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
             mPrivateDnsMode = Utils.getPrivateDnsMode(linkProperties);
             Log.i(TAG, "Private DNS: " + mPrivateDnsMode);
 
-            if(mSettings.readFromPcap()) {
+            if (mSettings.readFromPcap()) {
                 mDnsEncrypted = false;
                 setPrivateDnsBlocked(false);
-            } else if(!mSettings.root_capture && mSettings.auto_block_private_dns) {
+            } else if (!mSettings.root_capture && mSettings.auto_block_private_dns) {
                 mDnsEncrypted = mPrivateDnsMode.equals(Utils.PrivateDnsMode.STRICT);
                 boolean opportunistic_mode = mPrivateDnsMode.equals(Utils.PrivateDnsMode.OPPORTUNISTIC);
 
@@ -847,7 +1107,7 @@ public class CaptureService extends VpnService implements Runnable {
                 setPrivateDnsBlocked(false);
             }
 
-            if(mDnsEncrypted && !mStrictDnsNoticeShown) {
+            if (mDnsEncrypted && !mStrictDnsNoticeShown) {
                 mStrictDnsNoticeShown = true;
                 Utils.showToastLong(this, R.string.private_dns_message_notice);
             }
@@ -865,7 +1125,7 @@ public class CaptureService extends VpnService implements Runnable {
 
         Log.d(TAG, "Joining threads...");
 
-        while((mConnUpdateThread != null) && (mConnUpdateThread.isAlive())) {
+        while ((mConnUpdateThread != null) && (mConnUpdateThread.isAlive())) {
             try {
                 Log.d(TAG, "Joining conn update thread...");
                 mConnUpdateThread.join();
@@ -875,7 +1135,7 @@ public class CaptureService extends VpnService implements Runnable {
         }
         mConnUpdateThread = null;
 
-        while((mDumperThread != null) && (mDumperThread.isAlive())) {
+        while ((mDumperThread != null) && (mDumperThread.isAlive())) {
             try {
                 Log.d(TAG, "Joining dumper thread...");
                 mDumperThread.join();
@@ -886,7 +1146,7 @@ public class CaptureService extends VpnService implements Runnable {
         mDumperThread = null;
         mDumper = null;
 
-        if(mMitmReceiver != null) {
+        if (mMitmReceiver != null) {
             try {
                 mMitmReceiver.stop();
             } catch (IOException e) {
@@ -896,58 +1156,11 @@ public class CaptureService extends VpnService implements Runnable {
         }
     }
 
-    /* Stops the running Service. The SERVICE_STATUS_STOPPED notification is sent asynchronously
-     * when mCaptureThread terminates. */
-    @SuppressWarnings("deprecation")
-    public static void stopService() {
-        CaptureService captureService = INSTANCE;
-        Log.d(TAG, "stopService called (instance? " + (captureService != null) + ")");
-
-        if(captureService == null)
-            return;
-
-        captureService.mStopping = true;
-        stopPacketLoop();
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-            captureService.stopForeground(STOP_FOREGROUND_REMOVE);
-        else
-            captureService.stopForeground(true);
-
-        captureService.stopSelf();
-    }
-
-    /* Check if the VPN service was launched */
-    public static boolean isServiceActive() {
-        return((INSTANCE != null) &&
-                (INSTANCE.mCaptureThread != null));
-    }
-
-    public static MitmReceiver.Status getMitmProxyStatus() {
-        if((INSTANCE == null) || (INSTANCE.mMitmReceiver == null))
-            return MitmReceiver.Status.NOT_STARTED;
-
-        return INSTANCE.mMitmReceiver.getProxyStatus();
-    }
-
-    public static boolean isLowMemory() {
-        return((INSTANCE != null) && (INSTANCE.mLowMemory));
-    }
-
-    public static boolean isAlwaysOnVPN() {
-        return((INSTANCE != null) && INSTANCE.mIsAlwaysOnVPN);
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.Q)
-    public static boolean isLockdownVPN() {
-        return ((INSTANCE != null) && INSTANCE.isLockdownEnabled());
-    }
-
     private void checkBlacklistsUpdates(boolean firstUpdate) {
-        if(!mMalwareDetectionEnabled || (mBlacklistsUpdateThread != null))
+        if (!mMalwareDetectionEnabled || (mBlacklistsUpdateThread != null))
             return;
 
-        if(mBlacklistsUpdateRequested || mBlacklists.needsUpdate(firstUpdate)) {
+        if (mBlacklistsUpdateRequested || mBlacklists.needsUpdate(firstUpdate)) {
             mBlacklistsUpdateThread = new Thread(this::updateBlacklistsWork, "Blacklists Update");
             mBlacklistsUpdateThread.start();
         }
@@ -961,18 +1174,19 @@ public class CaptureService extends VpnService implements Runnable {
     }
 
     private String getIfname(int ifidx) {
-        if(ifidx <= 0)
+        if (ifidx <= 0)
             return "";
 
         String rv = mIfIndexToName.get(ifidx);
-        if(rv != null)
+        if (rv != null)
             return rv;
 
         // Not found, try to retrieve it
         NetworkInterface iface = null;
         try {
             iface = NetworkInterface.getByIndex(ifidx);
-        } catch (SocketException ignored) {}
+        } catch (SocketException ignored) {
+        }
         rv = (iface != null) ? iface.getName() : "";
 
         // store it even if not found, to avoid looking up it again
@@ -980,133 +1194,23 @@ public class CaptureService extends VpnService implements Runnable {
         return rv;
     }
 
-    public static Set<String> getAppFilter() {
-        return((INSTANCE != null) ? INSTANCE.mSettings.app_filter : null);
-    }
-
-    public static Uri getPcapUri() {
-        return ((INSTANCE != null) ? INSTANCE.mPcapUri : null);
-    }
-
-    public static String getPcapFname() {
-        return ((INSTANCE != null) ? INSTANCE.mPcapFname : null);
-    }
-
-    public static boolean isUserDefinedPcapUri() {
-        return (INSTANCE == null || !INSTANCE.mSettings.pcap_uri.isEmpty());
-    }
-
-    public static long getBytes() {
-        return((INSTANCE != null) ? INSTANCE.last_bytes : 0);
-    }
-
-    public static String getCollectorAddress() {
-        return((INSTANCE != null) ? INSTANCE.mSettings.collector_address : "");
-    }
-
-    public static int getCollectorPort() {
-        return((INSTANCE != null) ? INSTANCE.mSettings.collector_port : 0);
-    }
-
-    public static int getHTTPServerPort() {
-        return((INSTANCE != null) ? INSTANCE.mSettings.http_server_port : 0);
-    }
-
-    public static Prefs.DumpMode getDumpMode() {
-        return((INSTANCE != null) ? INSTANCE.mSettings.dump_mode : Prefs.DumpMode.NONE);
-    }
-
-    public static String getDNSServer() {
-        return((INSTANCE != null) ? INSTANCE.getDnsServer() : "");
-    }
-
-    public static boolean isDNSEncrypted() {
-        return((INSTANCE != null) && INSTANCE.mDnsEncrypted);
-    }
-
-    public static @NonNull CaptureService requireInstance() {
-        CaptureService inst = INSTANCE;
-        assert(inst != null);
-        return(inst);
-    }
-
-    public static @Nullable ConnectionsRegister getConnsRegister() {
-        return((INSTANCE != null) ? INSTANCE.conn_reg : null);
-    }
-
-    public static @NonNull ConnectionsRegister requireConnsRegister() {
-        ConnectionsRegister reg = getConnsRegister();
-
-        assert(reg != null);
-
-        return reg;
-    }
-
-    public static boolean isCapturingAsRoot() {
-        return((INSTANCE != null) &&
-                (INSTANCE.isRootCapture() == 1));
-    }
-
-    public static boolean isDecryptingTLS() {
-        return((INSTANCE != null) &&
-                (INSTANCE.isTlsDecryptionEnabled() == 1));
-    }
-
-    public static boolean isReadingFromPcapFile() {
-        return((INSTANCE != null) &&
-                (INSTANCE.isPcapFileCapture() == 1));
-    }
-
-    public static boolean isIPv6Enabled() {
-        return((INSTANCE != null) &&
-                (INSTANCE.getIPv6Enabled() == 1));
-    }
-
-    public static boolean isDecryptionListEnabled() {
-        return(INSTANCE != null && (INSTANCE.mDecryptionList != null));
-    }
-
-    public static Prefs.PayloadMode getCurPayloadMode() {
-        if(INSTANCE == null)
-            return Prefs.PayloadMode.MINIMAL;
-
-        return INSTANCE.mSettings.full_payload ? Prefs.PayloadMode.FULL : Prefs.PayloadMode.MINIMAL;
-    }
-
-    public static void requestBlacklistsUpdate() {
-        if(INSTANCE != null) {
-            INSTANCE.mBlacklistsUpdateRequested = true;
-
-            // Wake the update thread to run the blacklist thread
-            INSTANCE.mPendingUpdates.offer(new Pair<>(new ConnectionDescriptor[0], new ConnectionUpdate[0]));
-        }
-    }
-
-    public static String getInterfaceName(int ifidx) {
-        String ifname = null;
-
-        if(INSTANCE != null)
-            ifname = INSTANCE.getIfname(ifidx);
-        return (ifname != null) ? ifname : "";
-    }
-
     // Inside the mCaptureThread
     @Override
     public void run() {
-        if(mSettings.root_capture || mSettings.readFromPcap()) {
+        if (mSettings.root_capture || mSettings.readFromPcap()) {
             // Check for INTERACT_ACROSS_USERS, required to query apps of other users/work profiles
-            if(mSettings.root_capture && (checkCallingOrSelfPermission(Utils.INTERACT_ACROSS_USERS) != PackageManager.PERMISSION_GRANTED)) {
+            if (mSettings.root_capture && (checkCallingOrSelfPermission(Utils.INTERACT_ACROSS_USERS) != PackageManager.PERMISSION_GRANTED)) {
                 boolean success = Utils.rootGrantPermission(this, Utils.INTERACT_ACROSS_USERS);
                 mHandler.post(() -> Utils.showToast(this, success ? R.string.permission_granted : R.string.permission_grant_fail, "INTERACT_ACROSS_USERS"));
             }
 
             runPacketLoop(-1, this, Build.VERSION.SDK_INT);
         } else {
-            if(mParcelFileDescriptor != null) {
+            if (mParcelFileDescriptor != null) {
                 int fd = mParcelFileDescriptor.getFd();
                 int fd_setsize = getFdSetSize();
 
-                if((fd > 0) && (fd < fd_setsize)) {
+                if ((fd > 0) && (fd < fd_setsize)) {
                     Log.d(TAG, "VPN fd: " + fd + " - FD_SETSIZE: " + fd_setsize);
                     runPacketLoop(fd, this, Build.VERSION.SDK_INT);
 
@@ -1118,11 +1222,11 @@ public class CaptureService extends VpnService implements Runnable {
         }
 
         // After the capture is stopped
-        if(mMalwareDetectionEnabled)
+        if (mMalwareDetectionEnabled)
             mBlacklists.save();
 
         // Important: the fd must be closed to properly terminate the VPN
-        if(mParcelFileDescriptor != null) {
+        if (mParcelFileDescriptor != null) {
             try {
                 mParcelFileDescriptor.close();
             } catch (IOException e) {
@@ -1149,7 +1253,7 @@ public class CaptureService extends VpnService implements Runnable {
     }
 
     private void connUpdateWork() {
-        while(true) {
+        while (true) {
             Pair<ConnectionDescriptor[], ConnectionUpdate[]> item;
             try {
                 item = mPendingUpdates.take();
@@ -1157,7 +1261,7 @@ public class CaptureService extends VpnService implements Runnable {
                 continue;
             }
 
-            if(item.first == null) { // termination request
+            if (item.first == null) { // termination request
                 Log.i(TAG, "Connection update thread exit requested");
                 break;
             }
@@ -1166,26 +1270,26 @@ public class CaptureService extends VpnService implements Runnable {
             ConnectionUpdate[] conns_updates = item.second;
 
             checkBlacklistsUpdates(false);
-            if(mBlocklist.checkGracePeriods())
+            if (mBlocklist.checkGracePeriods())
                 mHandler.post(this::reloadBlocklist);
 
-            if(!mLowMemory)
+            if (!mLowMemory)
                 checkAvailableHeap();
 
             // synchronize the conn_reg to ensure that newConnections and connectionsUpdates run atomically
             // thus preventing the ConnectionsAdapter from interleaving other operations
             synchronized (conn_reg) {
-                if(new_conns.length > 0)
+                if (new_conns.length > 0)
                     conn_reg.newConnections(new_conns);
 
-                if(conns_updates.length > 0)
+                if (conns_updates.length > 0)
                     conn_reg.connectionsUpdates(conns_updates);
             }
         }
     }
 
     private void dumpWork() {
-        while(true) {
+        while (true) {
             byte[] data;
             try {
                 data = mDumpQueue.take();
@@ -1193,7 +1297,7 @@ public class CaptureService extends VpnService implements Runnable {
                 continue;
             }
 
-            if(data.length == 0) // termination request
+            if (data.length == 0) // termination request
                 break;
 
             try {
@@ -1218,7 +1322,7 @@ public class CaptureService extends VpnService implements Runnable {
         // This does not account per-app jvm limits
         long availableHeap = Utils.getAvailableHeap();
 
-        if(availableHeap <= Utils.LOW_HEAP_THRESHOLD) {
+        if (availableHeap <= Utils.LOW_HEAP_THRESHOLD) {
             Log.w(TAG, "Detected low HEAP memory: " + Utils.formatBytes(availableHeap));
             handleLowMemory();
         }
@@ -1234,7 +1338,7 @@ public class CaptureService extends VpnService implements Runnable {
 
         Log.d(TAG, "onTrimMemory: " + lvlStr + " - low=" + lowMemory + ", critical=" + critical);
 
-        if(critical && !mLowMemory)
+        if (critical && !mLowMemory)
             handleLowMemory();
     }
 
@@ -1243,20 +1347,20 @@ public class CaptureService extends VpnService implements Runnable {
         mLowMemory = true;
         boolean fullPayload = getCurPayloadMode() == Prefs.PayloadMode.FULL;
 
-        if(fullPayload) {
+        if (fullPayload) {
             Log.w(TAG, "Disabling full payload");
 
             // Disable full payload for new connections
             mSettings.full_payload = false;
             setPayloadMode(Prefs.PayloadMode.NONE.ordinal());
 
-            if(mSettings.tls_decryption) {
+            if (mSettings.tls_decryption) {
                 // TLS decryption without payload has little use, stop the capture all together
                 stopService();
                 notifyLowMemory(getString(R.string.capture_stopped_low_memory));
             } else {
                 // Release memory for existing connections
-                if(conn_reg != null) {
+                if (conn_reg != null) {
                     conn_reg.releasePayloadMemory();
 
                     // *possibly* call the gc
@@ -1274,81 +1378,131 @@ public class CaptureService extends VpnService implements Runnable {
         }
     }
 
-    /* The following methods are called from native code */
-
     public String getVpnIPv4() {
-        return(vpn_ipv4);
+        return (vpn_ipv4);
     }
 
     public String getVpnDns() {
-        return(vpn_dns);
+        return (vpn_dns);
     }
 
     public String getDnsServer() {
-        return(dns_server);
+        return (dns_server);
     }
 
-    public String getIpv6DnsServer() { return(Prefs.getDnsServerV6(mPrefs)); }
+    private static native void setDnsServer(String server);
 
-    public int getSocks5Enabled() { return mSocks5Enabled ? 1 : 0; }
+    public String getIpv6DnsServer() {
+        return (Prefs.getDnsServerV6(mPrefs));
+    }
 
-    public String getSocks5ProxyAddress() {  return(mSocks5Address); }
+    public int getSocks5Enabled() {
+        return mSocks5Enabled ? 1 : 0;
+    }
 
-    public int getSocks5ProxyPort() {  return(mSocks5Port);  }
+    public String getSocks5ProxyAddress() {
+        return (mSocks5Address);
+    }
 
-    public String getSocks5ProxyAuth() {  return(mSocks5Auth);  }
+    public int getSocks5ProxyPort() {
+        return (mSocks5Port);
+    }
 
-    public int getIPv4Enabled() { return((mSettings.ip_mode != Prefs.IpMode.IPV6_ONLY) ? 1 : 0); }
+    public String getSocks5ProxyAuth() {
+        return (mSocks5Auth);
+    }
 
-    public int getIPv6Enabled() { return((mSettings.ip_mode != Prefs.IpMode.IPV4_ONLY) ? 1 : 0); }
+    public int getIPv4Enabled() {
+        return ((mSettings.ip_mode != Prefs.IpMode.IPV6_ONLY) ? 1 : 0);
+    }
 
-    public int isVpnCapture() { return (isRootCapture() | isPcapFileCapture()) == 1 ? 0 : 1; }
+    public int getIPv6Enabled() {
+        return ((mSettings.ip_mode != Prefs.IpMode.IPV4_ONLY) ? 1 : 0);
+    }
 
-    public int isRootCapture() { return(mSettings.root_capture ? 1 : 0); }
+    public int isVpnCapture() {
+        return (isRootCapture() | isPcapFileCapture()) == 1 ? 0 : 1;
+    }
 
-    public int isPcapFileCapture() { return(mSettings.readFromPcap() ? 1 : 0); }
+    public int isRootCapture() {
+        return (mSettings.root_capture ? 1 : 0);
+    }
 
-    public int isTlsDecryptionEnabled() { return mSettings.tls_decryption ? 1 : 0; }
+    public int isPcapFileCapture() {
+        return (mSettings.readFromPcap() ? 1 : 0);
+    }
 
-    public int malwareDetectionEnabled() { return(mMalwareDetectionEnabled ? 1 : 0); }
+    public int isTlsDecryptionEnabled() {
+        return mSettings.tls_decryption ? 1 : 0;
+    }
 
-    public int firewallEnabled() { return(mFirewallEnabled ? 1 : 0); }
+    public int malwareDetectionEnabled() {
+        return (mMalwareDetectionEnabled ? 1 : 0);
+    }
 
-    public int addPcapdroidTrailer() { return(mSettings.pcapdroid_trailer ? 1 : 0); }
+    public int firewallEnabled() {
+        return (mFirewallEnabled ? 1 : 0);
+    }
 
-    public int isPcapngEnabled() { return(mSettings.pcapng_format ? 1 : 0); }
+    public int addPcapdroidTrailer() {
+        return (mSettings.pcapdroid_trailer ? 1 : 0);
+    }
 
-    public int[] getAppFilterUids() { return(mAppFilterUids); }
+    public int isPcapngEnabled() {
+        return (mSettings.pcapng_format ? 1 : 0);
+    }
+
+    public int[] getAppFilterUids() {
+        return (mAppFilterUids);
+    }
 
     public int getMitmAddonUid() {
         return MitmAddon.getUid(this);
     }
 
-    public String getCaptureInterface() { return(mSettings.capture_interface); }
+    public String getCaptureInterface() {
+        return (mSettings.capture_interface);
+    }
 
-    public int getSnaplen() {  return mSettings.snaplen; }
+    public int getSnaplen() {
+        return mSettings.snaplen;
+    }
 
-    public int getMaxPktsPerFlow() {  return mSettings.max_pkts_per_flow; }
+    public int getMaxPktsPerFlow() {
+        return mSettings.max_pkts_per_flow;
+    }
 
-    public int getMaxDumpSize() {  return mSettings.max_dump_size; }
+    public int getMaxDumpSize() {
+        return mSettings.max_dump_size;
+    }
 
-    public int getPayloadMode() { return getCurPayloadMode().ordinal(); }
+    public int getPayloadMode() {
+        return getCurPayloadMode().ordinal();
+    }
 
-    public int getVpnMTU()      { return VPN_MTU; }
+    public static native void setPayloadMode(int mode);
 
-    public int getBlockQuickMode() { return mSettings.block_quic_mode.ordinal(); }
+    public int getVpnMTU() {
+        return VPN_MTU;
+    }
+
+    public int getBlockQuickMode() {
+        return mSettings.block_quic_mode.ordinal();
+    }
 
     // returns 1 if dumpPcapData should be called
     public int pcapDumpEnabled() {
-        return((mSettings.dump_mode != Prefs.DumpMode.NONE) ? 1 : 0);
+        return ((mSettings.dump_mode != Prefs.DumpMode.NONE) ? 1 : 0);
     }
 
-    public String getPcapDumperBpf() { return((mDumper != null) ? mDumper.getBpf() : ""); }
+    public String getPcapDumperBpf() {
+        return ((mDumper != null) ? mDumper.getBpf() : "");
+    }
 
     @Override
     public boolean protect(int socket) {
         // Do not call protect in root mode
-        if(mSettings.root_capture)
+        if (mSettings.root_capture)
             return true;
 
         return super.protect(socket);
@@ -1372,13 +1526,13 @@ public class CaptureService extends VpnService implements Runnable {
     }
 
     public void updateConnections(ConnectionDescriptor[] new_conns, ConnectionUpdate[] conns_updates) {
-        if(mQueueFull)
+        if (mQueueFull)
             // if the queue is full, stop receiving updates to avoid inconsistent incr_ids
             return;
 
         // Put the update into a queue to avoid performing much work on the capture thread.
         // This will be processed by mConnUpdateThread.
-        if(!mPendingUpdates.offer(new Pair<>(new_conns, conns_updates))) {
+        if (!mPendingUpdates.offer(new Pair<>(new_conns, conns_updates))) {
             Log.e(TAG, "The updates queue is full, this should never happen!");
             mQueueFull = true;
             mHandler.post(CaptureService::stopPacketLoop);
@@ -1407,10 +1561,10 @@ public class CaptureService extends VpnService implements Runnable {
         // NOTE: new subscribers will receive the STOPPED status right after their registration
         serviceStatus.postValue(cur_status);
 
-        if(cur_status == ServiceStatus.STARTED) {
-            if(mMalwareDetectionEnabled)
+        if (cur_status == ServiceStatus.STARTED) {
+            if (mMalwareDetectionEnabled)
                 reloadMalwareWhitelist();
-            if(mDecryptionList != null)
+            if (mDecryptionList != null)
                 reloadDecryptionList();
             reloadBlocklist();
             reloadFirewallWhitelist();
@@ -1430,7 +1584,7 @@ public class CaptureService extends VpnService implements Runnable {
     public String getApplicationByUid(int uid) {
         AppDescriptor dsc = nativeAppsResolver.getAppByUid(uid, 0);
 
-        if(dsc == null)
+        if (dsc == null)
             return "";
 
         return dsc.getName();
@@ -1438,8 +1592,8 @@ public class CaptureService extends VpnService implements Runnable {
 
     /* Exports a PCAP data chunk */
     public void dumpPcapData(byte[] data) {
-        if((mDumper != null) && (data.length > 0)) {
-            while(true) {
+        if ((mDumper != null) && (data.length > 0)) {
+            while (true) {
                 try {
                     // wait until the queue has space to insert the data. If the queue is full, we
                     // will experience slow-downs/drops but this is expected
@@ -1453,7 +1607,7 @@ public class CaptureService extends VpnService implements Runnable {
     }
 
     public void stopPcapDump() {
-        if((mDumpQueue != null) && (mDumperThread != null) && (mDumperThread.isAlive()))
+        if ((mDumpQueue != null) && (mDumperThread != null) && (mDumperThread.isAlive()))
             mDumpQueue.offer(new byte[0]);
     }
 
@@ -1478,11 +1632,11 @@ public class CaptureService extends VpnService implements Runnable {
                     err = getString(R.string.pcap_file_not_exists);
                     break;
                 case "pcapd daemon start failure":
-                    if(mSettings.root_capture)
+                    if (mSettings.root_capture)
                         err = getString(R.string.root_capture_pcapd_start_failure);
                     break;
                 case "pcapd daemon did not spawn":
-                    if(mSettings.root_capture)
+                    if (mSettings.root_capture)
                         err = getString(R.string.root_capture_start_failed);
                     break;
                 case "PCAP read error":
@@ -1497,12 +1651,15 @@ public class CaptureService extends VpnService implements Runnable {
     public String getWorkingDir() {
         return getCacheDir().getAbsolutePath();
     }
-    public String getPersistentDir() { return getFilesDir().getAbsolutePath(); }
+
+    public String getPersistentDir() {
+        return getFilesDir().getAbsolutePath();
+    }
 
     public String getLibprogPath(String prog_name) {
         // executable binaries are stored into the /lib folder of the app
         String dir = getApplicationInfo().nativeLibraryDir;
-        return(dir + "/lib" + prog_name + ".so");
+        return (dir + "/lib" + prog_name + ".so");
     }
 
     public void notifyBlacklistsLoaded(Blacklists.NativeBlacklistStatus[] loaded_blacklists) {
@@ -1515,14 +1672,14 @@ public class CaptureService extends VpnService implements Runnable {
         int i = 0;
 
         Iterator<BlacklistDescriptor> it = mBlacklists.iter();
-        while(it.hasNext())
+        while (it.hasNext())
             blsinfo[i++] = it.next();
 
         return blsinfo;
     }
 
     public void reloadBlocklist() {
-        if(!mGUIUtils.isFirewallVisible())
+        if (!mGUIUtils.isFirewallVisible())
             return;
 
         Log.i(TAG, "reloading firewall blocklist");
@@ -1530,98 +1687,15 @@ public class CaptureService extends VpnService implements Runnable {
     }
 
     public void reloadFirewallWhitelist() {
-        if(!mGUIUtils.isFirewallVisible())
+        if (!mGUIUtils.isFirewallVisible())
             return;
 
         Log.i(TAG, "reloading firewall whitelist");
         reloadFirewallWhitelist(Prefs.isFirewallWhitelistMode(mPrefs) ? mFirewallWhitelist.toListDescriptor() : null);
     }
 
-    public static void reloadMalwareWhitelist() {
-        if((INSTANCE == null) || !INSTANCE.mMalwareDetectionEnabled)
-            return;
-
-        Log.i(TAG, "reloading malware whitelist");
-        reloadMalwareWhitelist(INSTANCE.mMalwareWhitelist.toListDescriptor());
+    public enum ServiceStatus {
+        STOPPED,
+        STARTED
     }
-
-    public static void reloadDecryptionList() {
-        if((INSTANCE == null) || (INSTANCE.mDecryptionList == null))
-            return;
-
-        Log.i(TAG, "reloading TLS decryption whitelist");
-        reloadDecryptionList(INSTANCE.mDecryptionList.toListDescriptor());
-    }
-
-    public static void setFirewallEnabled(boolean enabled) {
-        if(INSTANCE == null)
-            return;
-
-        INSTANCE.mFirewallEnabled = enabled;
-        nativeSetFirewallEnabled(enabled);
-    }
-
-    public static @NonNull CaptureStats getStats() {
-        CaptureStats stats = lastStats.getValue();
-        return((stats != null) ? stats : new CaptureStats());
-    }
-
-    public static void observeStats(LifecycleOwner lifecycleOwner, Observer<CaptureStats> observer) {
-        lastStats.observe(lifecycleOwner, observer);
-    }
-
-    public static void observeStatus(LifecycleOwner lifecycleOwner, Observer<ServiceStatus> observer) {
-        serviceStatus.observe(lifecycleOwner, observer);
-    }
-
-    public static void waitForCaptureStop() {
-        if(INSTANCE == null)
-            return;
-
-        Log.d(TAG, "waitForCaptureStop " + Thread.currentThread().getName());
-        INSTANCE.mLock.lock();
-        try {
-            while(INSTANCE.mCaptureThread != null) {
-                try {
-                    INSTANCE.mCaptureStopped.await();
-                } catch (InterruptedException ignored) {}
-            }
-        } finally {
-            INSTANCE.mLock.unlock();
-        }
-        Log.d(TAG, "waitForCaptureStop done " + Thread.currentThread().getName());
-    }
-
-    public static boolean hasError() {
-        return HAS_ERROR;
-    }
-
-    public static @Nullable Utils.PrivateDnsMode getPrivateDnsMode() {
-        return isServiceActive() ? INSTANCE.mPrivateDnsMode : null;
-    }
-
-    public static native int initLogger(String path, int level);
-    public static native int writeLog(int logger, int lvl, String message);
-    private static native void initPlatformInfo(String appver, String device, String os);
-    private static native void runPacketLoop(int fd, CaptureService vpn, int sdk);
-    private static native void stopPacketLoop();
-    private static native int getFdSetSize();
-    private static native void setPrivateDnsBlocked(boolean to_block);
-    private static native void setDnsServer(String server);
-    private static native void addPortMapping(int ipproto, int orig_port, int redirect_port, String redirect_ip);
-    private static native void reloadBlacklists();
-    private static native boolean reloadBlocklist(MatchList.ListDescriptor blocklist);
-    private static native boolean reloadFirewallWhitelist(MatchList.ListDescriptor whitelist);
-    private static native boolean reloadMalwareWhitelist(MatchList.ListDescriptor whitelist);
-    private static native boolean reloadDecryptionList(MatchList.ListDescriptor whitelist);
-    public static native void askStatsDump();
-    public static native byte[] getPcapHeader();
-    public static native void nativeSetFirewallEnabled(boolean enabled);
-    public static native int getNumCheckedMalwareConnections();
-    public static native int getNumCheckedFirewallConnections();
-    public static native int rootCmd(String prog, String args);
-    public static native void setPayloadMode(int mode);
-    public static native List<String> getL7Protocols();
-    public static native void dumpMasterSecret(byte[] secret);
-    public static native boolean hasSeenPcapdroidTrailer();
 }

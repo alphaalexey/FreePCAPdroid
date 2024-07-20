@@ -42,18 +42,13 @@ public class PersistableUriPermission {
 
     /* FLAG_GRANT_READ_URI_PERMISSION required for showPcapActionDialog (e.g. when auto-started at boot) */
     private static int PERSIST_MODE = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
-
+    private final Context mCtx;
+    private final SharedPreferences mPrefs;
+    private final ActivityResultLauncher<Intent> mPcapLauncher;
     public String key = "";
     public Uri persistableUri;
     private String mNewKey;
-    private final Context mCtx;
-    private final SharedPreferences mPrefs;
     private PupListener mListener;
-    private final ActivityResultLauncher<Intent> mPcapLauncher;
-
-    public interface PupListener {
-        void onUriChecked(Uri grantedUri);
-    }
 
     public PersistableUriPermission(ComponentActivity activity) {
         mCtx = activity;
@@ -65,7 +60,7 @@ public class PersistableUriPermission {
     public void reload() {
         String k = mPrefs.getString(PREF_KEY, "");
         int sep = k.indexOf("|");
-        if(sep < 0)
+        if (sep < 0)
             return;
 
         key = k.substring(0, sep);
@@ -84,15 +79,15 @@ public class PersistableUriPermission {
         mListener = listener;
 
         // Revoke the previous permissions and check
-        for(UriPermission permission : mCtx.getContentResolver().getPersistedUriPermissions()) {
-            if(keyChanged || !permission.getUri().equals(persistableUri)) {
+        for (UriPermission permission : mCtx.getContentResolver().getPersistedUriPermissions()) {
+            if (keyChanged || !permission.getUri().equals(persistableUri)) {
                 Log.d(TAG, "Releasing URI permission: " + permission.getUri().toString());
                 mCtx.getContentResolver().releasePersistableUriPermission(permission.getUri(), PERSIST_MODE);
             } else
                 hasPermission = true;
         }
 
-        if(!hasPermission)
+        if (!hasPermission)
             openFileSelector(pcapng_format);
         else
             mListener.onUriChecked(persistableUri);
@@ -106,7 +101,7 @@ public class PersistableUriPermission {
         intent.setType("*/*");
         intent.putExtra(Intent.EXTRA_TITLE, fname);
 
-        if(Utils.supportsFileDialog(mCtx, intent)) {
+        if (Utils.supportsFileDialog(mCtx, intent)) {
             try {
                 mPcapLauncher.launch(intent);
             } catch (ActivityNotFoundException e) {
@@ -115,7 +110,7 @@ public class PersistableUriPermission {
         } else
             noFileDialog = true;
 
-        if(noFileDialog) {
+        if (noFileDialog) {
             Log.w(TAG, "No app found to handle file selection");
             Utils.showToastLong(mCtx, R.string.no_activity_file_selection);
             mListener.onUriChecked(null);
@@ -130,7 +125,7 @@ public class PersistableUriPermission {
             /* Request a persistent permission to write this URI without invoking the system picker.
              * This is needed to write to the URI when invoking PCAPdroid from other apps via Intents
              * or when starting the capture at boot. */
-            if(persistable) {
+            if (persistable) {
                 try {
                     mCtx.getContentResolver().takePersistableUriPermission(uri, PERSIST_MODE);
 
@@ -148,5 +143,9 @@ public class PersistableUriPermission {
             mListener.onUriChecked(uri);
         } else
             mListener.onUriChecked(null);
+    }
+
+    public interface PupListener {
+        void onUriChecked(Uri grantedUri);
     }
 }

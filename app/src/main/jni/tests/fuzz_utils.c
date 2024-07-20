@@ -27,28 +27,28 @@
 
 /* Creates a temporary file to hold the specified buffer data.
  * Returns the file name string. The string must be freed. */
-char* buffer_to_tmpfile(const uint8_t *buf, size_t size) {
-  char fname[] = "/tmp/pcapdroid_testXXXXXX";
+char *buffer_to_tmpfile(const uint8_t *buf, size_t size) {
+    char fname[] = "/tmp/pcapdroid_testXXXXXX";
 
-  int filedes = mkstemp(fname);
-  if(filedes < 0) {
-    perror("mkstemp failed");
-    return NULL;
-  }
+    int filedes = mkstemp(fname);
+    if (filedes < 0) {
+        perror("mkstemp failed");
+        return NULL;
+    }
 
-  FILE *fd = fdopen(filedes, "wb");
-  if(!fd) {
-    perror("fdopen failed");
-    return NULL;
-  }
+    FILE *fd = fdopen(filedes, "wb");
+    if (!fd) {
+        perror("fdopen failed");
+        return NULL;
+    }
 
-  int success = (fwrite(buf, 1, size, fd) == size);
+    int success = (fwrite(buf, 1, size, fd) == size);
 
-  fclose(fd);
-  close(filedes);
+    fclose(fd);
+    close(filedes);
 
-  if(!success)
-    return NULL;
+    if (!success)
+        return NULL;
 
-  return strdup(fname);
+    return strdup(fname);
 }

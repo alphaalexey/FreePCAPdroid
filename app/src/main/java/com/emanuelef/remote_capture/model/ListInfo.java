@@ -36,14 +36,6 @@ import java.util.Set;
 public class ListInfo {
     private final Type mType;
 
-    public enum Type {
-        VISUALIZATION_MASK,
-        MALWARE_WHITELIST,
-        BLOCKLIST,
-        FIREWALL_WHITELIST,
-        DECRYPTION_LIST,
-    }
-
     public ListInfo(Type tp) {
         mType = tp;
     }
@@ -53,7 +45,7 @@ public class ListInfo {
     }
 
     public @NonNull MatchList getList() {
-        switch(mType) {
+        switch (mType) {
             case VISUALIZATION_MASK:
                 return PCAPdroid.getInstance().getVisualizationMask();
             case MALWARE_WHITELIST:
@@ -71,7 +63,7 @@ public class ListInfo {
     }
 
     public int getTitle() {
-        switch(mType) {
+        switch (mType) {
             case VISUALIZATION_MASK:
                 return R.string.hidden_connections_rules;
             case MALWARE_WHITELIST:
@@ -89,7 +81,7 @@ public class ListInfo {
     }
 
     public int getHelpString() {
-        switch(mType) {
+        switch (mType) {
             case VISUALIZATION_MASK:
                 return R.string.hidden_connections_help;
             case MALWARE_WHITELIST:
@@ -107,7 +99,7 @@ public class ListInfo {
     }
 
     public Set<RuleType> getSupportedRules() {
-        switch(mType) {
+        switch (mType) {
             case VISUALIZATION_MASK:
                 return new ArraySet<>(Arrays.asList(RuleType.APP, RuleType.IP, RuleType.HOST, RuleType.COUNTRY, RuleType.PROTOCOL));
             case MALWARE_WHITELIST:
@@ -123,16 +115,16 @@ public class ListInfo {
     }
 
     public void reloadRules() {
-        switch(mType) {
+        switch (mType) {
             case MALWARE_WHITELIST:
                 CaptureService.reloadMalwareWhitelist();
                 break;
             case BLOCKLIST:
-                if(CaptureService.isServiceActive())
+                if (CaptureService.isServiceActive())
                     CaptureService.requireInstance().reloadBlocklist();
                 break;
             case FIREWALL_WHITELIST:
-                if(CaptureService.isServiceActive())
+                if (CaptureService.isServiceActive())
                     CaptureService.requireInstance().reloadFirewallWhitelist();
                 break;
             case DECRYPTION_LIST:
@@ -143,5 +135,13 @@ public class ListInfo {
 
     public EditListFragment newFragment() {
         return EditListFragment.newInstance(mType);
+    }
+
+    public enum Type {
+        VISUALIZATION_MASK,
+        MALWARE_WHITELIST,
+        BLOCKLIST,
+        FIREWALL_WHITELIST,
+        DECRYPTION_LIST,
     }
 }

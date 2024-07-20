@@ -46,18 +46,18 @@ import androidx.lifecycle.Lifecycle;
 import androidx.preference.PreferenceManager;
 
 import com.emanuelef.remote_capture.AppsResolver;
+import com.emanuelef.remote_capture.CaptureService;
 import com.emanuelef.remote_capture.Log;
 import com.emanuelef.remote_capture.MitmReceiver;
-import com.emanuelef.remote_capture.activities.AppFilterActivity;
-import com.emanuelef.remote_capture.model.AppDescriptor;
-import com.emanuelef.remote_capture.model.AppState;
-import com.emanuelef.remote_capture.CaptureService;
 import com.emanuelef.remote_capture.R;
 import com.emanuelef.remote_capture.Utils;
+import com.emanuelef.remote_capture.activities.AppFilterActivity;
 import com.emanuelef.remote_capture.activities.MainActivity;
 import com.emanuelef.remote_capture.interfaces.AppStateListener;
-import com.emanuelef.remote_capture.model.Prefs;
+import com.emanuelef.remote_capture.model.AppDescriptor;
+import com.emanuelef.remote_capture.model.AppState;
 import com.emanuelef.remote_capture.model.CaptureStats;
+import com.emanuelef.remote_capture.model.Prefs;
 import com.emanuelef.remote_capture.views.PrefSpinner;
 
 import java.util.ArrayList;
@@ -143,7 +143,7 @@ public class StatusFragment extends Fragment implements AppStateListener, MenuPr
         refreshFilterInfo();
 
         mCaptureStatus.setOnClickListener(v -> {
-            if(mActivity.getState() == AppState.ready)
+            if (mActivity.getState() == AppState.ready)
                 mActivity.startCapture();
         });
 
@@ -188,7 +188,7 @@ public class StatusFragment extends Fragment implements AppStateListener, MenuPr
         MitmReceiver.Status proxy_status = CaptureService.getMitmProxyStatus();
         Context ctx = getContext();
 
-        if((proxy_status == MitmReceiver.Status.START_ERROR) && (ctx != null))
+        if ((proxy_status == MitmReceiver.Status.START_ERROR) && (ctx != null))
             Utils.showToastLong(ctx, R.string.mitm_addon_error);
 
         mInterfaceInfo.setText((proxy_status == MitmReceiver.Status.RUNNING) ? R.string.mitm_addon_running : R.string.mitm_addon_starting);
@@ -196,10 +196,10 @@ public class StatusFragment extends Fragment implements AppStateListener, MenuPr
 
     private void refreshFilterInfo() {
         Context context = getContext();
-        if(context == null)
+        if (context == null)
             return;
 
-        if((mAppFilter == null) || (mAppFilter.isEmpty())) {
+        if ((mAppFilter == null) || (mAppFilter.isEmpty())) {
             mFilterDescription.setText(R.string.capture_all_apps);
             mFilterIcon.setVisibility(View.GONE);
             mAppFilterSwitch.setChecked(false);
@@ -228,13 +228,13 @@ public class StatusFragment extends Fragment implements AppStateListener, MenuPr
         Drawable icon = null;
         String text = "";
 
-        if((mAppFilter != null) && (!mAppFilter.isEmpty())) {
+        if ((mAppFilter != null) && (!mAppFilter.isEmpty())) {
             if (mAppFilter.size() == 1) {
                 // only a single app is selected, show its image and text
                 String package_name = mAppFilter.iterator().next();
                 AppDescriptor app = AppsResolver.resolveInstalledApp(requireContext().getPackageManager(), package_name, 0);
 
-                if((app != null) && (app.getIcon() != null)) {
+                if ((app != null) && (app.getIcon() != null)) {
                     icon = app.getIcon();
                     text = app.getName() + " (" + app.getPackageName() + ")";
                 }
@@ -243,7 +243,7 @@ public class StatusFragment extends Fragment implements AppStateListener, MenuPr
                 icon = ContextCompat.getDrawable(context, R.drawable.ic_image);
                 ArrayList<String> parts = new ArrayList<>();
 
-                for (String package_name: mAppFilter) {
+                for (String package_name : mAppFilter) {
                     AppDescriptor app = AppsResolver.resolveInstalledApp(requireContext().getPackageManager(), package_name, 0);
                     String tmp = package_name;
 
@@ -266,31 +266,31 @@ public class StatusFragment extends Fragment implements AppStateListener, MenuPr
         Prefs.DumpMode mode = CaptureService.getDumpMode();
 
         switch (mode) {
-        case NONE:
-            info = getString(R.string.no_dump_info);
-            break;
-        case HTTP_SERVER:
-            info = String.format(getResources().getString(R.string.http_server_status),
-                    Utils.getLocalIPAddress(mActivity), CaptureService.getHTTPServerPort());
-            break;
-        case PCAP_FILE:
-            info = getString(R.string.pcap_file_info);
+            case NONE:
+                info = getString(R.string.no_dump_info);
+                break;
+            case HTTP_SERVER:
+                info = String.format(getResources().getString(R.string.http_server_status),
+                        Utils.getLocalIPAddress(mActivity), CaptureService.getHTTPServerPort());
+                break;
+            case PCAP_FILE:
+                info = getString(R.string.pcap_file_info);
 
-            String pcapFname = CaptureService.getPcapFname();
-            if(pcapFname != null)
-                info = pcapFname;
-            break;
-        case UDP_EXPORTER:
-            info = String.format(getResources().getString(R.string.collector_info),
-                    CaptureService.getCollectorAddress(), CaptureService.getCollectorPort());
-            break;
+                String pcapFname = CaptureService.getPcapFname();
+                if (pcapFname != null)
+                    info = pcapFname;
+                break;
+            case UDP_EXPORTER:
+                info = String.format(getResources().getString(R.string.collector_info),
+                        CaptureService.getCollectorAddress(), CaptureService.getCollectorPort());
+                break;
         }
 
         mCollectorInfoText.setText(info);
 
         // Check if a filter is set
         Drawable drawable = null;
-        if((mAppFilter != null) && (!mAppFilter.isEmpty())) {
+        if ((mAppFilter != null) && (!mAppFilter.isEmpty())) {
             Pair<String, Drawable> pair = getAppFilterTextAndIcon(context);
             drawable = pair.second;
         }
@@ -305,11 +305,11 @@ public class StatusFragment extends Fragment implements AppStateListener, MenuPr
     @Override
     public void appStateChanged(AppState state) {
         Context context = getContext();
-        if(context == null)
+        if (context == null)
             return;
 
-        if(mMenu != null) {
-            if((state == AppState.running) || (state == AppState.stopping)) {
+        if (mMenu != null) {
+            if ((state == AppState.running) || (state == AppState.stopping)) {
                 mStartBtn.setVisible(false);
                 mStopBtn.setEnabled(true);
                 mStopBtn.setVisible(!CaptureService.isAlwaysOnVPN());
@@ -324,7 +324,7 @@ public class StatusFragment extends Fragment implements AppStateListener, MenuPr
             }
         }
 
-        switch(state) {
+        switch (state) {
             case ready:
                 mCaptureStatus.setText(R.string.ready);
                 mCollectorInfoLayout.setVisibility(View.GONE);
@@ -334,11 +334,11 @@ public class StatusFragment extends Fragment implements AppStateListener, MenuPr
                 refreshFilterInfo();
                 break;
             case starting:
-                if(mMenu != null)
+                if (mMenu != null)
                     mStartBtn.setEnabled(false);
                 break;
             case stopping:
-                if(mMenu != null)
+                if (mMenu != null)
                     mStopBtn.setEnabled(false);
                 break;
             case running:
@@ -347,20 +347,20 @@ public class StatusFragment extends Fragment implements AppStateListener, MenuPr
                 mQuickSettings.setVisibility(View.GONE);
                 CaptureService service = CaptureService.requireInstance();
 
-                if(CaptureService.isDecryptingTLS()) {
+                if (CaptureService.isDecryptingTLS()) {
                     refreshDecryptionStatus();
                     mInterfaceInfo.setVisibility(View.VISIBLE);
-                } else if(CaptureService.isCapturingAsRoot()) {
+                } else if (CaptureService.isCapturingAsRoot()) {
                     String capiface = service.getCaptureInterface();
 
-                    if(capiface.equals("@inet"))
+                    if (capiface.equals("@inet"))
                         capiface = getString(R.string.internet);
-                    else if(capiface.equals("any"))
+                    else if (capiface.equals("any"))
                         capiface = getString(R.string.all_interfaces);
 
                     mInterfaceInfo.setText(String.format(getResources().getString(R.string.capturing_from), capiface));
                     mInterfaceInfo.setVisibility(View.VISIBLE);
-                } else if(service.getSocks5Enabled() == 1) {
+                } else if (service.getSocks5Enabled() == 1) {
                     mInterfaceInfo.setText(String.format(getResources().getString(R.string.socks5_info),
                             service.getSocks5ProxyAddress(), service.getSocks5ProxyPort()));
                     mInterfaceInfo.setVisibility(View.VISIBLE);
@@ -376,7 +376,7 @@ public class StatusFragment extends Fragment implements AppStateListener, MenuPr
     }
 
     private void refreshStatus() {
-        if(mActivity != null)
+        if (mActivity != null)
             appStateChanged(mActivity.getState());
         recheckFilterWarning();
     }

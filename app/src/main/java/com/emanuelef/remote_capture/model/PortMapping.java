@@ -20,6 +20,71 @@ public class PortMapping {
     private final SharedPreferences mPrefs;
     private ArrayList<PortMap> mMapping = new ArrayList<>();
 
+    public PortMapping(Context ctx) {
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        reload();
+    }
+
+    public void clear() {
+        mMapping.clear();
+    }
+
+    public void save() {
+        mPrefs.edit()
+                .putString(Prefs.PREF_PORT_MAPPING, toJson(false))
+                .apply();
+    }
+
+    public void reload() {
+        String serialized = mPrefs.getString(Prefs.PREF_PORT_MAPPING, "");
+        if (!serialized.isEmpty())
+            fromJson(serialized);
+        else
+            clear();
+    }
+
+    public boolean fromJson(String json_str) {
+        try {
+            Type listOfMyClassObject = new TypeToken<ArrayList<PortMap>>() {
+            }.getType();
+            Gson gson = new Gson();
+            mMapping = gson.fromJson(json_str, listOfMyClassObject);
+            return true;
+        } catch (JsonParseException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public String toJson(boolean pretty_print) {
+        GsonBuilder builder = new GsonBuilder();
+        if (pretty_print)
+            builder.setPrettyPrinting();
+        Gson gson = builder.create();
+
+        String serialized = gson.toJson(mMapping);
+        //Log.d(TAG, "toJson: " + serialized);
+
+        return serialized;
+    }
+
+    // returns false if the mapping already exists
+    public boolean add(PortMap mapping) {
+        if (mMapping.contains(mapping))
+            return false;
+
+        mMapping.add(mapping);
+        return true;
+    }
+
+    public boolean remove(PortMap mapping) {
+        return mMapping.remove(mapping);
+    }
+
+    public Iterator<PortMap> iter() {
+        return mMapping.iterator();
+    }
+
     public static class PortMap {
         public final int ipproto;
         public final int orig_port;
@@ -46,69 +111,5 @@ public class PortMapping {
         public int hashCode() {
             return Objects.hash(ipproto, orig_port, redirect_port, redirect_ip);
         }
-    }
-
-    public PortMapping(Context ctx) {
-        mPrefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        reload();
-    }
-
-    public void clear() {
-        mMapping.clear();
-    }
-
-    public void save() {
-        mPrefs.edit()
-                .putString(Prefs.PREF_PORT_MAPPING, toJson(false))
-                .apply();
-    }
-
-    public void reload() {
-        String serialized = mPrefs.getString(Prefs.PREF_PORT_MAPPING, "");
-        if(!serialized.isEmpty())
-            fromJson(serialized);
-        else
-            clear();
-    }
-
-    public boolean fromJson(String json_str) {
-        try {
-            Type listOfMyClassObject = new TypeToken<ArrayList<PortMap>>() {}.getType();
-            Gson gson = new Gson();
-            mMapping = gson.fromJson(json_str, listOfMyClassObject);
-            return true;
-        } catch (JsonParseException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public String toJson(boolean pretty_print) {
-        GsonBuilder builder = new GsonBuilder();
-        if(pretty_print)
-            builder.setPrettyPrinting();
-        Gson gson = builder.create();
-
-        String serialized = gson.toJson(mMapping);
-        //Log.d(TAG, "toJson: " + serialized);
-
-        return serialized;
-    }
-
-    // returns false if the mapping already exists
-    public boolean add(PortMap mapping) {
-        if(mMapping.contains(mapping))
-            return false;
-
-        mMapping.add(mapping);
-        return true;
-    }
-
-    public boolean remove(PortMap mapping) {
-        return mMapping.remove(mapping);
-    }
-
-    public Iterator<PortMap> iter() {
-        return mMapping.iterator();
     }
 }

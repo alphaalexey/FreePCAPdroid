@@ -50,7 +50,7 @@ public class CtrlPermissionsAdapter extends ArrayAdapter<CtrlPermissions.Rule> i
 
     public CtrlPermissionsAdapter(Context context, CtrlPermissions perms) {
         super(context, R.layout.rule_item);
-        mLayoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mLayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         mPermissions = perms;
         mContext = context;
         load();
@@ -61,10 +61,10 @@ public class CtrlPermissionsAdapter extends ArrayAdapter<CtrlPermissions.Rule> i
         Iterator<CtrlPermissions.Rule> it = mPermissions.iterRules();
         List<CtrlPermissions.Rule> sorted = new ArrayList<>();
 
-        while(it.hasNext()) {
+        while (it.hasNext()) {
             CtrlPermissions.Rule rule = it.next();
             AppDescriptor app = AppsResolver.resolveInstalledApp(pm, rule.package_name, 0);
-            if(app != null)
+            if (app != null)
                 mPkgToApp.put(rule.package_name, app);
 
             sorted.add(rule);
@@ -81,7 +81,7 @@ public class CtrlPermissionsAdapter extends ArrayAdapter<CtrlPermissions.Rule> i
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        if(convertView == null)
+        if (convertView == null)
             convertView = mLayoutInflater.inflate(R.layout.rule_item, parent, false);
 
         CtrlPermissions.Rule rule = getItem(position);
@@ -90,7 +90,7 @@ public class CtrlPermissionsAdapter extends ArrayAdapter<CtrlPermissions.Rule> i
                 (app == null) ? rule.package_name : String.format("%s (%s)", app.getName(), app.getPackageName()),
                 mContext.getString((rule.consent == CtrlPermissions.ConsentType.ALLOW) ? R.string.allow : R.string.deny));
 
-        ((TextView)convertView.findViewById(R.id.item_label)).setText(text);
+        ((TextView) convertView.findViewById(R.id.item_label)).setText(text);
 
         return convertView;
     }

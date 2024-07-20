@@ -25,11 +25,17 @@
 #include <jni.h>
 
 jclass jniFindClass(JNIEnv *env, const char *name);
+
 jmethodID jniGetMethodID(JNIEnv *env, jclass cls, const char *name, const char *signature);
+
 jmethodID jniGetStaticMethodID(JNIEnv *env, jclass cls, const char *name, const char *signature);
+
 jfieldID jniFieldID(JNIEnv *env, jclass cls, const char *name, const char *type);
+
 jobject jniEnumVal(JNIEnv *env, const char *class_name, const char *enum_key);
+
 int jniCheckException(JNIEnv *env);
+
 void jniDumpReferences(JNIEnv *env);
 
 #else // if ANDROID

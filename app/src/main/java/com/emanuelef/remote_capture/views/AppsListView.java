@@ -69,13 +69,13 @@ public class AppsListView extends EmptyRecyclerView implements SearchView.OnQuer
                 String charString = constraint.toString().toLowerCase();
                 List<AppDescriptor> appsFiltered;
 
-                if(charString.isEmpty())
+                if (charString.isEmpty())
                     appsFiltered = mAllApps;
                 else {
                     appsFiltered = new ArrayList<>();
 
-                    for(AppDescriptor app : mAllApps) {
-                        if(app.getPackageName().toLowerCase().contains(charString)
+                    for (AppDescriptor app : mAllApps) {
+                        if (app.getPackageName().toLowerCase().contains(charString)
                                 || app.getName().toLowerCase().contains(charString)) {
                             appsFiltered.add(app);
                         }
@@ -108,20 +108,16 @@ public class AppsListView extends EmptyRecyclerView implements SearchView.OnQuer
         return true;
     }
 
-    interface OnSelectedAppListener {
-        void onSelectedApp(AppDescriptor app);
-    }
-
     public void setApps(List<AppDescriptor> installedApps) {
         mAllApps = installedApps;
 
-        if(mAdapter == null) {
+        if (mAdapter == null) {
             mAdapter = new AppsAdapter(getContext(), mAllApps);
             setAdapter(mAdapter);
         } else
             mAdapter.setApps(mAllApps);
 
-        if(mLastFilter != null)
+        if (mLastFilter != null)
             getFilter().filter(mLastFilter);
     }
 
@@ -131,8 +127,12 @@ public class AppsListView extends EmptyRecyclerView implements SearchView.OnQuer
 
             AppDescriptor app = mAdapter.getItem(itemPosition);
 
-            if(app != null)
+            if (app != null)
                 listener.onSelectedApp(app);
         });
+    }
+
+    interface OnSelectedAppListener {
+        void onSelectedApp(AppDescriptor app);
     }
 }

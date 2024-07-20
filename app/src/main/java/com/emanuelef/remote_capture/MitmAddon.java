@@ -66,13 +66,20 @@ public class MitmAddon {
         mMessenger = new Messenger(new ReplyHandler(ctx.getMainLooper(), receiver));
     }
 
-    private final ServiceConnection mConnection = new ServiceConnection() {
+    public static long getInstalledVersion(Context ctx) {
+        try {
+            PackageInfo pInfo = Utils.getPackageInfo(ctx.getPackageManager(), MitmAPI.PACKAGE_NAME, 0);
+            return PackageInfoCompat.getLongVersionCode(pInfo);
+        } catch (PackageManager.NameNotFoundException e) {
+            return -1;
+        }
+    }    private final ServiceConnection mConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             Log.i(TAG, "Service connected");
             mService = new Messenger(service);
 
-            if(mStopRequested)
+            if (mStopRequested)
                 stopProxy();
             else
                 mReceiver.onMitmServiceConnect();
@@ -99,15 +106,6 @@ public class MitmAddon {
             mReceiver.onMitmServiceDisconnect();
         }
     };
-
-    public static long getInstalledVersion(Context ctx) {
-        try {
-            PackageInfo pInfo = Utils.getPackageInfo(ctx.getPackageManager(), MitmAPI.PACKAGE_NAME, 0);
-            return PackageInfoCompat.getLongVersionCode(pInfo);
-        } catch (PackageManager.NameNotFoundException e) {
-            return -1;
-        }
-    }
 
     public static int getUid(Context ctx) {
         try {
@@ -148,11 +146,11 @@ public class MitmAddon {
     public static boolean needsSetup(Context ctx) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
 
-        if(!Prefs.isTLSDecryptionSetupDone(prefs))
+        if (!Prefs.isTLSDecryptionSetupDone(prefs))
             return true;
 
         // Perform some other quick checks just in case the env has changed
-        if(!isInstalled(ctx)) {
+        if (!isInstalled(ctx)) {
             setDecryptionSetupDone(ctx, false);
             return true;
         }
@@ -160,33 +158,11 @@ public class MitmAddon {
         return false;
     }
 
-    private static class ReplyHandler extends Handler {
-        private final WeakReference<MitmListener> mReceiver;
+    public static boolean isDozeEnabled(Context context) {
+        final PowerManager manager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
 
-        ReplyHandler(Looper looper, MitmListener receiver) {
-            super(looper);
-            mReceiver = new WeakReference<>(receiver);
-        }
-
-        @Override
-        public void handleMessage(@NonNull Message msg) {
-            Log.d(TAG, "Message: " + msg.what);
-
-            MitmListener receiver = mReceiver.get();
-            if(receiver == null)
-                return;
-
-            if(msg.what == MitmAPI.MSG_GET_CA_CERTIFICATE) {
-                String ca_pem = null;
-
-                if(msg.getData() != null) {
-                    Bundle res = msg.getData();
-                    ca_pem = res.getString(MitmAPI.CERTIFICATE_RESULT);
-                }
-
-                receiver.onMitmGetCaCertificateResult(ca_pem);
-            }
-        }
+        return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) && (manager != null)
+                && !manager.isIgnoringBatteryOptimizations(MitmAPI.PACKAGE_NAME);
     }
 
     // Asynchronously connect to the service. The onConnect callback will be called.
@@ -194,7 +170,7 @@ public class MitmAddon {
         Intent intent = new Intent();
         intent.setComponent(new ComponentName(MitmAPI.PACKAGE_NAME, MitmAPI.MITM_SERVICE));
 
-        if(!mContext.bindService(intent, mConnection, Context.BIND_AUTO_CREATE |
+        if (!mContext.bindService(intent, mConnection, Context.BIND_AUTO_CREATE |
                 Context.BIND_ALLOW_ACTIVITY_STARTS | extra_flags)) {
             try {
                 mContext.unbindService(mConnection);
@@ -209,7 +185,7 @@ public class MitmAddon {
 
     // This must be always called after connect, e.g. in the OnDestroy
     public void disconnect() {
-        if(mService != null) {
+        if (mService != null) {
             Log.i(TAG, "Unbinding service...");
             try {
                 mContext.unbindService(mConnection);
@@ -225,7 +201,7 @@ public class MitmAddon {
     }
 
     public boolean requestCaCertificate() {
-        if(mService == null) {
+        if (mService == null) {
             Log.e(TAG, "Not connected");
             return false;
         }
@@ -244,7 +220,7 @@ public class MitmAddon {
     // Start the mitm proxy and returns a ParcelFileDescriptor for the data communication.
     // The proxy can be stopped by closing the descriptor and then calling disconnect().
     public ParcelFileDescriptor startProxy(MitmAPI.MitmConfig conf) {
-        if(mService == null) {
+        if (mService == null) {
             Log.e(TAG, "Not connected");
             return null;
         }
@@ -280,7 +256,7 @@ public class MitmAddon {
     }
 
     public boolean stopProxy() {
-        if(mService == null) {
+        if (mService == null) {
             Log.i(TAG, "Not connected, postponing stop message");
             mStopRequested = true;
             return true;
@@ -301,7 +277,7 @@ public class MitmAddon {
     // NOTE: doze could be disabled by PCAPdroid itself, however this is moved to the addon to avoid
     // any issues with the REQUEST_IGNORE_BATTERY_OPTIMIZATIONS Google Play policies
     public boolean disableDoze() {
-        if(mService == null)
+        if (mService == null)
             return false;
 
         Log.i(TAG, "Send disable doze");
@@ -315,10 +291,34 @@ public class MitmAddon {
         }
     }
 
-    public static boolean isDozeEnabled(Context context) {
-        final PowerManager manager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+    private static class ReplyHandler extends Handler {
+        private final WeakReference<MitmListener> mReceiver;
 
-        return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) && (manager != null)
-                && !manager.isIgnoringBatteryOptimizations(MitmAPI.PACKAGE_NAME);
+        ReplyHandler(Looper looper, MitmListener receiver) {
+            super(looper);
+            mReceiver = new WeakReference<>(receiver);
+        }
+
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            Log.d(TAG, "Message: " + msg.what);
+
+            MitmListener receiver = mReceiver.get();
+            if (receiver == null)
+                return;
+
+            if (msg.what == MitmAPI.MSG_GET_CA_CERTIFICATE) {
+                String ca_pem = null;
+
+                if (msg.getData() != null) {
+                    Bundle res = msg.getData();
+                    ca_pem = res.getString(MitmAPI.CERTIFICATE_RESULT);
+                }
+
+                receiver.onMitmGetCaCertificateResult(ca_pem);
+            }
+        }
     }
+
+
 }

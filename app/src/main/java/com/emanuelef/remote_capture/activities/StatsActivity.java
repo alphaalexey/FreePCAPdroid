@@ -19,9 +19,6 @@
 
 package com.emanuelef.remote_capture.activities;
 
-import androidx.annotation.NonNull;
-import androidx.core.view.MenuProvider;
-
 import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Color;
@@ -32,6 +29,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TableLayout;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.core.view.MenuProvider;
 
 import com.emanuelef.remote_capture.CaptureService;
 import com.emanuelef.remote_capture.R;
@@ -89,7 +89,7 @@ public class StatsActivity extends BaseActivity implements MenuProvider {
         mDnsServer = findViewById(R.id.dns_server);
         mAllocStats = findViewById(R.id.alloc_stats);
 
-        if(CaptureService.isCapturingAsRoot()) {
+        if (CaptureService.isCapturingAsRoot()) {
             findViewById(R.id.open_sockets_row).setVisibility(View.GONE);
             findViewById(R.id.row_dropped_connections).setVisibility(View.GONE);
         } else {
@@ -120,7 +120,7 @@ public class StatsActivity extends BaseActivity implements MenuProvider {
         long percentage = (tot_bytes > 0) ?
                 ((stats.ipv6_bytes_sent + stats.ipv6_bytes_rcvd) * 100 / tot_bytes) : 0;
         mIPv6BytesPercentage.setText(
-                String.format(Utils.getPrimaryLocale(this),"%d%%", percentage));
+                String.format(Utils.getPrimaryLocale(this), "%d%%", percentage));
 
         mPacketsSent.setText(Utils.formatIntShort(stats.pkts_sent));
         mPacketsRcvd.setText(Utils.formatIntShort(stats.pkts_rcvd));
@@ -133,7 +133,7 @@ public class StatsActivity extends BaseActivity implements MenuProvider {
 
         updateMemoryStats();
 
-        if(!CaptureService.isDNSEncrypted()) {
+        if (!CaptureService.isDNSEncrypted()) {
             findViewById(R.id.dns_server_row).setVisibility(View.VISIBLE);
             findViewById(R.id.dns_queries_row).setVisibility(View.VISIBLE);
             mDnsServer.setText(CaptureService.getDNSServer());
@@ -142,10 +142,10 @@ public class StatsActivity extends BaseActivity implements MenuProvider {
             findViewById(R.id.dns_queries_row).setVisibility(View.GONE);
         }
 
-        if(stats.num_dropped_conns > 0)
+        if (stats.num_dropped_conns > 0)
             mDroppedConns.setTextColor(Color.RED);
 
-        if(stats.alloc_summary != null) {
+        if (stats.alloc_summary != null) {
             mAllocStats.setVisibility(View.VISIBLE);
             mAllocStats.setText(stats.alloc_summary);
         }
@@ -184,10 +184,10 @@ public class StatsActivity extends BaseActivity implements MenuProvider {
     public boolean onMenuItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
 
-        if(id == R.id.copy_to_clipboard) {
+        if (id == R.id.copy_to_clipboard) {
             Utils.copyToClipboard(this, getContents());
             return true;
-        } else if(id == R.id.share) {
+        } else if (id == R.id.share) {
             Utils.shareText(this, getString(R.string.stats), getContents());
             return true;
         }

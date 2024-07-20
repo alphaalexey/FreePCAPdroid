@@ -364,7 +364,7 @@
     <string name="license_service_unavailable">El servicio de licencias de PCAPdroid no está disponible ahora mismo. Vuelve a intentarlo en unos minutos</string>
     <string name="requesting_unlock_token">Solicitando token de desbloqueo, por favor espera</string>
     <string name="show_action">Mostrar</string>
-    <string name="unlock_token_msg1">Este es tu token de desbloqueo. Guárdalo, lo necesitarás para generar tus códigos de licencia <a href="%1$s"/></string>
+    <string name="unlock_token_msg1">Este es tu token de desbloqueo. Guárdalo, lo necesitarás para generar tus códigos de licencia <a href="%1$s" /></string>
     <string name="heap_usage">Uso del montón</string>
     <string name="vpn_lockdown_notice">Para evitar que las aplicaciones accedan a Internet cuando PCAPdroid no se está ejecutando (por ejemplo, después de reiniciar), puede configurar PCAPdroid como una VPN siempre activa en modo de bloqueo.
 \n

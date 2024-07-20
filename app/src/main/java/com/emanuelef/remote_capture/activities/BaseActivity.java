@@ -25,7 +25,7 @@ public class BaseActivity extends AppCompatActivity {
     protected void displayBackAction() {
         ActionBar actionBar = getSupportActionBar();
 
-        if(actionBar != null) {
+        if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
             mBackAction = true;
         }
@@ -34,8 +34,8 @@ public class BaseActivity extends AppCompatActivity {
     protected Fragment getFragment(Class targetClass) {
         List<Fragment> fragments = getSupportFragmentManager().getFragments();
 
-        for(Fragment fragment : fragments) {
-            if(targetClass.isInstance(fragment))
+        for (Fragment fragment : fragments) {
+            if (targetClass.isInstance(fragment))
                 return fragment;
         }
 
@@ -49,7 +49,7 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     @SuppressWarnings("deprecation")
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if(mBackAction && (item.getItemId() == android.R.id.home)) {
+        if (mBackAction && (item.getItemId() == android.R.id.home)) {
             onBackPressed();
             return true;
         }

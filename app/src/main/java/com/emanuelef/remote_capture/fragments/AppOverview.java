@@ -89,7 +89,7 @@ public class AppOverview extends Fragment implements MenuProvider {
 
         AppsResolver res = new AppsResolver(ctx);
         AppDescriptor dsc = res.getAppByUid(mUid, PackageManager.GET_PERMISSIONS);
-        if(dsc == null) {
+        if (dsc == null) {
             mCreateError = true;
             Utils.showToast(ctx, R.string.app_not_found, mUid);
             requireActivity().finish();
@@ -103,32 +103,32 @@ public class AppOverview extends Fragment implements MenuProvider {
         mBlockedConnsRow = view.findViewById(R.id.conns_blocked_row);
         mPermissions = view.findViewById(R.id.permissions);
 
-        if(Utils.isTv(ctx)) {
+        if (Utils.isTv(ctx)) {
             // necessary to make scroll work on TV
             // but disables ability to select and copy permissions textview
             ViewGroup layout = view.findViewById(R.id.layout);
             layout.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
         }
 
-        ((TextView)view.findViewById(R.id.uid)).setText(Utils.formatInteger(ctx, dsc.getUid()));
-        ((TextView)view.findViewById(R.id.name)).setText(dsc.getName());
-        ((ImageView)view.findViewById(R.id.app_icon)).setImageDrawable(dsc.getIcon());
+        ((TextView) view.findViewById(R.id.uid)).setText(Utils.formatInteger(ctx, dsc.getUid()));
+        ((TextView) view.findViewById(R.id.name)).setText(dsc.getName());
+        ((ImageView) view.findViewById(R.id.app_icon)).setImageDrawable(dsc.getIcon());
 
         mPinfo = dsc.getPackageInfo();
 
-        if(mPinfo != null) {
-            ((TextView)view.findViewById(R.id.package_name)).setText(dsc.getPackageName());
-            ((TextView)view.findViewById(R.id.version)).setText(mPinfo.versionName);
-            ((TextView)view.findViewById(R.id.target_sdk)).setText(Utils.formatInteger(ctx, mPinfo.applicationInfo.targetSdkVersion));
-            ((TextView)view.findViewById(R.id.install_date)).setText(Utils.formatEpochFull(ctx, mPinfo.firstInstallTime / 1000));
-            ((TextView)view.findViewById(R.id.last_update)).setText(Utils.formatEpochFull(ctx, mPinfo.lastUpdateTime / 1000));
+        if (mPinfo != null) {
+            ((TextView) view.findViewById(R.id.package_name)).setText(dsc.getPackageName());
+            ((TextView) view.findViewById(R.id.version)).setText(mPinfo.versionName);
+            ((TextView) view.findViewById(R.id.target_sdk)).setText(Utils.formatInteger(ctx, mPinfo.applicationInfo.targetSdkVersion));
+            ((TextView) view.findViewById(R.id.install_date)).setText(Utils.formatEpochFull(ctx, mPinfo.firstInstallTime / 1000));
+            ((TextView) view.findViewById(R.id.last_update)).setText(Utils.formatEpochFull(ctx, mPinfo.lastUpdateTime / 1000));
 
-            if((mPinfo.requestedPermissions != null) && (mPinfo.requestedPermissions.length != 0)) {
+            if ((mPinfo.requestedPermissions != null) && (mPinfo.requestedPermissions.length != 0)) {
                 StringBuilder builder = new StringBuilder();
                 boolean first = true;
 
-                for(String perm: mPinfo.requestedPermissions) {
-                    if(first)
+                for (String perm : mPinfo.requestedPermissions) {
+                    if (first)
                         first = false;
                     else
                         builder.append("\n");
@@ -138,7 +138,7 @@ public class AppOverview extends Fragment implements MenuProvider {
 
                 mPermissions.setText(builder.toString());
 
-                if(Utils.isTv(ctx)) {
+                if (Utils.isTv(ctx)) {
                     mPermissions.setOnClickListener(v -> Utils.shareText(ctx, getString(R.string.permissions), mPermissions.getText().toString()));
                 }
             } else {
@@ -147,7 +147,7 @@ public class AppOverview extends Fragment implements MenuProvider {
             }
         } else {
             // This is a virtual App
-            if(!dsc.getDescription().isEmpty()) {
+            if (!dsc.getDescription().isEmpty()) {
                 ((TextView) view.findViewById(R.id.vapp_info)).setText(dsc.getDescription());
                 view.findViewById(R.id.vapp_info).setVisibility(View.VISIBLE);
             }
@@ -169,7 +169,7 @@ public class AppOverview extends Fragment implements MenuProvider {
     @Override
     public void onResume() {
         super.onResume();
-        if(mCreateError)
+        if (mCreateError)
             return;
 
         updateStatus();
@@ -178,14 +178,14 @@ public class AppOverview extends Fragment implements MenuProvider {
     @Override
     public void onPause() {
         super.onPause();
-        if(mCreateError)
+        if (mCreateError)
             return;
 
         mHandler.removeCallbacksAndMessages(null);
     }
 
     private String asString() {
-        if(mPermissions.getVisibility() == View.GONE)
+        if (mPermissions.getVisibility() == View.GONE)
             return Utils.table2Text(mTable);
 
         return Utils.table2Text(mTable) +
@@ -199,7 +199,7 @@ public class AppOverview extends Fragment implements MenuProvider {
     public void onCreateMenu(@NonNull Menu menu, MenuInflater menuInflater) {
         menuInflater.inflate(R.menu.app_overview_menu, menu);
 
-        if(mPinfo == null)
+        if (mPinfo == null)
             menu.findItem(R.id.app_info).setVisible(false);
     }
 
@@ -207,15 +207,15 @@ public class AppOverview extends Fragment implements MenuProvider {
     public boolean onMenuItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
 
-        if(id == R.id.app_info) {
+        if (id == R.id.app_info) {
             Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
             intent.setData(Uri.fromParts("package", mPinfo.packageName, null));
             Utils.startActivity(requireContext(), intent);
             return true;
-        } else if(id == R.id.copy_to_clipboard) {
+        } else if (id == R.id.copy_to_clipboard) {
             Utils.copyToClipboard(requireContext(), asString());
             return true;
-        } else if(id == R.id.share) {
+        } else if (id == R.id.share) {
             Utils.shareText(requireContext(), getString(R.string.app_details), asString());
             return true;
         }
@@ -226,11 +226,11 @@ public class AppOverview extends Fragment implements MenuProvider {
     private void updateStatus() {
         Context ctx = requireContext();
         ConnectionsRegister reg = CaptureService.getConnsRegister();
-        if(reg == null)
+        if (reg == null)
             return;
 
         AppStats stats = reg.getAppStats(mUid);
-        if(stats == null)
+        if (stats == null)
             stats = new AppStats(mUid);
 
         mBytes.setText(getString(R.string.rcvd_and_sent, Utils.formatBytes(stats.rcvdBytes), Utils.formatBytes(stats.sentBytes)));

@@ -36,7 +36,7 @@ public class ActionReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String unblock_app = intent.getStringExtra(EXTRA_UNBLOCK_APP);
 
-        if((unblock_app != null) && !unblock_app.isEmpty()) {
+        if ((unblock_app != null) && !unblock_app.isEmpty()) {
             Log.d(TAG, "unblock_app: " + unblock_app);
             Blocklist blocklist = PCAPdroid.getInstance().getBlocklist();
             blocklist.removeApp(unblock_app);

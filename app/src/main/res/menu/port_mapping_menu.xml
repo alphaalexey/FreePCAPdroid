@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
         android:id="@+id/toggle_btn"
-        android:title=""
         android:orderInCategory="10"
-        app:showAsAction="always"
-        app:actionViewClass="androidx.appcompat.widget.SwitchCompat" />
+        android:title=""
+        app:actionViewClass="androidx.appcompat.widget.SwitchCompat"
+        app:showAsAction="always" />
 
     <item
         android:id="@+id/add_mapping"
-        android:title="@string/add_action"
-        android:orderInCategory="20"
         android:icon="@drawable/ic_add"
+        android:orderInCategory="20"
+        android:title="@string/add_action"
         app:showAsAction="ifRoom" />
 </menu>

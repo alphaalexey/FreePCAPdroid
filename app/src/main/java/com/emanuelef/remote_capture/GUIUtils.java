@@ -21,7 +21,7 @@ public class GUIUtils {
     }
 
     public boolean isFirewallVisible() {
-        if(CaptureService.isServiceActive())
+        if (CaptureService.isServiceActive())
             return !CaptureService.isCapturingAsRoot() && !CaptureService.isReadingFromPcapFile();
         else
             return !Prefs.isRootCaptureEnabled(mPrefs);

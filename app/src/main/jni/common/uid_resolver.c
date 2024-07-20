@@ -40,11 +40,11 @@ struct uid_resolver {
 
 // src_port and dst_port are in HBO.
 static int get_uid_proc(int ipver, int ipproto, const char *conn_shex,
-                         const char *conn_dhex, u_int16_t src_port, u_int16_t dst_port) {
+                        const char *conn_dhex, u_int16_t src_port, u_int16_t dst_port) {
     char *proc;
 
     // Get proc file name
-    switch(ipproto) {
+    switch (ipproto) {
         case IPPROTO_TCP:
             proc = (ipver == 4) ? "/proc/net/tcp" : "/proc/net/tcp6";
             break;
@@ -77,20 +77,20 @@ static int get_uid_proc(int ipver, int ipproto, const char *conn_shex,
                        ? "%*d: %8s:%X %8s:%X %*X %*X:%*X %*X:%*X %*X %d"
                        : "%*d: %32s:%X %32s:%X %*X %*X:%*X %*X:%*X %*X %d");
 
-    while(fgets(line, sizeof(line), fd) != NULL) {
+    while (fgets(line, sizeof(line), fd) != NULL) {
         // skip header
-        if(!lines++)
+        if (!lines++)
             continue;
 
         //log_i("[try] %s", line);
 
-        if(sscanf(line, fmt, shex, &sport, dhex, &dport, &uid) == 5) {
+        if (sscanf(line, fmt, shex, &sport, dhex, &dport, &uid) == 5) {
             //log_d("[try] %s:%d -> %s:%d [%d]", shex, sport, dhex, dport, uid);
 
-            if((sport == src_port)
-                    && ((dport == dst_port) || (dport == 0 /* ANY */))
-                    && (!strcmp(conn_dhex, dhex) || !strcmp(dhex, zero /* ANY */))
-                    && (!strcmp(conn_shex, shex) || !strcmp(shex, zero /* ANY */))) {
+            if ((sport == src_port)
+                && ((dport == dst_port) || (dport == 0 /* ANY */))
+                && (!strcmp(conn_dhex, dhex) || !strcmp(dhex, zero /* ANY */))
+                && (!strcmp(conn_shex, shex) || !strcmp(shex, zero /* ANY */))) {
                 // found
                 rv = uid;
                 break;
@@ -100,7 +100,7 @@ static int get_uid_proc(int ipver, int ipproto, const char *conn_shex,
 
     fclose(fd);
 
-    return(rv);
+    return (rv);
 }
 
 /* ******************************************************* */
@@ -132,7 +132,7 @@ static int get_uid_slow(const zdtun_5tuple_t *conn_info) {
     u_int16_t sport = ntohs(conn_info->src_port);
     u_int16_t dport = ntohs(conn_info->dst_port);
 
-    if(conn_info->ipver == 4) {
+    if (conn_info->ipver == 4) {
         sprintf(shex, "%08X", conn_info->src_ip.ip4);
         sprintf(dhex, "%08X", conn_info->dst_ip.ip4);
 
@@ -171,7 +171,7 @@ static int get_uid_slow(const zdtun_5tuple_t *conn_info) {
 #ifdef ANDROID
 
 static int get_uid_q(uid_resolver_t *resolver,
-                      const zdtun_5tuple_t *conn_info) {
+                     const zdtun_5tuple_t *conn_info) {
     JNIEnv *env = resolver->env;
     int juid = UID_UNKNOWN;
     int version = conn_info->ipver;
@@ -180,16 +180,16 @@ static int get_uid_q(uid_resolver_t *resolver,
     char dstip[INET6_ADDRSTRLEN];
 
     // getUidQ only works for TCP/UDP connections
-    if((conn_info->ipproto != IPPROTO_TCP) && (conn_info->ipproto != IPPROTO_UDP))
+    if ((conn_info->ipproto != IPPROTO_TCP) && (conn_info->ipproto != IPPROTO_UDP))
         return UID_UNKNOWN;
 
-    if(resolver->getUidQ == NULL) {
+    if (resolver->getUidQ == NULL) {
         // Resolve method
         jclass vpn_service_cls = (*env)->GetObjectClass(env, resolver->vpn_service);
         resolver->getUidQ = jniGetMethodID(env, vpn_service_cls, "getUidQ",
-                "(ILjava/lang/String;ILjava/lang/String;I)I");
+                                           "(ILjava/lang/String;ILjava/lang/String;I)I");
 
-        if(!resolver->getUidQ)
+        if (!resolver->getUidQ)
             return UID_UNKNOWN;
     }
 
@@ -202,10 +202,10 @@ static int get_uid_q(uid_resolver_t *resolver,
     jstring jsource = (*env)->NewStringUTF(env, srcip);
     jstring jdest = (*env)->NewStringUTF(env, dstip);
 
-    if((jsource != NULL) && (jdest != NULL)) {
+    if ((jsource != NULL) && (jdest != NULL)) {
         juid = (*env)->CallIntMethod(
-            env, resolver->vpn_service, resolver->getUidQ,
-            conn_info->ipproto, jsource, sport, jdest, dport);
+                env, resolver->vpn_service, resolver->getUidQ,
+                conn_info->ipproto, jsource, sport, jdest, dport);
         jniCheckException(env);
     }
 
@@ -221,10 +221,10 @@ static int get_uid_q(uid_resolver_t *resolver,
 
 #ifdef ANDROID
 
-uid_resolver_t* init_uid_resolver(jint sdk_version, JNIEnv *env, jobject vpn) {
+uid_resolver_t *init_uid_resolver(jint sdk_version, JNIEnv *env, jobject vpn) {
     uid_resolver_t *rv = pd_calloc(1, sizeof(uid_resolver_t));
 
-    if(!rv) {
+    if (!rv) {
         log_e("calloc uid_resolver_t failed");
         return NULL;
     }
@@ -238,9 +238,9 @@ uid_resolver_t* init_uid_resolver(jint sdk_version, JNIEnv *env, jobject vpn) {
 
 #endif
 
-uid_resolver_t* init_uid_resolver_from_proc() {
+uid_resolver_t *init_uid_resolver_from_proc() {
 #ifdef ANDROID
-    return(init_uid_resolver(0, NULL, 0));
+    return (init_uid_resolver(0, NULL, 0));
 #else
     return pd_calloc(1, sizeof(uid_resolver_t));
 #endif
@@ -256,9 +256,9 @@ void destroy_uid_resolver(uid_resolver_t *resolver) {
 
 int get_uid(uid_resolver_t *resolver, const zdtun_5tuple_t *conn_info) {
 #ifdef ANDROID
-    if(resolver->sdk > 28) // Android 9 Pie
-        return(get_uid_q(resolver, conn_info));
+    if (resolver->sdk > 28) // Android 9 Pie
+        return (get_uid_q(resolver, conn_info));
     else
 #endif
-        return(get_uid_slow(conn_info));
+        return (get_uid_slow(conn_info));
 }

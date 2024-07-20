@@ -56,29 +56,24 @@ import java.util.Locale;
  * Since the text of a chunk can be very long (hundreds of KB) and rendering it would freeze the UI,
  * it is split into pages of VISUAL_PAGE_SIZE. */
 public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadViewHolder> implements HTTPReassembly.ReassemblyListener {
-    private static final String TAG = "PayloadAdapter";
     public static final int COLLAPSE_CHUNK_SIZE = 1500;
     public static final int VISUAL_PAGE_SIZE = 4020; // must be a multiple of 67 to avoid splitting the hexdump
+    private static final String TAG = "PayloadAdapter";
     private final LayoutInflater mLayoutInflater;
     private final ConnectionDescriptor mConn;
     private final Context mContext;
     private final ChunkType mMode;
-    private int mHandledChunks;
-    private AdapterChunk mUnrepliedHttpReq = null;
     private final ArrayList<AdapterChunk> mChunks = new ArrayList<>();
     private final HTTPReassembly mHttpReq;
     private final HTTPReassembly mHttpRes;
     private final boolean mSupportsFileDialog;
+    private int mHandledChunks;
+    private AdapterChunk mUnrepliedHttpReq = null;
     private boolean mShowAsPrintable;
     private ExportPayloadHandler mExportHandler;
 
-    public interface ExportPayloadHandler {
-        void exportPayload(String payload);
-        void exportPayload(byte[] payload, String contentType, String fname);
-    }
-
     public PayloadAdapter(Context context, ConnectionDescriptor conn, ChunkType mode, boolean showAsPrintable) {
-        mLayoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mLayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         mConn = conn;
         mContext = context;
         mMode = mode;
@@ -99,139 +94,6 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
         mExportHandler = handler;
     }
 
-    private class AdapterChunk {
-        private final PayloadChunk mChunk;
-        private String mTheText;
-        private boolean mIsExpanded;
-        private int mNumPages = 1;
-        public final int incrId;
-
-        AdapterChunk(PayloadChunk _chunk, int incr_id) {
-            mChunk = _chunk;
-            incrId = incr_id;
-        }
-
-        boolean canBeExpanded() {
-            return mChunk.payload.length > COLLAPSE_CHUNK_SIZE;
-        }
-
-        boolean isExpanded() {
-            return mIsExpanded;
-        }
-
-        int getNumPages() {
-            return mNumPages;
-        }
-
-        PayloadChunk getPayloadChunk() {
-            return mChunk;
-        }
-
-        @CheckResult
-        private String makeText(boolean as_printable, boolean expanded) {
-            int dump_len = expanded ? mChunk.payload.length : Math.min(mChunk.payload.length, COLLAPSE_CHUNK_SIZE);
-
-            if(!as_printable)
-                return Utils.hexdump(mChunk.payload, 0, dump_len);
-            else
-                return new String(mChunk.payload, 0, dump_len, StandardCharsets.UTF_8);
-        }
-
-        @CheckResult
-        private String makeText() {
-            return makeText(mShowAsPrintable, mIsExpanded);
-        }
-
-        void expand() {
-            mIsExpanded = true;
-            mTheText = makeText();
-
-            // round up div
-            mNumPages = (mTheText.length() + VISUAL_PAGE_SIZE - 1) / VISUAL_PAGE_SIZE;
-        }
-
-        // collapses the item and returns the old number of pages
-        void collapse() {
-            mIsExpanded = false;
-            mTheText = null;
-
-            mNumPages = 1;
-        }
-
-        String getText(int start, int end) {
-            if(mTheText == null)
-                mTheText = makeText();
-
-            if((start == 0) && (end >= mTheText.length() - 1)) {
-                return mTheText;
-            }
-
-            return mTheText.substring(start, end);
-        }
-
-        String getExpandedText(boolean as_printable) {
-            return makeText(as_printable, true);
-        }
-
-        Page getPage(int pageIdx) {
-            assert(pageIdx < mNumPages);
-
-            if(mTheText == null)
-                mTheText = makeText();
-
-            if(!mIsExpanded)
-                return new Page(this, 0, mTheText.length() - 1, true);
-            else
-                return new Page(this, pageIdx * VISUAL_PAGE_SIZE,
-                        Math.min(((pageIdx + 1) * VISUAL_PAGE_SIZE) - 1, mTheText.length() - 1),
-                        pageIdx == (mNumPages - 1));
-        }
-    }
-
-    private static class Page {
-        AdapterChunk adaptChunk;
-        int textStart;
-        int textEnd;
-        boolean isLast;
-
-        Page(AdapterChunk _adaptChunk, int _textStart, int _textEnd, boolean _isLast) {
-            adaptChunk = _adaptChunk;
-            textStart = _textStart;
-            textEnd = _textEnd;
-            isLast = _isLast;
-        }
-
-        boolean isFirst() {
-            return (textStart == 0);
-        }
-
-        String getText() {
-            return adaptChunk.getText(textStart, textEnd);
-        }
-    }
-
-    protected static class PayloadViewHolder extends RecyclerView.ViewHolder {
-        View headerLine;
-        View dumpBox;
-        TextView header;
-        TextView dump;
-        MaterialButton expandButton;
-        MaterialButton copybutton;
-        MaterialButton exportbutton;
-
-        public PayloadViewHolder(View view) {
-            super(view);
-
-            headerLine = view.findViewById(R.id.header_line);
-            header = view.findViewById(R.id.header);
-            dump = view.findViewById(R.id.dump);
-            dumpBox = view.findViewById(R.id.dump_box);
-            expandButton = view.findViewById(R.id.expand_button);
-            copybutton = view.findViewById(R.id.copy_button);
-            exportbutton = view.findViewById(R.id.export_button);
-        }
-    }
-
     @NonNull
     @Override
     public PayloadViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -242,7 +104,7 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
             int pos = holder.getAbsoluteAdapterPosition();
             Page page = getItem(pos);
 
-            if(page.adaptChunk.isExpanded()) {
+            if (page.adaptChunk.isExpanded()) {
                 int numPages = page.adaptChunk.getNumPages();
                 int firstPagePos = pos - (numPages - 1);
                 page.adaptChunk.collapse();
@@ -263,7 +125,7 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
     }
 
     private void handleCopyExportButtons(PayloadViewHolder holder, boolean is_export) {
-        if(is_export && (mExportHandler == null))
+        if (is_export && (mExportHandler == null))
             return;
 
         int payload_pos = holder.getAbsoluteAdapterPosition();
@@ -274,7 +136,7 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
         if (chunk == null)
             return;
 
-        if(mMode == ChunkType.HTTP) {
+        if (mMode == ChunkType.HTTP) {
             String payload = chunk.getExpandedText(true);
             int crlf_pos = payload.indexOf("\r\n\r\n");
             String content_type = ((chunk.mChunk.contentType != null) && (!chunk.mChunk.contentType.isEmpty())) ?
@@ -324,10 +186,12 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
 
             AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
             builder.setTitle(title);
-            builder.setSingleChoiceItems(choices, 1, (dialogInterface, i) -> {});
-            builder.setNeutralButton(R.string.cancel_action, (dialogInterface, i) -> {});
+            builder.setSingleChoiceItems(choices, 1, (dialogInterface, i) -> {
+            });
+            builder.setNeutralButton(R.string.cancel_action, (dialogInterface, i) -> {
+            });
             builder.setPositiveButton(positive_action, (dialogInterface, i) -> {
-                int choice = ((AlertDialog)dialogInterface).getListView().getCheckedItemPosition();
+                int choice = ((AlertDialog) dialogInterface).getListView().getCheckedItemPosition();
                 String to_copy = payload;
 
                 if (choice != 2) {
@@ -366,11 +230,13 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
 
             AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
             builder.setTitle(title);
-            builder.setSingleChoiceItems(choices.toArray(new String[]{}), mShowAsPrintable ? 0 : 1, (dialogInterface, i) -> {});
+            builder.setSingleChoiceItems(choices.toArray(new String[]{}), mShowAsPrintable ? 0 : 1, (dialogInterface, i) -> {
+            });
 
-            builder.setNeutralButton(R.string.cancel_action, (dialogInterface, i) -> {});
+            builder.setNeutralButton(R.string.cancel_action, (dialogInterface, i) -> {
+            });
             builder.setPositiveButton(positive_action, (dialogInterface, i) -> {
-                int choice = ((AlertDialog)dialogInterface).getListView().getCheckedItemPosition();
+                int choice = ((AlertDialog) dialogInterface).getListView().getCheckedItemPosition();
 
                 if (choice == 2 /* raw bytes */) {
                     assert (is_export);
@@ -392,7 +258,7 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
     }
 
     private String getHeaderTag(PayloadChunk chunk) {
-        if(mMode == ChunkType.HTTP)
+        if (mMode == ChunkType.HTTP)
             return (chunk.is_sent) ? mContext.getString(R.string.request) : mContext.getString(R.string.response);
         else
             return chunk.is_sent ? mContext.getString(R.string.tx_direction) : mContext.getString(R.string.rx_direction);
@@ -403,7 +269,7 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
         Page page = getItem(position);
         PayloadChunk chunk = page.adaptChunk.getPayloadChunk();
 
-        if(page.isFirst()) {
+        if (page.isFirst()) {
             holder.headerLine.setVisibility(View.VISIBLE);
 
             Locale locale = Utils.getPrimaryLocale(mContext);
@@ -415,7 +281,7 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
         } else
             holder.headerLine.setVisibility(View.GONE);
 
-        if(page.isLast && page.adaptChunk.canBeExpanded()) {
+        if (page.isLast && page.adaptChunk.canBeExpanded()) {
             holder.expandButton.setVisibility(View.VISIBLE);
             holder.expandButton.setRotation(page.adaptChunk.isExpanded() ? 180 : 0);
         } else
@@ -423,7 +289,7 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
 
         holder.dump.setText(page.getText());
 
-        if(chunk.is_sent) {
+        if (chunk.is_sent) {
             holder.dumpBox.setBackgroundResource(R.color.sentPayloadBg);
             holder.dump.setTextColor(ContextCompat.getColor(mContext, R.color.sentPayloadFg));
         } else {
@@ -437,31 +303,31 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
         // TODO remove loop, as it can generate ANRs on high number of elements
         int count = 0;
 
-        for(AdapterChunk aChunk: mChunks)
+        for (AdapterChunk aChunk : mChunks)
             count += aChunk.getNumPages();
 
         return count;
     }
 
     public Page getItem(int pos) {
-        if(pos < 0)
+        if (pos < 0)
             return null;
 
         int count = 0;
         int i;
 
         // Find the AdapterChunk for the given page pos
-        for(i=0; i < mChunks.size(); i++) {
+        for (i = 0; i < mChunks.size(); i++) {
             AdapterChunk aChunk = mChunks.get(i);
             int new_count = count + aChunk.getNumPages();
 
-            if((pos >= count) && (pos < new_count))
+            if ((pos >= count) && (pos < new_count))
                 break;
 
             count = new_count;
         }
 
-        if(i >= mChunks.size())
+        if (i >= mChunks.size())
             return null;
 
         int pageIdx = pos - count;
@@ -470,12 +336,12 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
 
     @SuppressLint("NotifyDataSetChanged")
     public void setDisplayAsPrintableText(boolean asText) {
-        if(mShowAsPrintable != asText) {
+        if (mShowAsPrintable != asText) {
             mShowAsPrintable = asText;
 
             // Chunk pagination depends on the displayed data length, collapsing everything is simpler
             // than handling individual changes
-            for(AdapterChunk chunk: mChunks)
+            for (AdapterChunk chunk : mChunks)
                 chunk.collapse(); // resets the chunk text
             notifyDataSetChanged();
         }
@@ -485,9 +351,9 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
         int i;
         int count = 0;
 
-        for(i=0; i < mChunks.size(); i++) {
+        for (i = 0; i < mChunks.size(); i++) {
             AdapterChunk aChunk = mChunks.get(i);
-            if(aChunk == chunk)
+            if (aChunk == chunk)
                 break;
 
             count += aChunk.getNumPages();
@@ -499,24 +365,24 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
     public void handleChunksAdded(int tot_chunks) {
         int items_count = -1;
 
-        for(int i = mHandledChunks; i<tot_chunks; i++) {
+        for (int i = mHandledChunks; i < tot_chunks; i++) {
             PayloadChunk chunk = mConn.getPayloadChunk(i);
-            if(chunk == null)
+            if (chunk == null)
                 continue;
 
             // Exclude unrelated chunks
-            if((mMode != ChunkType.RAW) && (mMode != chunk.type))
+            if ((mMode != ChunkType.RAW) && (mMode != chunk.type))
                 continue;
 
-            if(mMode == ChunkType.HTTP) {
+            if (mMode == ChunkType.HTTP) {
                 // will call onChunkReassembled
-                if(chunk.is_sent)
+                if (chunk.is_sent)
                     mHttpReq.handleChunk(chunk);
                 else
                     mHttpRes.handleChunk(chunk);
             } else {
                 // TODO remove temporary caching due to slow getItemCount
-                if(items_count == -1)
+                if (items_count == -1)
                     items_count = getItemCount();
                 mChunks.add(new AdapterChunk(chunk, mChunks.size()));
                 notifyItemInserted(items_count);
@@ -529,10 +395,10 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
 
     private void setNextUnrepliedRequest(int prevChunkIdx) {
         // Possibly find next un-replied HTTP request
-        for(int i=prevChunkIdx + 1; i<mChunks.size(); i++) {
+        for (int i = prevChunkIdx + 1; i < mChunks.size(); i++) {
             AdapterChunk cur = mChunks.get(i);
 
-            if(cur.mChunk.is_sent) {
+            if (cur.mChunk.is_sent) {
                 mUnrepliedHttpReq = cur;
                 return;
             }
@@ -550,19 +416,158 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
 
         // Need to determine where to add the chunk. If HTTP request, always add it to the bottom.
         // If HTTP reply, it should be added right after the first un-replied HTTP request
-        if(!chunk.is_sent && (mUnrepliedHttpReq != null)) {
+        if (!chunk.is_sent && (mUnrepliedHttpReq != null)) {
             // HTTP reply to a matching request
             int reqPos = mChunks.indexOf(mUnrepliedHttpReq);
-            assert(reqPos >= 0);
+            assert (reqPos >= 0);
 
             insertPos = reqPos + 1;
             adapterPos = getAdapterPosition(mUnrepliedHttpReq) + mUnrepliedHttpReq.getNumPages();
             Log.d(TAG, String.format("chunk #%d reply of #%d at %d", adapterChunk.incrId, mUnrepliedHttpReq.incrId, insertPos));
             setNextUnrepliedRequest(reqPos);
-        } else if((chunk.is_sent) && (mUnrepliedHttpReq == null))
+        } else if ((chunk.is_sent) && (mUnrepliedHttpReq == null))
             mUnrepliedHttpReq = adapterChunk;
 
         mChunks.add(insertPos, adapterChunk);
         notifyItemInserted(adapterPos);
+    }
+
+    public interface ExportPayloadHandler {
+        void exportPayload(String payload);
+
+        void exportPayload(byte[] payload, String contentType, String fname);
+    }
+
+    private static class Page {
+        AdapterChunk adaptChunk;
+        int textStart;
+        int textEnd;
+        boolean isLast;
+
+        Page(AdapterChunk _adaptChunk, int _textStart, int _textEnd, boolean _isLast) {
+            adaptChunk = _adaptChunk;
+            textStart = _textStart;
+            textEnd = _textEnd;
+            isLast = _isLast;
+        }
+
+        boolean isFirst() {
+            return (textStart == 0);
+        }
+
+        String getText() {
+            return adaptChunk.getText(textStart, textEnd);
+        }
+    }
+
+    protected static class PayloadViewHolder extends RecyclerView.ViewHolder {
+        View headerLine;
+        View dumpBox;
+        TextView header;
+        TextView dump;
+        MaterialButton expandButton;
+        MaterialButton copybutton;
+        MaterialButton exportbutton;
+
+        public PayloadViewHolder(View view) {
+            super(view);
+
+            headerLine = view.findViewById(R.id.header_line);
+            header = view.findViewById(R.id.header);
+            dump = view.findViewById(R.id.dump);
+            dumpBox = view.findViewById(R.id.dump_box);
+            expandButton = view.findViewById(R.id.expand_button);
+            copybutton = view.findViewById(R.id.copy_button);
+            exportbutton = view.findViewById(R.id.export_button);
+        }
+    }
+
+    private class AdapterChunk {
+        public final int incrId;
+        private final PayloadChunk mChunk;
+        private String mTheText;
+        private boolean mIsExpanded;
+        private int mNumPages = 1;
+
+        AdapterChunk(PayloadChunk _chunk, int incr_id) {
+            mChunk = _chunk;
+            incrId = incr_id;
+        }
+
+        boolean canBeExpanded() {
+            return mChunk.payload.length > COLLAPSE_CHUNK_SIZE;
+        }
+
+        boolean isExpanded() {
+            return mIsExpanded;
+        }
+
+        int getNumPages() {
+            return mNumPages;
+        }
+
+        PayloadChunk getPayloadChunk() {
+            return mChunk;
+        }
+
+        @CheckResult
+        private String makeText(boolean as_printable, boolean expanded) {
+            int dump_len = expanded ? mChunk.payload.length : Math.min(mChunk.payload.length, COLLAPSE_CHUNK_SIZE);
+
+            if (!as_printable)
+                return Utils.hexdump(mChunk.payload, 0, dump_len);
+            else
+                return new String(mChunk.payload, 0, dump_len, StandardCharsets.UTF_8);
+        }
+
+        @CheckResult
+        private String makeText() {
+            return makeText(mShowAsPrintable, mIsExpanded);
+        }
+
+        void expand() {
+            mIsExpanded = true;
+            mTheText = makeText();
+
+            // round up div
+            mNumPages = (mTheText.length() + VISUAL_PAGE_SIZE - 1) / VISUAL_PAGE_SIZE;
+        }
+
+        // collapses the item and returns the old number of pages
+        void collapse() {
+            mIsExpanded = false;
+            mTheText = null;
+
+            mNumPages = 1;
+        }
+
+        String getText(int start, int end) {
+            if (mTheText == null)
+                mTheText = makeText();
+
+            if ((start == 0) && (end >= mTheText.length() - 1)) {
+                return mTheText;
+            }
+
+            return mTheText.substring(start, end);
+        }
+
+        String getExpandedText(boolean as_printable) {
+            return makeText(as_printable, true);
+        }
+
+        Page getPage(int pageIdx) {
+            assert (pageIdx < mNumPages);
+
+            if (mTheText == null)
+                mTheText = makeText();
+
+            if (!mIsExpanded)
+                return new Page(this, 0, mTheText.length() - 1, true);
+            else
+                return new Page(this, pageIdx * VISUAL_PAGE_SIZE,
+                        Math.min(((pageIdx + 1) * VISUAL_PAGE_SIZE) - 1, mTheText.length() - 1),
+                        pageIdx == (mNumPages - 1));
+        }
     }
 }

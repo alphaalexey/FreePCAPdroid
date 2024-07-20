@@ -31,8 +31,8 @@ public class Geomodel {
         public final Country country;
 
         @MaxMindDbConstructor
-        public CountryResult (
-                @MaxMindDbParameter(name="country") Country country
+        public CountryResult(
+                @MaxMindDbParameter(name = "country") Country country
         ) {
             this.country = country;
         }
@@ -44,7 +44,7 @@ public class Geomodel {
         // https://db-ip.com/db/format/ip-to-country/mmdb.html
         @MaxMindDbConstructor
         public Country(
-                @MaxMindDbParameter(name="iso_code") String isoCode) {
+                @MaxMindDbParameter(name = "iso_code") String isoCode) {
             this.isoCode = isoCode;
         }
     }
@@ -61,19 +61,20 @@ public class Geomodel {
         // https://dev.maxmind.com/geoip/docs/databases/asn?lang=en#blocks-files
         @MaxMindDbConstructor
         public ASN(
-                @MaxMindDbParameter(name="autonomous_system_number") long number,
-                @MaxMindDbParameter(name="autonomous_system_organization") String asname) {
+                @MaxMindDbParameter(name = "autonomous_system_number") long number,
+                @MaxMindDbParameter(name = "autonomous_system_organization") String asname) {
             this.number = number;
             this.asname = asname;
         }
 
         public boolean isKnown() {
-            return(number != 0);
+            return (number != 0);
         }
 
-        @Override @NonNull
+        @Override
+        @NonNull
         public String toString() {
-            if(number == 0)
+            if (number == 0)
                 return "Unknown ASN";
             return "AS" + number + " - " + asname;
         }

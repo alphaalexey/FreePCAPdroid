@@ -40,10 +40,10 @@ static struct {
 
 /* ******************************************************* */
 
-static inline port_map_list_t* get_map_list(int ipproto) {
-    if(ipproto == IPPROTO_TCP)
+static inline port_map_list_t *get_map_list(int ipproto) {
+    if (ipproto == IPPROTO_TCP)
         return &mappings.tcp;
-    else if(ipproto == IPPROTO_UDP)
+    else if (ipproto == IPPROTO_UDP)
         return &mappings.udp;
     else
         return NULL;
@@ -51,13 +51,15 @@ static inline port_map_list_t* get_map_list(int ipproto) {
 
 /* ******************************************************* */
 
-bool pd_add_port_map(int ipver, int ipproto, int orig_port, int redirect_port, const zdtun_ip_t *redirect_ip) {
+bool pd_add_port_map(int ipver, int ipproto, int orig_port, int redirect_port,
+                     const zdtun_ip_t *redirect_ip) {
     port_map_list_t *mlist = get_map_list(ipproto);
-    if(!mlist)
+    if (!mlist)
         return false;
 
-    mlist->items = (port_map_t*) pd_realloc(mlist->items, (++mlist->num_items) * sizeof(port_map_t));
-    if(!mlist->items) {
+    mlist->items = (port_map_t *) pd_realloc(mlist->items,
+                                             (++mlist->num_items) * sizeof(port_map_t));
+    if (!mlist->items) {
         mlist->num_items = 0;
         return false;
     }
@@ -76,14 +78,15 @@ bool pd_add_port_map(int ipver, int ipproto, int orig_port, int redirect_port, c
 bool pd_check_port_map(zdtun_conn_t *conn) {
     const zdtun_5tuple_t *tuple = zdtun_conn_get_5tuple(conn);
     port_map_list_t *mlist = get_map_list(tuple->ipproto);
-    if(!mlist)
+    if (!mlist)
         return false;
 
-    for(int i=0; i<mlist->num_items; i++) {
+    for (int i = 0; i < mlist->num_items; i++) {
         port_map_t *mapping = &mlist->items[i];
 
-        if(mapping->orig_port == tuple->dst_port) {
-            log_d("Port mapping found: %d -> %d", ntohs(tuple->dst_port), ntohs(mapping->redirect_port));
+        if (mapping->orig_port == tuple->dst_port) {
+            log_d("Port mapping found: %d -> %d", ntohs(tuple->dst_port),
+                  ntohs(mapping->redirect_port));
             zdtun_conn_dnat(conn, &mapping->redirect_ip, mapping->redirect_port, mapping->ipver);
             return true;
         }

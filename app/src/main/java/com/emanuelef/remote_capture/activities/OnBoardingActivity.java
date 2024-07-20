@@ -50,81 +50,8 @@ import com.github.appintro.model.SliderPagerBuilder;
 import org.jetbrains.annotations.Nullable;
 
 public class OnBoardingActivity extends AppIntro {
-    private static final String TAG = "OnBoardingActivity";
     public static final String ENABLE_BACK_BUTTON = "back_enabled";
-
-    public static class OnBoardingFragment extends AppIntroBaseFragment {
-        @Override
-        protected int getLayoutId() {
-            return R.layout.appintro_fragment_intro;
-        }
-
-        public static OnBoardingFragment createInstance(CharSequence title, CharSequence description, int imageRes, int imageTint, boolean imageAutosize) {
-            OnBoardingFragment fragment = new OnBoardingFragment();
-            Bundle args = new SliderPagerBuilder()
-                    .title(title)
-                    //.description(description) see below
-                    .imageDrawable(imageRes)
-                    .backgroundColorRes(R.color.backgroundColor)
-                    .titleColorRes(R.color.colorAccent)
-                    .descriptionColorRes(R.color.colorTabText)
-                    .build().toBundle();
-
-            args.putCharSequence("pd_descr", description);
-            args.putInt("pd_image_tint", imageTint);
-            args.putBoolean("pd_image_autosz", imageAutosize);
-            fragment.setArguments(args);
-
-            return fragment;
-        }
-
-        @Nullable
-        @Override
-        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-            View view = super.onCreateView(inflater, container, savedInstanceState);
-            if(view == null)
-                return null;
-
-            Bundle args = getArguments();
-            assert args != null;
-            DisplayMetrics metrics = getResources().getDisplayMetrics();
-
-            // fixes links from Utils.getText not clickable
-            TextView tv = view.findViewById(R.id.description);
-            tv.setAutoLinkMask(0);
-            tv.setMovementMethod(LinkMovementMethod.getInstance());
-            tv.setText(args.getCharSequence("pd_descr"));
-            tv.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                // Disable auto-sizing, as it makes the text not readable
-                TextViewCompat.setAutoSizeTextTypeWithDefaults(tv, TextView.AUTO_SIZE_TEXT_TYPE_NONE);
-            }
-            tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-
-            // Fix excessive vertical padding, causing scroll
-            ViewGroup.LayoutParams lp = tv.getLayoutParams();
-            if(lp instanceof ConstraintLayout.LayoutParams) {
-                ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) lp;
-                params.setMargins(0, (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10, metrics), 0, 0);
-                tv.setPadding(tv.getPaddingLeft(), 0, tv.getPaddingRight(), 0);
-                tv.setLayoutParams(params);
-            }
-
-            // fix drawable tint and size
-            ImageView image = view.findViewById(R.id.image);
-            int tint = args.getInt("pd_image_tint");
-            if(tint > 0)
-                image.setColorFilter(ContextCompat.getColor(view.getContext(), tint));
-            if(args.getBoolean("pd_image_autosz")) {
-                image.setAdjustViewBounds(true);
-                ViewGroup.LayoutParams params = image.getLayoutParams();
-                params.height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 120, metrics);
-            }
-
-            return view;
-        }
-    }
+    private static final String TAG = "OnBoardingActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -132,7 +59,7 @@ public class OnBoardingActivity extends AppIntro {
         boolean backEnabled = false;
 
         Intent intent = getIntent();
-        if(intent != null)
+        if (intent != null)
             backEnabled = intent.getBooleanExtra(ENABLE_BACK_BUTTON, false);
 
         addSlide(OnBoardingFragment.createInstance(getString(R.string.welcome_to_pcapdroid),
@@ -205,5 +132,78 @@ public class OnBoardingActivity extends AppIntro {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+    public static class OnBoardingFragment extends AppIntroBaseFragment {
+        public static OnBoardingFragment createInstance(CharSequence title, CharSequence description, int imageRes, int imageTint, boolean imageAutosize) {
+            OnBoardingFragment fragment = new OnBoardingFragment();
+            Bundle args = new SliderPagerBuilder()
+                    .title(title)
+                    //.description(description) see below
+                    .imageDrawable(imageRes)
+                    .backgroundColorRes(R.color.backgroundColor)
+                    .titleColorRes(R.color.colorAccent)
+                    .descriptionColorRes(R.color.colorTabText)
+                    .build().toBundle();
+
+            args.putCharSequence("pd_descr", description);
+            args.putInt("pd_image_tint", imageTint);
+            args.putBoolean("pd_image_autosz", imageAutosize);
+            fragment.setArguments(args);
+
+            return fragment;
+        }
+
+        @Override
+        protected int getLayoutId() {
+            return R.layout.appintro_fragment_intro;
+        }
+
+        @Nullable
+        @Override
+        public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+            View view = super.onCreateView(inflater, container, savedInstanceState);
+            if (view == null)
+                return null;
+
+            Bundle args = getArguments();
+            assert args != null;
+            DisplayMetrics metrics = getResources().getDisplayMetrics();
+
+            // fixes links from Utils.getText not clickable
+            TextView tv = view.findViewById(R.id.description);
+            tv.setAutoLinkMask(0);
+            tv.setMovementMethod(LinkMovementMethod.getInstance());
+            tv.setText(args.getCharSequence("pd_descr"));
+            tv.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                // Disable auto-sizing, as it makes the text not readable
+                TextViewCompat.setAutoSizeTextTypeWithDefaults(tv, TextView.AUTO_SIZE_TEXT_TYPE_NONE);
+            }
+            tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+
+            // Fix excessive vertical padding, causing scroll
+            ViewGroup.LayoutParams lp = tv.getLayoutParams();
+            if (lp instanceof ConstraintLayout.LayoutParams) {
+                ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) lp;
+                params.setMargins(0, (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10, metrics), 0, 0);
+                tv.setPadding(tv.getPaddingLeft(), 0, tv.getPaddingRight(), 0);
+                tv.setLayoutParams(params);
+            }
+
+            // fix drawable tint and size
+            ImageView image = view.findViewById(R.id.image);
+            int tint = args.getInt("pd_image_tint");
+            if (tint > 0)
+                image.setColorFilter(ContextCompat.getColor(view.getContext(), tint));
+            if (args.getBoolean("pd_image_autosz")) {
+                image.setAdjustViewBounds(true);
+                ViewGroup.LayoutParams params = image.getLayoutParams();
+                params.height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 120, metrics);
+            }
+
+            return view;
+        }
     }
 }

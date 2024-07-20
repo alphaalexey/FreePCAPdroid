@@ -35,55 +35,56 @@
 #define PCAPD_MAX_INTERFACES 16
 
 typedef struct {
-  char *ifnames[PCAPD_MAX_INTERFACES];
-  char *bpf;
-  char *log_file;
-  int* uid_filter;
-  int num_interfaces;
-  int inet_ifid;
-  uint8_t dump_datalink;
-  uint8_t daemonize;
-  uint8_t no_client;
-  uint8_t quiet;
-  uid_t log_uid;
+    char *ifnames[PCAPD_MAX_INTERFACES];
+    char *bpf;
+    char *log_file;
+    int *uid_filter;
+    int num_interfaces;
+    int inet_ifid;
+    uint8_t dump_datalink;
+    uint8_t daemonize;
+    uint8_t no_client;
+    uint8_t quiet;
+    uid_t log_uid;
 } pcapd_conf_t;
 
 typedef struct {
-  char name[PATH_MAX];
-  int ifidx;
-  uint8_t ifid;       // positional interface index
-  uint8_t is_file;
-  pcap_t *pd;
-  int pf;
-  int dlink;
-  int ipoffset;
-  uint64_t mac;
-  uint32_t ip;
-  struct in6_addr ip6;
-  time_t next_stats_update;
-  struct pcap_stat stats;
+    char name[PATH_MAX];
+    int ifidx;
+    uint8_t ifid;       // positional interface index
+    uint8_t is_file;
+    pcap_t *pd;
+    int pf;
+    int dlink;
+    int ipoffset;
+    uint64_t mac;
+    uint32_t ip;
+    struct in6_addr ip6;
+    time_t next_stats_update;
+    struct pcap_stat stats;
 } pcapd_iface_t;
 
 typedef struct {
-  char bpf[512];
-  char nlbuf[NL_BUFFER_SIZE];
+    char bpf[512];
+    char nlbuf[NL_BUFFER_SIZE];
 
-  int nlroute_sock;
-  int nldiag_sock;
-  int client;
+    int nlroute_sock;
+    int nldiag_sock;
+    int client;
 
-  zdtun_t *tun;
-  uid_lru_t *lru;
-  uid_resolver_t *resolver;
-  pcapd_iface_t *inet_iface;
-  pcapd_iface_t ifaces[PCAPD_MAX_INTERFACES];
-  struct pcap_stat stats;
-  fd_set sel_fds;
-  int maxfd;
-  pcapd_conf_t *conf;
+    zdtun_t *tun;
+    uid_lru_t *lru;
+    uid_resolver_t *resolver;
+    pcapd_iface_t *inet_iface;
+    pcapd_iface_t ifaces[PCAPD_MAX_INTERFACES];
+    struct pcap_stat stats;
+    fd_set sel_fds;
+    int maxfd;
+    pcapd_conf_t *conf;
 } pcapd_runtime_t;
 
 void init_conf(pcapd_conf_t *conf);
+
 pcapd_rv run_pcap_dump(pcapd_conf_t *conf);
 
 #endif

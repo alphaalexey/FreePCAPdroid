@@ -132,7 +132,7 @@ public class FirewallStatus extends Fragment implements MenuProvider {
 
         mToggle = (SwitchCompat) menu.findItem(R.id.toggle_btn).getActionView();
         mToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if(isChecked == Prefs.isFirewallEnabled(requireContext(), mPrefs))
+            if (isChecked == Prefs.isFirewallEnabled(requireContext(), mPrefs))
                 return; // not changed
 
             Log.d(TAG, "Firwall is now " + (isChecked ? "enabled" : "disabled"));
@@ -152,18 +152,18 @@ public class FirewallStatus extends Fragment implements MenuProvider {
     public boolean onMenuItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
 
-        if(id == R.id.user_guide) {
+        if (id == R.id.user_guide) {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(MainActivity.FIREWALL_DOCS_URL));
             Utils.startActivity(requireContext(), browserIntent);
             return true;
-        } else if(id == R.id.block_new_apps) {
+        } else if (id == R.id.block_new_apps) {
             boolean checked = !item.isChecked();
             item.setChecked(checked);
             mPrefs.edit().putBoolean(Prefs.PREF_BLOCK_NEW_APPS, checked).apply();
             return true;
-        } else if(id == R.id.whitelist_mode) {
+        } else if (id == R.id.whitelist_mode) {
             boolean checked = !item.isChecked();
-            if(checked && !whitelistWarningAck) {
+            if (checked && !whitelistWarningAck) {
                 AlertDialog dialog = new AlertDialog.Builder(requireContext())
                         .setTitle(R.string.whitelist_mode)
                         .setMessage(R.string.firewall_whitelist_notice)
@@ -173,7 +173,8 @@ public class FirewallStatus extends Fragment implements MenuProvider {
                             mPrefs.edit().putBoolean(Prefs.PREF_FIREWALL_WHITELIST_MODE, true).apply();
                             reloadMode(true);
                         })
-                        .setNegativeButton(R.string.cancel_action, (d, whichButton) -> {})
+                        .setNegativeButton(R.string.cancel_action, (d, whichButton) -> {
+                        })
                         .show();
 
                 dialog.setCanceledOnTouchOutside(false);
@@ -189,10 +190,10 @@ public class FirewallStatus extends Fragment implements MenuProvider {
     }
 
     private void reloadMode(boolean changed) {
-        if(changed && CaptureService.isServiceActive())
+        if (changed && CaptureService.isServiceActive())
             CaptureService.requireInstance().reloadFirewallWhitelist();
 
-        ((FirewallActivity)requireActivity()).recheckTabs();
+        ((FirewallActivity) requireActivity()).recheckTabs();
         updateStatus();
     }
 
@@ -203,18 +204,18 @@ public class FirewallStatus extends Fragment implements MenuProvider {
         boolean is_enabled = Prefs.isFirewallEnabled(ctx, mPrefs);
         boolean whitelist_mode = Prefs.isFirewallWhitelistMode(mPrefs);
 
-        if(!is_running) {
+        if (!is_running) {
             mStatusIcon.setImageResource(R.drawable.ic_shield);
             mStatusIcon.setColorFilter(mGrayColor);
             mStatus.setText(R.string.capture_not_running_status);
-        } else if(CaptureService.isDNSEncrypted()) {
+        } else if (CaptureService.isDNSEncrypted()) {
             mStatusIcon.setImageResource(R.drawable.ic_exclamation_triangle_solid);
             mStatusIcon.setColorFilter(mWarnColor);
             mStatus.setText(R.string.private_dns_hinders_detection);
         } else {
             mStatusIcon.setImageResource(R.drawable.ic_shield);
 
-            if(is_enabled) {
+            if (is_enabled) {
                 mStatusIcon.setColorFilter(mOkColor);
                 mStatus.setText(R.string.firewall_is_enabled);
             } else {
@@ -223,7 +224,7 @@ public class FirewallStatus extends Fragment implements MenuProvider {
             }
         }
 
-        if(mToggle != null)
+        if (mToggle != null)
             mToggle.setChecked(is_enabled);
 
         mNumBlocked.setText(Utils.formatIntShort(((reg != null) ? reg.getNumBlockedConnections() : 0)));

@@ -34,13 +34,13 @@ import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.emanuelef.remote_capture.AppsResolver;
 import com.emanuelef.remote_capture.GUIUtils;
 import com.emanuelef.remote_capture.PCAPdroid;
 import com.emanuelef.remote_capture.R;
 import com.emanuelef.remote_capture.Utils;
 import com.emanuelef.remote_capture.model.AppDescriptor;
 import com.emanuelef.remote_capture.model.AppStats;
-import com.emanuelef.remote_capture.AppsResolver;
 import com.emanuelef.remote_capture.model.Blocklist;
 import com.emanuelef.remote_capture.model.MatchList;
 import com.emanuelef.remote_capture.model.Prefs;
@@ -58,11 +58,144 @@ public class AppsStatsAdapter extends RecyclerView.Adapter<AppsStatsAdapter.View
     private final Blocklist mBlocklist;
     private final MatchList mWhitelist;
     private final boolean mFirewallAvailable;
+    private final AppsResolver mApps;
     private View.OnClickListener mListener;
     private List<AppStats> mStats;
-    private final AppsResolver mApps;
     private AppStats mSelectedItem;
     private SortField mSortField;
+
+    public AppsStatsAdapter(Context context) {
+        mContext = context;
+        mApps = new AppsResolver(context);
+        mLayoutInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mUnknownIcon = ContextCompat.getDrawable(mContext, android.R.drawable.ic_menu_help);
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(mContext);
+        mBlocklist = PCAPdroid.getInstance().getBlocklist();
+        mWhitelist = PCAPdroid.getInstance().getFirewallWhitelist();
+        mListener = null;
+        mStats = new ArrayList<>();
+        mFirewallAvailable = GUIUtils.newInstance(context).isFirewallVisible();
+        mSortField = SortField.NAME;
+        setHasStableIds(true);
+    }
+
+    @Override
+    public int getItemCount() {
+        return mStats.size();
+    }
+
+    @NonNull
+    @Override
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = mLayoutInflater.inflate(R.layout.app_item, parent, false);
+
+        if (mListener != null)
+            view.setOnClickListener(mListener);
+
+        ViewHolder holder = new ViewHolder(view);
+
+        if (mFirewallAvailable) {
+            // Enable the ability to show the context menu
+            view.setLongClickable(true);
+
+            view.setOnLongClickListener(v -> {
+                // see registerForContextMenu
+                mSelectedItem = getItem(holder.getAbsoluteAdapterPosition());
+                return false;
+            });
+        }
+
+        return holder;
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        AppStats stats = getItem(position);
+
+        if (stats == null)
+            return;
+
+        holder.bindAppStats(stats);
+    }
+
+    @Override
+    public long getItemId(int pos) {
+        AppStats stats = getItem(pos);
+
+        return ((stats != null) ? stats.getUid() : Utils.UID_UNKNOWN);
+    }
+
+    public AppStats getItem(int pos) {
+        return mStats.get(pos);
+    }
+
+    public AppStats getSelectedItem() {
+        return mSelectedItem;
+    }
+
+    public void notifyItemChanged(AppStats app) {
+        int pos = mStats.indexOf(app);
+        if (pos >= 0)
+            notifyItemChanged(pos);
+    }
+
+    public String getItemPackage(int pos) {
+        AppStats stats = getItem(pos);
+
+        if (stats == null)
+            return null;
+
+        AppDescriptor descr = mApps.getAppByUid(stats.getUid(), 0);
+
+        return ((descr != null) ? descr.getPackageName() : null);
+    }
+
+    public void setClickListener(View.OnClickListener listener) {
+        mListener = listener;
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    public void setStats(List<AppStats> stats) {
+        Collections.sort(stats, (o1, o2) -> {
+            AppDescriptor a1 = mApps.getAppByUid(o1.getUid(), 0);
+            AppDescriptor a2 = mApps.getAppByUid(o2.getUid(), 0);
+
+            if ((a1 == null) && (a2 == null))
+                return 0;
+
+            if (a1 == null)
+                return -1;
+
+            if (a2 == null)
+                return 1;
+
+            switch (mSortField) {
+                case TOTAL_BYTES:
+                    return -Long.compare(o1.rcvdBytes + o1.sentBytes,
+                            o2.rcvdBytes + o2.sentBytes);
+                case BYTES_SENT:
+                    return -Long.compare(o1.sentBytes, o2.sentBytes);
+                case BYTES_RCVD:
+                    return -Long.compare(o1.rcvdBytes, o2.rcvdBytes);
+                case NAME:
+                default:
+                    return a1.compareTo(a2);
+            }
+        });
+
+        mStats = stats;
+        notifyDataSetChanged();
+    }
+
+    public SortField getSortField() {
+        return mSortField;
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    public void setSortField(SortField field) {
+        mSortField = field;
+        setStats(mStats);
+    }
 
     public enum SortField {
         NAME,
@@ -103,7 +236,7 @@ public class AppsStatsAdapter extends RecyclerView.Adapter<AppsStatsAdapter.View
 
             String info_txt = (app != null) ? app.getName() : Integer.toString(stats.getUid());
 
-            if(stats.numConnections > 1)
+            if (stats.numConnections > 1)
                 info_txt += " (" + Utils.formatNumber(mContext, stats.numConnections) + ")";
 
             info.setText(info_txt);
@@ -119,138 +252,5 @@ public class AppsStatsAdapter extends RecyclerView.Adapter<AppsStatsAdapter.View
             whitelistedFlag.setVisibility(isWhitelistEnabled && isWhitelistedApp ? View.VISIBLE : View.GONE);
             tempUnblocked.setVisibility(isGracedApp ? View.VISIBLE : View.GONE);
         }
-    }
-
-    public AppsStatsAdapter(Context context) {
-        mContext = context;
-        mApps = new AppsResolver(context);
-        mLayoutInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        mUnknownIcon = ContextCompat.getDrawable(mContext, android.R.drawable.ic_menu_help);
-        mPrefs = PreferenceManager.getDefaultSharedPreferences(mContext);
-        mBlocklist = PCAPdroid.getInstance().getBlocklist();
-        mWhitelist = PCAPdroid.getInstance().getFirewallWhitelist();
-        mListener = null;
-        mStats = new ArrayList<>();
-        mFirewallAvailable = GUIUtils.newInstance(context).isFirewallVisible();
-        mSortField = SortField.NAME;
-        setHasStableIds(true);
-    }
-
-    @Override
-    public int getItemCount() {
-        return mStats.size();
-    }
-
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = mLayoutInflater.inflate(R.layout.app_item, parent, false);
-
-        if(mListener != null)
-            view.setOnClickListener(mListener);
-
-        ViewHolder holder = new ViewHolder(view);
-
-        if(mFirewallAvailable) {
-            // Enable the ability to show the context menu
-            view.setLongClickable(true);
-
-            view.setOnLongClickListener(v -> {
-                // see registerForContextMenu
-                mSelectedItem = getItem(holder.getAbsoluteAdapterPosition());
-                return false;
-            });
-        }
-
-        return holder;
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        AppStats stats = getItem(position);
-
-        if(stats == null)
-            return;
-
-        holder.bindAppStats(stats);
-    }
-
-    @Override
-    public long getItemId(int pos) {
-        AppStats stats = getItem(pos);
-
-        return((stats != null) ? stats.getUid() : Utils.UID_UNKNOWN);
-    }
-
-    public AppStats getItem(int pos) {
-        return mStats.get(pos);
-    }
-
-    public AppStats getSelectedItem() {
-        return mSelectedItem;
-    }
-
-    public void notifyItemChanged(AppStats app) {
-        int pos = mStats.indexOf(app);
-        if(pos >= 0)
-            notifyItemChanged(pos);
-    }
-
-    public String getItemPackage(int pos) {
-        AppStats stats = getItem(pos);
-
-        if(stats == null)
-            return null;
-
-        AppDescriptor descr = mApps.getAppByUid(stats.getUid(), 0);
-
-        return((descr != null) ? descr.getPackageName() : null);
-    }
-
-    public void setClickListener(View.OnClickListener listener) {
-        mListener = listener;
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    public void setStats(List<AppStats> stats) {
-        Collections.sort(stats, (o1, o2) -> {
-            AppDescriptor a1 = mApps.getAppByUid(o1.getUid(), 0);
-            AppDescriptor a2 = mApps.getAppByUid(o2.getUid(), 0);
-
-            if((a1 == null) && (a2 == null))
-                return 0;
-
-            if(a1 == null)
-                return -1;
-
-            if(a2 == null)
-                return 1;
-
-            switch (mSortField) {
-                case TOTAL_BYTES:
-                    return -Long.compare(o1.rcvdBytes + o1.sentBytes,
-                            o2.rcvdBytes + o2.sentBytes);
-                case BYTES_SENT:
-                    return -Long.compare(o1.sentBytes, o2.sentBytes);
-                case BYTES_RCVD:
-                    return -Long.compare(o1.rcvdBytes, o2.rcvdBytes);
-                case NAME:
-                default:
-                    return a1.compareTo(a2);
-            }
-        });
-
-        mStats = stats;
-        notifyDataSetChanged();
-    }
-
-    public SortField getSortField() {
-        return mSortField;
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    public void setSortField(SortField field) {
-        mSortField = field;
-        setStats(mStats);
     }
 }

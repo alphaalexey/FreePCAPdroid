@@ -43,15 +43,14 @@ import com.google.android.material.tabs.TabLayoutMediator;
 
 public class FirewallActivity extends BaseActivity {
     private static final String TAG = "Firewall";
-    private ViewPager2 mPager;
-    private StateAdapter mPagerAdapter;
-    private boolean mHasWhitelist = false;
-    private SharedPreferences mPrefs;
-
     private static final int POS_STATUS = 0;
     private static final int POS_BLOCKLIST = 1;
     private static final int POS_WHITELIST = 2;
     private static final int TOTAL_COUNT = 3;
+    private ViewPager2 mPager;
+    private StateAdapter mPagerAdapter;
+    private boolean mHasWhitelist = false;
+    private SharedPreferences mPrefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,45 +63,10 @@ public class FirewallActivity extends BaseActivity {
         setupTabs();
     }
 
-    private class StateAdapter extends FragmentStateAdapter {
-        StateAdapter(final FragmentActivity fa) { super(fa); }
-
-        @NonNull
-        @Override
-        public Fragment createFragment(int position) {
-            Log.d(TAG, "createFragment");
-
-            switch (position) {
-                default: // Deliberate fall-through to status tab
-                case POS_STATUS:
-                    return new FirewallStatus();
-                case POS_BLOCKLIST:
-                    return EditListFragment.newInstance(ListInfo.Type.BLOCKLIST);
-                case POS_WHITELIST:
-                    return EditListFragment.newInstance(ListInfo.Type.FIREWALL_WHITELIST);
-            }
-        }
-
-        @Override
-        public int getItemCount() {  return mHasWhitelist ? TOTAL_COUNT : (TOTAL_COUNT - 1);  }
-
-        public int getPageTitle(final int position) {
-            switch (position) {
-                default: // Deliberate fall-through to status tab
-                case POS_STATUS:
-                    return R.string.status;
-                case POS_BLOCKLIST:
-                    return R.string.blocklist;
-                case POS_WHITELIST:
-                    return R.string.whitelist;
-            }
-        }
-    }
-
     @SuppressLint("NotifyDataSetChanged")
     public void recheckTabs() {
         boolean whitelist_mode = Prefs.isFirewallWhitelistMode(mPrefs);
-        if(mHasWhitelist == whitelist_mode)
+        if (mHasWhitelist == whitelist_mode)
             return;
 
         mHasWhitelist = whitelist_mode;
@@ -150,5 +114,44 @@ public class FirewallActivity extends BaseActivity {
         }
 
         return super.onKeyDown(keyCode, event);
+    }
+
+    private class StateAdapter extends FragmentStateAdapter {
+        StateAdapter(final FragmentActivity fa) {
+            super(fa);
+        }
+
+        @NonNull
+        @Override
+        public Fragment createFragment(int position) {
+            Log.d(TAG, "createFragment");
+
+            switch (position) {
+                default: // Deliberate fall-through to status tab
+                case POS_STATUS:
+                    return new FirewallStatus();
+                case POS_BLOCKLIST:
+                    return EditListFragment.newInstance(ListInfo.Type.BLOCKLIST);
+                case POS_WHITELIST:
+                    return EditListFragment.newInstance(ListInfo.Type.FIREWALL_WHITELIST);
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return mHasWhitelist ? TOTAL_COUNT : (TOTAL_COUNT - 1);
+        }
+
+        public int getPageTitle(final int position) {
+            switch (position) {
+                default: // Deliberate fall-through to status tab
+                case POS_STATUS:
+                    return R.string.status;
+                case POS_BLOCKLIST:
+                    return R.string.blocklist;
+                case POS_WHITELIST:
+                    return R.string.whitelist;
+            }
+        }
     }
 }

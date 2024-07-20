@@ -18,7 +18,7 @@ struct log_writer {
 };
 
 static void pd_destroy_logger(struct log_writer *logger) {
-    if(logger->f)
+    if (logger->f)
         fclose(logger->f);
     pd_free(logger->path);
     pd_free(logger);
@@ -27,7 +27,7 @@ static void pd_destroy_logger(struct log_writer *logger) {
 void pd_close_loggers() {
     pthread_mutex_lock(&mutex);
 
-    for(int i=0; i<num_loggers; i++)
+    for (int i = 0; i < num_loggers; i++)
         pd_destroy_logger(loggers[i]);
     pd_free(loggers);
     loggers = NULL;
@@ -38,20 +38,20 @@ void pd_close_loggers() {
 
 int pd_init_logger(const char *path, int min_lvl) {
     int rv;
-    struct log_writer *logger = (struct log_writer*) pd_calloc(1, sizeof(struct log_writer));
-    if(!logger)
+    struct log_writer *logger = (struct log_writer *) pd_calloc(1, sizeof(struct log_writer));
+    if (!logger)
         return -errno;
 
     logger->level = min_lvl;
     logger->path = pd_strdup(path);
-    if(!logger->path) {
+    if (!logger->path) {
         pd_free(logger);
         return -errno;
     }
 
     pthread_mutex_lock(&mutex);
-    loggers = pd_realloc(loggers, sizeof(void*) * (num_loggers + 1));
-    if(!loggers) {
+    loggers = pd_realloc(loggers, sizeof(void *) * (num_loggers + 1));
+    if (!loggers) {
         pd_destroy_logger(logger);
         rv = -1;
     } else {
@@ -72,24 +72,25 @@ int pd_log_write(int logger_id, int lvl, const char *msg) {
 
     pthread_mutex_lock(&mutex);
 
-    if((logger_id < 0) || (logger_id >= num_loggers)) {
+    if ((logger_id < 0) || (logger_id >= num_loggers)) {
         rv = -ENOENT;
         goto unlock;
     }
 
     struct log_writer *logger = loggers[logger_id];
 
-    if(logger->level > lvl)
+    if (logger->level > lvl)
         goto unlock;
 
-    if(!logger->f && !logger->errored) {
+    if (!logger->f && !logger->errored) {
         // only overwrite the file when writing to it
         logger->f = fopen(logger->path, "w");
 
-        if(!logger->f) {
+        if (!logger->f) {
 #ifdef ANDROID
             __android_log_print(ANDROID_LOG_ERROR, logtag,
-                                "pd_init_logger %s failed[%d]: %s", logger->path, errno, strerror(errno));
+                                "pd_init_logger %s failed[%d]: %s", logger->path, errno,
+                                strerror(errno));
 #endif
             rv = -errno;
             logger->errored = true;
@@ -97,13 +98,13 @@ int pd_log_write(int logger_id, int lvl, const char *msg) {
         }
     }
 
-    if(!logger->f || ferror(logger->f)) {
+    if (!logger->f || ferror(logger->f)) {
         rv = -EINVAL;
         goto unlock;
     }
 
     fprintf(logger->f, "[%c] %s - %s\n", loglvl2char(lvl), dtbuf, msg);
-    if(ferror(logger->f)) {
+    if (ferror(logger->f)) {
 #ifdef ANDROID
         __android_log_print(ANDROID_LOG_ERROR, logtag,
                             "pd_log %d failed[%d]: %s", logger_id, errno, strerror(errno));
@@ -114,7 +115,7 @@ int pd_log_write(int logger_id, int lvl, const char *msg) {
 
     fflush(logger->f);
 
-unlock:
+    unlock:
     pthread_mutex_unlock(&mutex);
     return rv;
 }

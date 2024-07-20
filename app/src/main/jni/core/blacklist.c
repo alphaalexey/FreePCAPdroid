@@ -18,6 +18,7 @@
  */
 
 #define _GNU_SOURCE
+
 #include <string.h>
 #include "pcapdroid.h"
 #include "common/utils.h"
@@ -41,13 +42,13 @@ struct blacklist {
 
 /* ******************************************************* */
 
-blacklist_t* blacklist_init() {
-    blacklist_t *bl = (blacklist_t*) bl_calloc(1, sizeof(blacklist_t));
-    if(!bl)
+blacklist_t *blacklist_init() {
+    blacklist_t *bl = (blacklist_t *) bl_calloc(1, sizeof(blacklist_t));
+    if (!bl)
         return NULL;
 
     bl->ptree = ndpi_ptree_create();
-    if(!bl->ptree) {
+    if (!bl->ptree) {
         bl_free(bl);
         return NULL;
     }
@@ -58,18 +59,18 @@ blacklist_t* blacklist_init() {
 /* ******************************************************* */
 
 int blacklist_add_domain(blacklist_t *bl, const char *domain) {
-    if(strncmp(domain, "www.", 4) == 0)
+    if (strncmp(domain, "www.", 4) == 0)
         domain += 4;
 
-    if(blacklist_match_domain(bl, domain))
+    if (blacklist_match_domain(bl, domain))
         return -EADDRINUSE; // duplicate domain
 
     string_entry_t *entry = bl_malloc(sizeof(string_entry_t));
-    if(!entry)
+    if (!entry)
         return -ENOMEM;
 
     entry->key = bl_strdup(domain);
-    if(!entry->key) {
+    if (!entry->key) {
         bl_free(entry);
         return -ENOMEM;
     }
@@ -83,7 +84,7 @@ int blacklist_add_domain(blacklist_t *bl, const char *domain) {
 
 int blacklist_add_ip(blacklist_t *bl, const ndpi_ip_addr_t *addr, uint8_t bits) {
     int rv = ndpi_ptree_insert(bl->ptree, addr, bits, PCAPDROID_NDPI_CATEGORY_MALWARE);
-    if(rv != 0)
+    if (rv != 0)
         return (rv == -2) ? -EADDRINUSE : -EINVAL; // -2 means IP already in ptree
 
     bl->stats.num_ips++;
@@ -96,7 +97,7 @@ int blacklist_add_ipstr(blacklist_t *bl, const char *ip) {
     ndpi_ip_addr_t addr;
     int ipver = ndpi_parse_ip_string(ip, &addr);
 
-    if((ipver != 4) && (ipver != 6))
+    if ((ipver != 4) && (ipver != 6))
         return -EINVAL;
 
     int bits = (ipver == 4) ? 32 : 128;
@@ -106,11 +107,11 @@ int blacklist_add_ipstr(blacklist_t *bl, const char *ip) {
 /* ******************************************************* */
 
 int blacklist_add_uid(blacklist_t *bl, int uid) {
-    if(blacklist_match_uid(bl, uid))
+    if (blacklist_match_uid(bl, uid))
         return -EADDRINUSE; // duplicate uid
 
     int_entry_t *entry = bl_malloc(sizeof(int_entry_t));
-    if(!entry)
+    if (!entry)
         return -ENOMEM;
 
     entry->key = uid;
@@ -122,80 +123,82 @@ int blacklist_add_uid(blacklist_t *bl, int uid) {
 
 /* ******************************************************* */
 
-int blacklist_load_file(blacklist_t *bl, const char *path, blacklist_type btype, blacklist_stats_t *bstats) {
+int blacklist_load_file(blacklist_t *bl, const char *path, blacklist_type btype,
+                        blacklist_stats_t *bstats) {
     FILE *f;
     char buffer[256];
     int num_ok = 0, num_fail = 0, num_dup = 0;
     int max_file_rules = 500000;
 
     f = fopen(path, "r");
-    if(!f) {
+    if (!f) {
         log_e("Could not open blacklist file \"%s\" [%d]: %s", path, errno, strerror(errno));
         return -1;
     }
 
-    while(1) {
+    while (1) {
         char *item = fgets(buffer, sizeof(buffer), f);
-        if(!item)
+        if (!item)
             break;
 
-        if(!item[0] || (item[0] == '#') || (item[0] == '\n'))
+        if (!item[0] || (item[0] == '#') || (item[0] == '\n'))
             continue;
 
         item[strcspn(buffer, "\r\n")] = '\0';
         char *slash = strchr(buffer, '/');
-        if(slash)
+        if (slash)
             *slash = 0;
 
         ndpi_ip_addr_t ip_addr;
         int ipver = ndpi_parse_ip_string(buffer, &ip_addr);
         bool is_ip_addr = (ipver == 4) || (ipver == 6);
 
-        if(num_ok >= max_file_rules) {  // limit reached
+        if (num_ok >= max_file_rules) {  // limit reached
             num_fail++;
             continue;
         }
 
-        if(btype == IP_BLACKLIST) {
-            if(!is_ip_addr) {
+        if (btype == IP_BLACKLIST) {
+            if (!is_ip_addr) {
                 log_w("Invalid IP/net \"%s\" in blacklist %s", buffer, path);
                 num_fail++;
                 continue;
             }
 
             int bits;
-            if(slash)
+            if (slash)
                 bits = atoi(slash + 1); // subnet
-            else if(ipver == 4)
+            else if (ipver == 4)
                 bits = 32;
             else
                 bits = 128;
 
             // Validate IPv4
-            if(((ipver == 4) && (bits == 32)) &&
-                    ((ip_addr.ipv4 == 0) || (ip_addr.ipv4 == 0xFFFFFFFF) || (ip_addr.ipv4 == 0x7F000001)))
+            if (((ipver == 4) && (bits == 32)) &&
+                ((ip_addr.ipv4 == 0) || (ip_addr.ipv4 == 0xFFFFFFFF) ||
+                 (ip_addr.ipv4 == 0x7F000001)))
                 continue; // invalid
 
             // TODO validate IPv6
 
             int rv = blacklist_add_ip(bl, &ip_addr, bits);
-            if(rv == 0)
+            if (rv == 0)
                 num_ok++;
-            else if(rv == -EADDRINUSE)
+            else if (rv == -EADDRINUSE)
                 num_dup++;
             else
                 num_fail++;
         } else { // DOMAIN_BLACKLIST
-            if(is_ip_addr) {
+            if (is_ip_addr) {
                 log_w("IP/net \"%s\" found instead of domain in %s", buffer, path);
                 num_fail++;
                 continue;
             }
 
             int rv = blacklist_add_domain(bl, item);
-            if(rv == 0)
+            if (rv == 0)
                 num_ok++;
-            else if(rv == -EADDRINUSE)
+            else if (rv == -EADDRINUSE)
                 num_dup++;
             else
                 num_fail++;
@@ -204,7 +207,8 @@ int blacklist_load_file(blacklist_t *bl, const char *path, blacklist_type btype,
 
     fclose(f);
     log_d("Blacklist loaded[%s][%s]: %d ok, %d dups, %d failed",
-          strrchr(path, '/') + 1, (btype == IP_BLACKLIST ? "IP" : "domain"), num_ok, num_dup, num_fail);
+          strrchr(path, '/') + 1, (btype == IP_BLACKLIST ? "IP" : "domain"), num_ok, num_dup,
+          num_fail);
 
     // current list stats
     memset(bstats, 0, sizeof(*bstats));
@@ -242,7 +246,7 @@ void blacklist_destroy(blacklist_t *bl) {
 
 bool blacklist_match_ip(blacklist_t *bl, const zdtun_ip_t *ip, int ipver) {
     ndpi_ip_addr_t addr = {0};
-    if(ipver == 4)
+    if (ipver == 4)
         addr.ipv4 = ip->ip4;
     else
         memcpy(&addr.ipv6, &ip->ip6, 16);
@@ -250,7 +254,7 @@ bool blacklist_match_ip(blacklist_t *bl, const zdtun_ip_t *ip, int ipver) {
     u_int64_t res = 0;
     ndpi_ptree_match_addr(bl->ptree, &addr, &res);
 
-    return(res == PCAPDROID_NDPI_CATEGORY_MALWARE);
+    return (res == PCAPDROID_NDPI_CATEGORY_MALWARE);
 }
 
 /* ******************************************************* */
@@ -259,7 +263,7 @@ bool blacklist_match_ipstr(blacklist_t *bl, const char *ip_str) {
     zdtun_ip_t parsed;
 
     int ipver = zdtun_parse_ip(ip_str, &parsed);
-    if(ipver < 0)
+    if (ipver < 0)
         return false;
 
     return blacklist_match_ip(bl, &parsed, ipver);
@@ -267,14 +271,14 @@ bool blacklist_match_ipstr(blacklist_t *bl, const char *ip_str) {
 
 /* ******************************************************* */
 
-static char* get_second_level_domain(const char *domain) {
-    char *dot = (char*) memrchr(domain, '.', strlen(domain));
-    if(!dot || (dot == domain))
-        return (char*)domain;
+static char *get_second_level_domain(const char *domain) {
+    char *dot = (char *) memrchr(domain, '.', strlen(domain));
+    if (!dot || (dot == domain))
+        return (char *) domain;
 
-    dot = (char*) memrchr(domain, '.', dot - domain);
-    if(!dot)
-        return (char*)domain;
+    dot = (char *) memrchr(domain, '.', dot - domain);
+    if (!dot)
+        return (char *) domain;
 
     return dot + 1;
 }
@@ -285,19 +289,19 @@ bool blacklist_match_domain(blacklist_t *bl, const char *domain) {
     // Keep in sync with MatchList.matchesHost
     string_entry_t *entry = NULL;
 
-    if(strncmp(domain, "www.", 4) == 0)
+    if (strncmp(domain, "www.", 4) == 0)
         domain += 4;
 
     // exact domain match
     HASH_FIND_STR(bl->domains, domain, entry);
-    if(entry != NULL)
+    if (entry != NULL)
         return true;
 
     // 2nd-level domain match
     char *domain2 = get_second_level_domain(domain);
-    if(domain2 != domain) {
+    if (domain2 != domain) {
         HASH_FIND_STR(bl->domains, domain2, entry);
-        if(entry != NULL)
+        if (entry != NULL)
             return true;
     }
 
@@ -310,7 +314,7 @@ bool blacklist_match_uid(blacklist_t *bl, int uid) {
     int_entry_t *entry = NULL;
 
     HASH_FIND_INT(bl->uids, &uid, entry);
-    return(entry != NULL);
+    return (entry != NULL);
 }
 
 /* ******************************************************* */
@@ -327,9 +331,9 @@ static int bl_load_list_of_type(blacklist_t *bl, JNIEnv *env, jobject list, blac
     int num_items = (*env)->CallIntMethod(env, list, mids.listSize);
     int num_loaded = 0;
 
-    for(int i=0; i<num_items; i++) {
+    for (int i = 0; i < num_items; i++) {
         jstring *obj = (*env)->CallObjectMethod(env, list, mids.listGet, i);
-        if(obj != NULL) {
+        if (obj != NULL) {
             int rv;
             const char *val = (*env)->GetStringUTFChars(env, obj, NULL);
 
@@ -349,9 +353,9 @@ static int bl_load_list_of_type(blacklist_t *bl, JNIEnv *env, jobject list, blac
             (*env)->ReleaseStringUTFChars(env, obj, val);
             (*env)->DeleteLocalRef(env, obj);
 
-            if(rv == 0) {
+            if (rv == 0) {
                 num_loaded++;
-            } else if(rv != -EADDRINUSE) {
+            } else if (rv != -EADDRINUSE) {
                 log_e("bl add %s failed: %d", val, rv);
                 return -1;
             }
@@ -372,7 +376,7 @@ int blacklist_load_list_descriptor(blacklist_t *bl, JNIEnv *env, jobject ld) {
     int num_domains = bl_load_list_of_type(bl, env, hosts, DOMAIN_BLACKLIST);
     int num_ips = bl_load_list_of_type(bl, env, ips, IP_BLACKLIST);
 
-    if((num_apps == -1) || (num_ips == -1) || (num_domains == -1))
+    if ((num_apps == -1) || (num_ips == -1) || (num_domains == -1))
         return -1;
 
     (*env)->DeleteLocalRef(env, apps);

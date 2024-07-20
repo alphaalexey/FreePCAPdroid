@@ -1,4 +1,5 @@
-<resources xmlns:android="http://schemas.android.com/apk/res/android">
+<resources>
+
     <style name="AppTheme" parent="Base.AppTheme">
         <!--
         <item name="android:colorBackground">#ff000000</item>

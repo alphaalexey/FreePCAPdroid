@@ -283,11 +283,11 @@
     <string name="mitm_setup_wizard_intro">Dieser Assistent führt Sie durch die Installation des PCAPdroid mitm-Addons und des Zertifikates, die zur Durchführung der <a href="%1$s">TLS-Entschlüsselung benötigt werden</a></string>
     <string name="mitm_setup_wizard_done">PCAPdroid ist nun bereit, den TLS-Datenverkehr zu entschlüsseln
 \n
-\nSchauen Sie sich das Benutzerhandbuch <a href="%1$s"/> an, um mehr über die Sicherheitsmaßnahmen zu erfahren, die eine Entschlüsselung verhindern können und wie diese umgangen werden können</string>
+\nSchauen Sie sich das Benutzerhandbuch <a href="%1$s" /> an, um mehr über die Sicherheitsmaßnahmen zu erfahren, die eine Entschlüsselung verhindern können und wie diese umgangen werden können</string>
     <string name="welcome_to_pcapdroid">Willkommen bei PCAPdroid</string>
     <string name="app_intro_privacy_msg">Die App beinhaltet keine Tracking-, Analyse- oder Datensammel-Funktionen.
 \n
-\nWie können Sie sich sicher sein\? Überprüfen Sie die Datenschutzrichtlinie <a href="%1$s"/> und den Quellcode <a href="%2$s">an.</a></string>
+\nWie können Sie sich sicher sein\? Überprüfen Sie die Datenschutzrichtlinie <a href="%1$s" /> und den Quellcode <a href="%2$s">an.</a></string>
     <string name="app_intro_geolocation_msg">PCAPdroid kann eine lokale Datenbank abfragen, um das Land eines entfernten Servers zu bestimmen
 \n
 \nSie müssen zuerst die Geolokalisierungsdatenbank aus den App-Einstellungen herunterladen</string>

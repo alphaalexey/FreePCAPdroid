@@ -20,8 +20,6 @@
 package com.emanuelef.remote_capture.adapters;
 
 import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -43,9 +41,9 @@ public class BlacklistsAdapter extends ArrayAdapter<BlacklistDescriptor> {
 
     public BlacklistsAdapter(@NonNull Context context, Iterator<BlacklistDescriptor> iterator) {
         super(context, R.layout.blacklist_item);
-        mLayoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mLayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-        while(iterator.hasNext()) {
+        while (iterator.hasNext()) {
             BlacklistDescriptor item = iterator.next();
             add(item);
         }
@@ -54,7 +52,7 @@ public class BlacklistsAdapter extends ArrayAdapter<BlacklistDescriptor> {
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        if(convertView == null)
+        if (convertView == null)
             convertView = mLayoutInflater.inflate(R.layout.blacklist_item, parent, false);
 
         Context ctx = parent.getContext();
@@ -68,9 +66,9 @@ public class BlacklistsAdapter extends ArrayAdapter<BlacklistDescriptor> {
         status.setTextColor(bl.getStatusColor(ctx));
         status.setVisibility(CaptureService.isServiceActive() ? View.VISIBLE : View.INVISIBLE);
 
-        ((TextView)convertView.findViewById(R.id.type)).setText(String.format(ctx.getString(R.string.blacklist_type), bl.getTypeLabel(ctx)));
-        ((TextView)convertView.findViewById(R.id.rules)).setText(String.format(ctx.getString(R.string.n_rules), Utils.formatIntShort(bl.num_rules)));
-        ((TextView)convertView.findViewById(R.id.last_update)).setText(String.format(ctx.getString(R.string.last_update_val), Utils.formatEpochMin(ctx, bl.getLastUpdate() / 1000)));
+        ((TextView) convertView.findViewById(R.id.type)).setText(String.format(ctx.getString(R.string.blacklist_type), bl.getTypeLabel(ctx)));
+        ((TextView) convertView.findViewById(R.id.rules)).setText(String.format(ctx.getString(R.string.n_rules), Utils.formatIntShort(bl.num_rules)));
+        ((TextView) convertView.findViewById(R.id.last_update)).setText(String.format(ctx.getString(R.string.last_update_val), Utils.formatEpochMin(ctx, bl.getLastUpdate() / 1000)));
 
         return convertView;
     }

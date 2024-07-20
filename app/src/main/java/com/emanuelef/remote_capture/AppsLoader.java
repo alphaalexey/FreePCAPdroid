@@ -42,9 +42,9 @@ import java.util.List;
 public class AppsLoader implements LoaderManager.LoaderCallbacks<ArrayList<AppDescriptor>> {
     private static final String TAG = "AppsLoader";
     private static final int OPERATION_LOAD_APPS_INFO = 23;
-    private AppsLoadListener mListener;
-    private final AppCompatActivity mContext;
     private static final String TERMUX_PACKAGE = "com.termux";
+    private final AppCompatActivity mContext;
+    private AppsLoadListener mListener;
 
     public AppsLoader(AppCompatActivity context) {
         mContext = context;
@@ -80,7 +80,7 @@ public class AppsLoader implements LoaderManager.LoaderCallbacks<ArrayList<AppDe
             if (package_name.equals(TERMUX_PACKAGE))
                 termuxPkgInfo = p;
 
-            if(!uid_to_pos.containsKey(p.applicationInfo.uid) && !package_name.equals(app_package)) {
+            if (!uid_to_pos.containsKey(p.applicationInfo.uid) && !package_name.equals(app_package)) {
                 int uid = p.applicationInfo.uid;
                 AppDescriptor app = new AppDescriptor(pm, p);
 
@@ -104,7 +104,7 @@ public class AppsLoader implements LoaderManager.LoaderCallbacks<ArrayList<AppDe
 
         Collections.sort(apps);
 
-        Log.d(TAG, packs.size() + " apps loaded in " + (Utils.now() - tstart) +" seconds");
+        Log.d(TAG, packs.size() + " apps loaded in " + (Utils.now() - tstart) + " seconds");
         return apps;
     }
 
@@ -117,7 +117,7 @@ public class AppsLoader implements LoaderManager.LoaderCallbacks<ArrayList<AppDe
             public ArrayList<AppDescriptor> loadInBackground() {
                 ArrayList<AppDescriptor> empty_res = new ArrayList<>();
 
-                if(opid == OPERATION_LOAD_APPS_INFO)
+                if (opid == OPERATION_LOAD_APPS_INFO)
                     return asyncLoadAppsInfo();
 
                 Log.e(TAG, "unknown loader op: " + opid);
@@ -128,7 +128,7 @@ public class AppsLoader implements LoaderManager.LoaderCallbacks<ArrayList<AppDe
 
     @Override
     public void onLoadFinished(@NonNull Loader<ArrayList<AppDescriptor>> loader, ArrayList<AppDescriptor> data) {
-        if(mListener != null)
+        if (mListener != null)
             mListener.onAppsInfoLoaded(data);
 
         finishLoader();

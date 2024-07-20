@@ -42,19 +42,14 @@ import java.util.List;
 
 public class AppSelectDialog implements AppsLoadListener {
     private static final String TAG = "AppSelectDialog";
+    private final SharedPreferences mPrefs;
+    private final int mTitleRes;
     private AppsListView mOpenAppsList;
     private TextView mEmptyAppsView;
     private Dialog mDialog;
     private AppsLoader mLoader;
     private AppCompatActivity mActivity;
     private AppSelectListener mListener;
-    private final SharedPreferences mPrefs;
-    private final int mTitleRes;
-
-    public interface AppSelectListener {
-        void onSelectedApp(AppDescriptor app);
-        void onAppSelectionAborted();
-    }
 
     public AppSelectDialog(AppCompatActivity activity, int title_res, AppSelectListener listener) {
         mActivity = activity;
@@ -66,34 +61,34 @@ public class AppSelectDialog implements AppsLoadListener {
 
     @Override
     public void onAppsInfoLoaded(List<AppDescriptor> installedApps) {
-        if(mOpenAppsList == null)
+        if (mOpenAppsList == null)
             return;
 
         mEmptyAppsView.setText(R.string.no_apps);
 
-        if(Prefs.isTLSDecryptionSetupDone(mPrefs)) {
+        if (Prefs.isTLSDecryptionSetupDone(mPrefs)) {
             // Remove the mitm addon from the list
             AppDescriptor mitmAddon = null;
 
-            for(AppDescriptor cur: installedApps) {
-                if(cur.getPackageName().equals(MitmAPI.PACKAGE_NAME)) {
+            for (AppDescriptor cur : installedApps) {
+                if (cur.getPackageName().equals(MitmAPI.PACKAGE_NAME)) {
                     mitmAddon = cur;
                     break;
                 }
             }
 
-            if(mitmAddon != null)
+            if (mitmAddon != null)
                 installedApps.remove(mitmAddon);
         }
 
-        Log.d(TAG, "loading " + installedApps.size() +" apps in dialog, icons=" + installedApps);
+        Log.d(TAG, "loading " + installedApps.size() + " apps in dialog, icons=" + installedApps);
         mOpenAppsList.setApps(installedApps);
     }
 
     private void show() {
         mDialog = getDialog();
         mDialog.setOnCancelListener(dialog1 -> {
-            if(mListener != null)
+            if (mListener != null)
                 mListener.onAppSelectionAborted();
         });
         mDialog.setOnDismissListener(dialog1 -> {
@@ -130,7 +125,7 @@ public class AppSelectDialog implements AppsLoadListener {
         alert.setCanceledOnTouchOutside(true);
 
         apps.setSelectedAppListener(app -> {
-            if(mListener != null)
+            if (mListener != null)
                 mListener.onSelectedApp(app);
 
             // dismiss the dialog
@@ -147,5 +142,11 @@ public class AppSelectDialog implements AppsLoadListener {
         mOpenAppsList = null;
         mActivity = null;
         mListener = null;
+    }
+
+    public interface AppSelectListener {
+        void onSelectedApp(AppDescriptor app);
+
+        void onAppSelectionAborted();
     }
 }

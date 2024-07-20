@@ -40,9 +40,10 @@ import androidx.preference.PreferenceManager;
 import androidx.preference.SwitchPreference;
 
 import com.emanuelef.remote_capture.Log;
-import com.emanuelef.remote_capture.PCAPdroid;
-import com.emanuelef.remote_capture.Utils;
 import com.emanuelef.remote_capture.MitmAddon;
+import com.emanuelef.remote_capture.PCAPdroid;
+import com.emanuelef.remote_capture.R;
+import com.emanuelef.remote_capture.Utils;
 import com.emanuelef.remote_capture.VpnReconnectService;
 import com.emanuelef.remote_capture.activities.BaseActivity;
 import com.emanuelef.remote_capture.activities.MainActivity;
@@ -51,7 +52,6 @@ import com.emanuelef.remote_capture.fragments.prefs.DnsSettings;
 import com.emanuelef.remote_capture.fragments.prefs.GeoipSettings;
 import com.emanuelef.remote_capture.fragments.prefs.Socks5Settings;
 import com.emanuelef.remote_capture.model.Prefs;
-import com.emanuelef.remote_capture.R;
 
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -59,9 +59,9 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 
 public class SettingsActivity extends BaseActivity implements PreferenceFragmentCompat.OnPreferenceStartFragmentCallback, FragmentManager.OnBackStackChangedListener {
+    public static final String TARGET_PREF_EXTRA = "target_pref";
     private static final String TAG = "SettingsActivity";
     private static final String ACTION_LANG_RESTART = "lang_restart";
-    public static final String TARGET_PREF_EXTRA = "target_pref";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,18 +85,18 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
 
         Log.d(TAG, "startFragment: " + prefKey);
 
-        if(prefKey.equals("geolocation")) {
+        if (prefKey.equals("geolocation")) {
             targetFragment = new GeoipSettings();
             setTitle(R.string.geolocation);
-        } else if(prefKey.equals("dns_settings")) {
+        } else if (prefKey.equals("dns_settings")) {
             targetFragment = new DnsSettings();
             setTitle(R.string.dns_servers);
-        } else if(prefKey.equals("socks5_settings")) {
+        } else if (prefKey.equals("socks5_settings")) {
             targetFragment = new Socks5Settings();
             setTitle(R.string.socks5_proxy);
         }
 
-        if(targetFragment != null) {
+        if (targetFragment != null) {
             getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.settings_container, targetFragment, pref.getKey())
@@ -112,7 +112,7 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
     @Override
     public void onBackStackChanged() {
         Fragment f = getSupportFragmentManager().findFragmentById(R.id.settings_container);
-        if(f instanceof SettingsFragment)
+        if (f instanceof SettingsFragment)
             setTitle(R.string.title_activity_settings);
     }
 
@@ -120,7 +120,7 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
         Fragment f = getSupportFragmentManager().findFragmentById(R.id.settings_container);
-        if(f instanceof SettingsFragment) {
+        if (f instanceof SettingsFragment) {
             // Use a custom intent to provide "up" navigation after ACTION_LANG_RESTART took place
             Intent intent = new Intent(this, MainActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -131,6 +131,9 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
     }
 
     public static class SettingsFragment extends PreferenceFragmentCompat {
+        private final ActivityResultLauncher<String> requestPermissionLauncher =
+                registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted ->
+                        Log.d(TAG, "Write permission " + (isGranted ? "granted" : "denied")));
         private SwitchPreference mTlsDecryption;
         private SwitchPreference mFullPayloadEnabled;
         private SwitchPreference mRootCaptureEnabled;
@@ -151,10 +154,6 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
         private boolean mHasStartedMitmWizard;
         private boolean mRootDecryptionNoticeShown = false;
 
-        private final ActivityResultLauncher<String> requestPermissionLauncher =
-                registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted ->
-                        Log.d(TAG, "Write permission " + (isGranted ? "granted" : "denied")));
-
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
@@ -171,9 +170,9 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
             rootCaptureHideShow(rootCaptureEnabled());
 
             Intent intent = requireActivity().getIntent();
-            if(intent != null) {
+            if (intent != null) {
                 String target_pref = intent.getStringExtra(TARGET_PREF_EXTRA);
-                if(target_pref != null)
+                if (target_pref != null)
                     scrollToPreference(target_pref);
             }
         }
@@ -182,7 +181,7 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
         public void onResume() {
             super.onResume();
 
-            if(mHasStartedMitmWizard && !MitmAddon.needsSetup(requireContext())) {
+            if (mHasStartedMitmWizard && !MitmAddon.needsSetup(requireContext())) {
                 Log.d(TAG, "mitm setup complete, enabling");
                 mTlsDecryption.setChecked(true);
                 mFullPayloadEnabled.setChecked(true);
@@ -192,7 +191,7 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
 
         private @NonNull <T extends Preference> T requirePreference(String key) {
             T pref = findPreference(key);
-            if(pref == null)
+            if (pref == null)
                 throw new IllegalStateException();
             return pref;
         }
@@ -237,7 +236,7 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
 
                 while (ifaces.hasMoreElements()) {
                     NetworkInterface iface = ifaces.nextElement();
-                    if(!iface.isUp())
+                    if (!iface.isUp())
                         continue;
 
                     String name = iface.getName();
@@ -257,7 +256,7 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
             refreshInterfaces();
 
             mRootCaptureEnabled = requirePreference(Prefs.PREF_ROOT_CAPTURE);
-            if(Utils.isRootAvailable()) {
+            if (Utils.isRootAvailable()) {
                 mRootCaptureEnabled.setOnPreferenceChangeListener((preference, newValue) -> {
                     rootCaptureHideShow((Boolean) newValue);
                     return checkDecrpytionWithRoot((Boolean) newValue, mTlsDecryption.isChecked());
@@ -268,7 +267,8 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
             mRestartOnDisconnect = requirePreference(Prefs.PREF_RESTART_ON_DISCONNECT);
             mRestartOnDisconnect.setVisible(VpnReconnectService.isAvailable());
 
-            mDnsSettings = requirePreference("dns_settings");;
+            mDnsSettings = requirePreference("dns_settings");
+            ;
             mVpnExceptions = requirePreference(Prefs.PREF_VPN_EXCEPTIONS);
             mVpnExceptions.setOnPreferenceClickListener(preference -> {
                 Intent intent = new Intent(requireContext(), VpnExemptionsActivity.class);
@@ -293,10 +293,10 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
                 boolean enabled = (boolean) newValue;
                 Context ctx = requireContext();
 
-                if(!checkDecrpytionWithRoot(rootCaptureEnabled(), (boolean) newValue))
+                if (!checkDecrpytionWithRoot(rootCaptureEnabled(), (boolean) newValue))
                     return false;
 
-                if(enabled && MitmAddon.needsSetup(ctx)) {
+                if (enabled && MitmAddon.needsSetup(ctx)) {
                     mHasStartedMitmWizard = true;
                     Intent intent = new Intent(ctx, MitmSetupWizard.class);
                     startActivity(intent);
@@ -339,14 +339,14 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
         private void setupOtherPrefs() {
             DropDownPreference appLang = requirePreference(Prefs.PREF_APP_LANGUAGE);
 
-            if(SettingsActivity.ACTION_LANG_RESTART.equals(requireActivity().getIntent().getAction()))
+            if (SettingsActivity.ACTION_LANG_RESTART.equals(requireActivity().getIntent().getAction()))
                 scrollToPreference(appLang);
 
             // Current locale applied via BaseActivity.attachBaseContext
             appLang.setOnPreferenceChangeListener((preference, newValue) -> {
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
 
-                if(prefs.edit().putString(Prefs.PREF_APP_LANGUAGE, newValue.toString()).commit()) {
+                if (prefs.edit().putString(Prefs.PREF_APP_LANGUAGE, newValue.toString()).commit()) {
                     // Restart the activity to apply the language change
                     Intent intent = new Intent(getContext(), SettingsActivity.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -376,7 +376,7 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
             mIpMode = requirePreference(Prefs.PREF_IP_MODE);
 
             Preference ctrlPerm = requirePreference("control_permissions");
-            if(!PCAPdroid.getInstance().getCtrlPermissions().hasRules())
+            if (!PCAPdroid.getInstance().getCtrlPermissions().hasRules())
                 ctrlPerm.setVisible(false);
             else
                 ctrlPerm.setOnPreferenceClickListener(preference -> {
@@ -387,7 +387,7 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
         }
 
         private void rootCaptureHideShow(boolean enabled) {
-            if(enabled) {
+            if (enabled) {
                 mAutoBlockPrivateDNS.setVisible(false);
                 mBlockQuic.setVisible(false);
                 mSocks5Settings.setVisible(false);
@@ -408,7 +408,7 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
         }
 
         private boolean checkDecrpytionWithRoot(boolean rootEnabled, boolean tlsDecryption) {
-            if(mRootDecryptionNoticeShown || !rootEnabled || !tlsDecryption)
+            if (mRootDecryptionNoticeShown || !rootEnabled || !tlsDecryption)
                 return true;
 
             new AlertDialog.Builder(requireContext())

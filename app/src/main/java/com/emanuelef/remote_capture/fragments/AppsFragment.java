@@ -58,9 +58,9 @@ import com.emanuelef.remote_capture.model.Prefs;
 import com.emanuelef.remote_capture.views.EmptyRecyclerView;
 
 public class AppsFragment extends Fragment implements ConnectionsListener, MenuProvider {
+    private static final String TAG = "AppsFragment";
     private EmptyRecyclerView mRecyclerView;
     private AppsStatsAdapter mAdapter;
-    private static final String TAG = "AppsFragment";
     private Handler mHandler;
     private boolean mRefreshApps;
     private boolean listenerSet;
@@ -114,8 +114,8 @@ public class AppsFragment extends Fragment implements ConnectionsListener, MenuP
 
         /* Register for service status */
         CaptureService.observeStatus(this, serviceStatus -> {
-            if(serviceStatus == CaptureService.ServiceStatus.STARTED) {
-                if(listenerSet) {
+            if (serviceStatus == CaptureService.ServiceStatus.STARTED) {
+                if (listenerSet) {
                     // register the new connection register
                     unregisterConnsListener();
                     registerConnsListener();
@@ -125,7 +125,7 @@ public class AppsFragment extends Fragment implements ConnectionsListener, MenuP
     }
 
     private void refreshSortField() {
-        if((mMenu == null) || (mAdapter == null))
+        if ((mMenu == null) || (mAdapter == null))
             return;
 
         SortField sortField = mAdapter.getSortField();
@@ -142,13 +142,13 @@ public class AppsFragment extends Fragment implements ConnectionsListener, MenuP
         byBytesSent.setChecked(false);
         byBytesRcvd.setChecked(false);
 
-        if(sortField.equals(SortField.NAME))
+        if (sortField.equals(SortField.NAME))
             byName.setChecked(true);
-        else if(sortField.equals(SortField.TOTAL_BYTES))
+        else if (sortField.equals(SortField.TOTAL_BYTES))
             byTotalBytes.setChecked(true);
-        else if(sortField.equals(SortField.BYTES_SENT))
+        else if (sortField.equals(SortField.BYTES_SENT))
             byBytesSent.setChecked(true);
-        else if(sortField.equals(SortField.BYTES_RCVD))
+        else if (sortField.equals(SortField.BYTES_RCVD))
             byBytesRcvd.setChecked(true);
     }
 
@@ -163,33 +163,34 @@ public class AppsFragment extends Fragment implements ConnectionsListener, MenuP
     public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
         int id = menuItem.getItemId();
 
-        if(id == R.id.reset) {
+        if (id == R.id.reset) {
             new AlertDialog.Builder(requireContext())
-                .setMessage(R.string.reset_stats_confirm)
-                .setPositiveButton(R.string.yes, (dialog, whichButton) -> {
-                    ConnectionsRegister reg = CaptureService.getConnsRegister();
-                    if(reg != null) {
-                        reg.resetAppsStats();
-                        doRefreshApps();
-                    }
-                })
-                .setNegativeButton(R.string.no, (dialog, whichButton) -> {})
-                .show();
+                    .setMessage(R.string.reset_stats_confirm)
+                    .setPositiveButton(R.string.yes, (dialog, whichButton) -> {
+                        ConnectionsRegister reg = CaptureService.getConnsRegister();
+                        if (reg != null) {
+                            reg.resetAppsStats();
+                            doRefreshApps();
+                        }
+                    })
+                    .setNegativeButton(R.string.no, (dialog, whichButton) -> {
+                    })
+                    .show();
 
             return true;
-        } else if(id == R.id.sort_by_name) {
+        } else if (id == R.id.sort_by_name) {
             mAdapter.setSortField(SortField.NAME);
             refreshSortField();
             return true;
-        } else if(id == R.id.sort_by_total_bytes) {
+        } else if (id == R.id.sort_by_total_bytes) {
             mAdapter.setSortField(SortField.TOTAL_BYTES);
             refreshSortField();
             return true;
-        } else if(id == R.id.sort_by_bytes_sent) {
+        } else if (id == R.id.sort_by_bytes_sent) {
             mAdapter.setSortField(SortField.BYTES_SENT);
             refreshSortField();
             return true;
-        } else if(id == R.id.sort_by_bytes_rcvd) {
+        } else if (id == R.id.sort_by_bytes_rcvd) {
             mAdapter.setSortField(SortField.BYTES_RCVD);
             refreshSortField();
             return true;
@@ -208,14 +209,14 @@ public class AppsFragment extends Fragment implements ConnectionsListener, MenuP
         inflater.inflate(R.menu.app_context_menu, menu);
 
         AppStats stats = mAdapter.getSelectedItem();
-        if(stats == null)
+        if (stats == null)
             return;
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
         boolean isBlocked = PCAPdroid.getInstance().getBlocklist().matchesApp(stats.getUid());
         menu.findItem(R.id.block_app).setVisible(!isBlocked);
 
-        if(Prefs.isFirewallWhitelistMode(prefs)) {
+        if (Prefs.isFirewallWhitelistMode(prefs)) {
             boolean isWhitelisted = PCAPdroid.getInstance().getFirewallWhitelist().matchesApp(stats.getUid());
             menu.findItem(R.id.add_to_fw_whitelist).setVisible(!isWhitelisted);
             menu.findItem(R.id.remove_from_fw_whitelist).setVisible(isWhitelisted);
@@ -238,29 +239,29 @@ public class AppsFragment extends Fragment implements ConnectionsListener, MenuP
         boolean whitelistChanged = false;
         AppStats app = mAdapter.getSelectedItem();
 
-        if(app == null)
+        if (app == null)
             return super.onContextItemSelected(item);
 
-        if(id == R.id.block_app)
+        if (id == R.id.block_app)
             blocklist.addApp(app.getUid());
-        else if(id == R.id.unblock_app_permanently)
+        else if (id == R.id.unblock_app_permanently)
             blocklist.removeApp(app.getUid());
-        else if(id == R.id.unblock_app_10m)
+        else if (id == R.id.unblock_app_10m)
             blocklist.unblockAppForMinutes(app.getUid(), 10);
-        else if(id == R.id.unblock_app_1h)
+        else if (id == R.id.unblock_app_1h)
             blocklist.unblockAppForMinutes(app.getUid(), 60);
-        else if(id == R.id.unblock_app_8h)
+        else if (id == R.id.unblock_app_8h)
             blocklist.unblockAppForMinutes(app.getUid(), 480);
-        else if(id == R.id.add_to_fw_whitelist) {
+        else if (id == R.id.add_to_fw_whitelist) {
             whitelist.addApp(app.getUid());
             whitelistChanged = true;
-        } else if(id == R.id.remove_from_fw_whitelist) {
+        } else if (id == R.id.remove_from_fw_whitelist) {
             whitelist.removeApp(app.getUid());
             whitelistChanged = true;
         } else
             return super.onContextItemSelected(item);
 
-        if(whitelistChanged) {
+        if (whitelistChanged) {
             whitelist.save();
             if (CaptureService.isServiceActive())
                 CaptureService.requireInstance().reloadFirewallWhitelist();
@@ -285,7 +286,7 @@ public class AppsFragment extends Fragment implements ConnectionsListener, MenuP
     }
 
     private void unregisterConnsListener() {
-        if(listenerSet) {
+        if (listenerSet) {
             ConnectionsRegister reg = CaptureService.getConnsRegister();
             if (reg != null)
                 reg.removeListener(this);
@@ -306,7 +307,7 @@ public class AppsFragment extends Fragment implements ConnectionsListener, MenuP
     }
 
     private void refreshAppsAsync() {
-        if(!mRefreshApps) {
+        if (!mRefreshApps) {
             mRefreshApps = true;
 
             // schedule a delayed refresh to possibly catch multiple refreshes
@@ -320,12 +321,12 @@ public class AppsFragment extends Fragment implements ConnectionsListener, MenuP
     }
 
     @Override
-    public void connectionsAdded(int start, ConnectionDescriptor []conns) {
+    public void connectionsAdded(int start, ConnectionDescriptor[] conns) {
         refreshAppsAsync();
     }
 
     @Override
-    public void connectionsRemoved(int start, ConnectionDescriptor []conns) {
+    public void connectionsRemoved(int start, ConnectionDescriptor[] conns) {
         refreshAppsAsync();
     }
 

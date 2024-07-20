@@ -30,13 +30,6 @@ public class PayloadChunk implements Serializable {
     public String contentType;
     public String path;
 
-    // Serializable need in ConnectionPayload fragment
-    public enum ChunkType implements Serializable {
-        RAW,
-        HTTP,
-        WEBSOCKET
-    }
-
     public PayloadChunk(byte[] _payload, ChunkType _type, boolean _is_sent, long _timestamp) {
         payload = _payload;
         type = _type;
@@ -52,5 +45,12 @@ public class PayloadChunk implements Serializable {
 
     public PayloadChunk withPayload(byte[] the_payload) {
         return new PayloadChunk(the_payload, type, is_sent, timestamp);
+    }
+
+    // Serializable need in ConnectionPayload fragment
+    public enum ChunkType implements Serializable {
+        RAW,
+        HTTP,
+        WEBSOCKET
     }
 }

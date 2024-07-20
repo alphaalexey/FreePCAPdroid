@@ -110,61 +110,49 @@ public class Prefs {
     public static final String PREF_PCAPNG_ENABLED = "pcapng_format";
     public static final String PREF_RESTART_ON_DISCONNECT = "restart_on_disconnect";
 
-    public enum DumpMode {
-        NONE,
-        HTTP_SERVER,
-        PCAP_FILE,
-        UDP_EXPORTER
-    }
-
-    public enum IpMode {
-        IPV4_ONLY,
-        IPV6_ONLY,
-        BOTH,
-    }
-
-    public enum BlockQuicMode {
-        NEVER,
-        ALWAYS,
-        TO_DECRYPT
-    }
-
-    public enum PayloadMode {
-        NONE,
-        MINIMAL,
-        FULL
-    }
-
     public static DumpMode getDumpMode(String pref) {
         switch (pref) {
-            case DUMP_HTTP_SERVER:      return DumpMode.HTTP_SERVER;
-            case DUMP_PCAP_FILE:        return DumpMode.PCAP_FILE;
-            case DUMP_UDP_EXPORTER:     return DumpMode.UDP_EXPORTER;
-            default:                    return DumpMode.NONE;
+            case DUMP_HTTP_SERVER:
+                return DumpMode.HTTP_SERVER;
+            case DUMP_PCAP_FILE:
+                return DumpMode.PCAP_FILE;
+            case DUMP_UDP_EXPORTER:
+                return DumpMode.UDP_EXPORTER;
+            default:
+                return DumpMode.NONE;
         }
     }
 
     public static IpMode getIPMode(String pref) {
         switch (pref) {
-            case IP_MODE_IPV6_ONLY:     return IpMode.IPV6_ONLY;
-            case IP_MODE_BOTH:          return IpMode.BOTH;
-            default:                    return IpMode.IPV4_ONLY;
+            case IP_MODE_IPV6_ONLY:
+                return IpMode.IPV6_ONLY;
+            case IP_MODE_BOTH:
+                return IpMode.BOTH;
+            default:
+                return IpMode.IPV4_ONLY;
         }
     }
 
     public static BlockQuicMode getBlockQuicMode(String pref) {
         switch (pref) {
-            case BLOCK_QUIC_MODE_ALWAYS:        return BlockQuicMode.ALWAYS;
-            case BLOCK_QUIC_MODE_TO_DECRYPT:    return BlockQuicMode.TO_DECRYPT;
-            default:                            return BlockQuicMode.NEVER;
+            case BLOCK_QUIC_MODE_ALWAYS:
+                return BlockQuicMode.ALWAYS;
+            case BLOCK_QUIC_MODE_TO_DECRYPT:
+                return BlockQuicMode.TO_DECRYPT;
+            default:
+                return BlockQuicMode.NEVER;
         }
     }
 
     public static PayloadMode getPayloadMode(String pref) {
         switch (pref) {
-            case PAYLOAD_MODE_MINIMAL:  return PayloadMode.MINIMAL;
-            case PAYLOAD_MODE_FULL:     return PayloadMode.FULL;
-            default:                    return PayloadMode.NONE;
+            case PAYLOAD_MODE_MINIMAL:
+                return PayloadMode.MINIMAL;
+            case PAYLOAD_MODE_FULL:
+                return PayloadMode.FULL;
+            default:
+                return PayloadMode.NONE;
         }
     }
 
@@ -189,45 +177,147 @@ public class Prefs {
     }
 
     /* Prefs with defaults */
-    public static String getCollectorIp(SharedPreferences p) { return(p.getString(PREF_COLLECTOR_IP_KEY, "127.0.0.1")); }
-    public static int getCollectorPort(SharedPreferences p)  { return(Integer.parseInt(p.getString(PREF_COLLECTOR_PORT_KEY, "1234"))); }
-    public static DumpMode getDumpMode(SharedPreferences p)  { return(getDumpMode(p.getString(PREF_PCAP_DUMP_MODE, DEFAULT_DUMP_MODE))); }
-    public static int getHttpServerPort(SharedPreferences p) { return(Integer.parseInt(p.getString(Prefs.PREF_HTTP_SERVER_PORT, "8080"))); }
-    public static boolean getTlsDecryptionEnabled(SharedPreferences p) { return(p.getBoolean(PREF_TLS_DECRYPTION_KEY, false)); }
-    public static boolean getSocks5Enabled(SharedPreferences p)     { return(p.getBoolean(PREF_SOCKS5_ENABLED_KEY, false)); }
-    public static String getSocks5ProxyHost(SharedPreferences p)    { return(p.getString(PREF_SOCKS5_PROXY_IP_KEY, "0.0.0.0")); }
-    public static int getSocks5ProxyPort(SharedPreferences p)       { return(Integer.parseInt(p.getString(Prefs.PREF_SOCKS5_PROXY_PORT_KEY, "8080"))); }
-    public static boolean isSocks5AuthEnabled(SharedPreferences p)  { return(p.getBoolean(PREF_SOCKS5_AUTH_ENABLED_KEY, false)); }
-    public static String getSocks5Username(SharedPreferences p)     { return(p.getString(PREF_SOCKS5_USERNAME_KEY, "")); }
-    public static String getSocks5Password(SharedPreferences p)     { return(p.getString(PREF_SOCKS5_PASSWORD_KEY, "")); }
-    public static Set<String> getAppFilter(SharedPreferences p)     { return(getStringSet(p, PREF_APP_FILTER)); }
-    public static IpMode getIPMode(SharedPreferences p)          { return(getIPMode(p.getString(PREF_IP_MODE, IP_MODE_DEFAULT))); }
-    public static BlockQuicMode getBlockQuicMode(SharedPreferences p) { return(getBlockQuicMode(p.getString(PREF_BLOCK_QUIC, BLOCK_QUIC_MODE_DEFAULT))); }
-    public static boolean useEnglishLanguage(SharedPreferences p){ return("english".equals(p.getString(PREF_APP_LANGUAGE, "system")));}
-    public static boolean isRootCaptureEnabled(SharedPreferences p) { return(Utils.isRootAvailable() && p.getBoolean(PREF_ROOT_CAPTURE, false)); }
-    public static boolean isPcapdroidTrailerEnabled(SharedPreferences p) { return(p.getBoolean(PREF_PCAPDROID_TRAILER, false)); }
-    public static String getCaptureInterface(SharedPreferences p) { return(p.getString(PREF_CAPTURE_INTERFACE, "@inet")); }
-    public static boolean isMalwareDetectionEnabled(SharedPreferences p) { return(p.getBoolean(PREF_MALWARE_DETECTION, true)); }
+    public static String getCollectorIp(SharedPreferences p) {
+        return (p.getString(PREF_COLLECTOR_IP_KEY, "127.0.0.1"));
+    }
+
+    public static int getCollectorPort(SharedPreferences p) {
+        return (Integer.parseInt(p.getString(PREF_COLLECTOR_PORT_KEY, "1234")));
+    }
+
+    public static DumpMode getDumpMode(SharedPreferences p) {
+        return (getDumpMode(p.getString(PREF_PCAP_DUMP_MODE, DEFAULT_DUMP_MODE)));
+    }
+
+    public static int getHttpServerPort(SharedPreferences p) {
+        return (Integer.parseInt(p.getString(Prefs.PREF_HTTP_SERVER_PORT, "8080")));
+    }
+
+    public static boolean getTlsDecryptionEnabled(SharedPreferences p) {
+        return (p.getBoolean(PREF_TLS_DECRYPTION_KEY, false));
+    }
+
+    public static boolean getSocks5Enabled(SharedPreferences p) {
+        return (p.getBoolean(PREF_SOCKS5_ENABLED_KEY, false));
+    }
+
+    public static String getSocks5ProxyHost(SharedPreferences p) {
+        return (p.getString(PREF_SOCKS5_PROXY_IP_KEY, "0.0.0.0"));
+    }
+
+    public static int getSocks5ProxyPort(SharedPreferences p) {
+        return (Integer.parseInt(p.getString(Prefs.PREF_SOCKS5_PROXY_PORT_KEY, "8080")));
+    }
+
+    public static boolean isSocks5AuthEnabled(SharedPreferences p) {
+        return (p.getBoolean(PREF_SOCKS5_AUTH_ENABLED_KEY, false));
+    }
+
+    public static String getSocks5Username(SharedPreferences p) {
+        return (p.getString(PREF_SOCKS5_USERNAME_KEY, ""));
+    }
+
+    public static String getSocks5Password(SharedPreferences p) {
+        return (p.getString(PREF_SOCKS5_PASSWORD_KEY, ""));
+    }
+
+    public static Set<String> getAppFilter(SharedPreferences p) {
+        return (getStringSet(p, PREF_APP_FILTER));
+    }
+
+    public static IpMode getIPMode(SharedPreferences p) {
+        return (getIPMode(p.getString(PREF_IP_MODE, IP_MODE_DEFAULT)));
+    }
+
+    public static BlockQuicMode getBlockQuicMode(SharedPreferences p) {
+        return (getBlockQuicMode(p.getString(PREF_BLOCK_QUIC, BLOCK_QUIC_MODE_DEFAULT)));
+    }
+
+    public static boolean useEnglishLanguage(SharedPreferences p) {
+        return ("english".equals(p.getString(PREF_APP_LANGUAGE, "system")));
+    }
+
+    public static boolean isRootCaptureEnabled(SharedPreferences p) {
+        return (Utils.isRootAvailable() && p.getBoolean(PREF_ROOT_CAPTURE, false));
+    }
+
+    public static boolean isPcapdroidTrailerEnabled(SharedPreferences p) {
+        return (p.getBoolean(PREF_PCAPDROID_TRAILER, false));
+    }
+
+    public static String getCaptureInterface(SharedPreferences p) {
+        return (p.getString(PREF_CAPTURE_INTERFACE, "@inet"));
+    }
+
+    public static boolean isMalwareDetectionEnabled(SharedPreferences p) {
+        return (p.getBoolean(PREF_MALWARE_DETECTION, true));
+    }
+
     public static boolean isFirewallEnabled(Context ctx, SharedPreferences p) {
         // NOTE: firewall can be disabled at runtime
-        return(GUIUtils.newInstance(ctx).isFirewallVisible()
+        return (GUIUtils.newInstance(ctx).isFirewallVisible()
                 && p.getBoolean(PREF_FIREWALL, true));
     }
-    public static boolean isPcapngEnabled(SharedPreferences p)  { return(p.getBoolean(PREF_PCAPNG_ENABLED, true)); }
-    public static boolean startAtBoot(SharedPreferences p)        { return(p.getBoolean(PREF_START_AT_BOOT, false)); }
-    public static boolean restartOnDisconnect(SharedPreferences p)        { return(p.getBoolean(PREF_RESTART_ON_DISCONNECT, false)); }
-    public static boolean isTLSDecryptionSetupDone(SharedPreferences p)     { return(p.getBoolean(PREF_TLS_DECRYPTION_SETUP_DONE, false)); }
-    public static boolean getFullPayloadMode(SharedPreferences p) { return(p.getBoolean(PREF_FULL_PAYLOAD, false)); }
-    public static boolean isPrivateDnsBlockingEnabled(SharedPreferences p) { return(p.getBoolean(PREF_AUTO_BLOCK_PRIVATE_DNS, true)); }
-    public static boolean lockdownVpnNoticeShown(SharedPreferences p)      { return(p.getBoolean(PREF_LOCKDOWN_VPN_NOTICE_SHOWN, false)); }
-    public static boolean blockNewApps(SharedPreferences p)       { return(p.getBoolean(PREF_BLOCK_NEW_APPS, false)); }
-    public static boolean isFirewallWhitelistMode(SharedPreferences p)     { return(p.getBoolean(PREF_FIREWALL_WHITELIST_MODE, false)); }
-    public static boolean isFirewallWhitelistInitialized(SharedPreferences p) { return(p.getInt(PREF_FIREWALL_WHITELIST_INIT_VER, 0) == FIREWALL_WHITELIST_INIT_VER); }
-    public static String getMitmproxyOpts(SharedPreferences p)    { return(p.getString(PREF_MITMPROXY_OPTS, "")); }
-    public static boolean isPortMappingEnabled(SharedPreferences p) { return(p.getBoolean(PREF_PORT_MAPPING_ENABLED, true)); }
-    public static boolean useSystemDns(SharedPreferences p)     { return(p.getBoolean(PREF_USE_SYSTEM_DNS, true)); }
-    public static String getDnsServerV4(SharedPreferences p)    { return(p.getString(PREF_DNS_SERVER_V4, "1.1.1.1")); }
-    public static String getDnsServerV6(SharedPreferences p)    { return(p.getString(PREF_DNS_SERVER_V6, "2606:4700:4700::1111")); }
+
+    public static boolean isPcapngEnabled(SharedPreferences p) {
+        return (p.getBoolean(PREF_PCAPNG_ENABLED, true));
+    }
+
+    public static boolean startAtBoot(SharedPreferences p) {
+        return (p.getBoolean(PREF_START_AT_BOOT, false));
+    }
+
+    public static boolean restartOnDisconnect(SharedPreferences p) {
+        return (p.getBoolean(PREF_RESTART_ON_DISCONNECT, false));
+    }
+
+    public static boolean isTLSDecryptionSetupDone(SharedPreferences p) {
+        return (p.getBoolean(PREF_TLS_DECRYPTION_SETUP_DONE, false));
+    }
+
+    public static boolean getFullPayloadMode(SharedPreferences p) {
+        return (p.getBoolean(PREF_FULL_PAYLOAD, false));
+    }
+
+    public static boolean isPrivateDnsBlockingEnabled(SharedPreferences p) {
+        return (p.getBoolean(PREF_AUTO_BLOCK_PRIVATE_DNS, true));
+    }
+
+    public static boolean lockdownVpnNoticeShown(SharedPreferences p) {
+        return (p.getBoolean(PREF_LOCKDOWN_VPN_NOTICE_SHOWN, false));
+    }
+
+    public static boolean blockNewApps(SharedPreferences p) {
+        return (p.getBoolean(PREF_BLOCK_NEW_APPS, false));
+    }
+
+    public static boolean isFirewallWhitelistMode(SharedPreferences p) {
+        return (p.getBoolean(PREF_FIREWALL_WHITELIST_MODE, false));
+    }
+
+    public static boolean isFirewallWhitelistInitialized(SharedPreferences p) {
+        return (p.getInt(PREF_FIREWALL_WHITELIST_INIT_VER, 0) == FIREWALL_WHITELIST_INIT_VER);
+    }
+
+    public static String getMitmproxyOpts(SharedPreferences p) {
+        return (p.getString(PREF_MITMPROXY_OPTS, ""));
+    }
+
+    public static boolean isPortMappingEnabled(SharedPreferences p) {
+        return (p.getBoolean(PREF_PORT_MAPPING_ENABLED, true));
+    }
+
+    public static boolean useSystemDns(SharedPreferences p) {
+        return (p.getBoolean(PREF_USE_SYSTEM_DNS, true));
+    }
+
+    public static String getDnsServerV4(SharedPreferences p) {
+        return (p.getString(PREF_DNS_SERVER_V4, "1.1.1.1"));
+    }
+
+    public static String getDnsServerV6(SharedPreferences p) {
+        return (p.getString(PREF_DNS_SERVER_V6, "2606:4700:4700::1111"));
+    }
 
     // Gets a StringSet from the prefs
     // The preference should either be a StringSet or a String
@@ -276,5 +366,30 @@ public class Prefs {
                 "\nIpMode: " + getIPMode(p) +
                 "\nTrailer: " + isPcapdroidTrailerEnabled(p) +
                 "\nStartAtBoot: " + startAtBoot(p);
+    }
+
+    public enum DumpMode {
+        NONE,
+        HTTP_SERVER,
+        PCAP_FILE,
+        UDP_EXPORTER
+    }
+
+    public enum IpMode {
+        IPV4_ONLY,
+        IPV6_ONLY,
+        BOTH,
+    }
+
+    public enum BlockQuicMode {
+        NEVER,
+        ALWAYS,
+        TO_DECRYPT
+    }
+
+    public enum PayloadMode {
+        NONE,
+        MINIMAL,
+        FULL
     }
 }

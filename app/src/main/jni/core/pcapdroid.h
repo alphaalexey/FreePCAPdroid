@@ -94,7 +94,7 @@ typedef struct {
         } vpn;
     };
 
-    void* payload_chunks;
+    void *payload_chunks;
 
     jlong first_seen;
     jlong last_seen;
@@ -164,13 +164,21 @@ struct pcapdroid;
 // Used to decouple pcapdroid.c from the JNI calls
 typedef struct {
     void (*get_libprog_path)(struct pcapdroid *pd, const char *prog_name, char *buf, int bufsize);
-     int (*load_blacklists_info)(struct pcapdroid *pd);
+
+    int (*load_blacklists_info)(struct pcapdroid *pd);
+
     void (*send_stats_dump)(struct pcapdroid *pd);
+
     void (*send_connections_dump)(struct pcapdroid *pd);
+
     void (*send_pcap_dump)(struct pcapdroid *pd, const int8_t *buf, int dump_size);
+
     void (*stop_pcap_dump)(struct pcapdroid *pd);
+
     void (*notify_service_status)(struct pcapdroid *pd, const char *status);
+
     void (*notify_blacklists_loaded)(struct pcapdroid *pd, bl_status_arr_t *status_arr);
+
     bool (*dump_payload_chunk)(struct pcapdroid *pd, const pkt_context_t *pctx, int dump_size);
 } pd_callbacks_t;
 
@@ -290,7 +298,7 @@ typedef struct pcapdroid {
 } pcapdroid_t;
 
 // return 0 to continue, anything else to break
-typedef int (*conn_cb)(pcapdroid_t*, const zdtun_5tuple_t*, pd_conn_t*);
+typedef int (*conn_cb)(pcapdroid_t *, const zdtun_5tuple_t *, pd_conn_t *);
 
 /* ******************************************************* */
 
@@ -386,41 +394,65 @@ extern char *pd_os;
 
 // capture API
 int pd_run(pcapdroid_t *pd);
+
 void pd_refresh_time(pcapdroid_t *pd);
+
 void pd_process_packet(pcapdroid_t *pd, zdtun_pkt_t *pkt, bool is_tx, const zdtun_5tuple_t *tuple,
                        pd_conn_t *data, struct timeval *tv, pkt_context_t *pctx);
+
 void pd_account_stats(pcapdroid_t *pd, pkt_context_t *pctx);
-void pd_dump_packet(pcapdroid_t *pd, const char *pktbuf, int pktlen, const struct timeval *tv, int uid);
+
+void
+pd_dump_packet(pcapdroid_t *pd, const char *pktbuf, int pktlen, const struct timeval *tv, int uid);
+
 void pd_housekeeping(pcapdroid_t *pd);
-pd_conn_t* pd_new_connection(pcapdroid_t *pd, const zdtun_5tuple_t *tuple, int uid);
+
+pd_conn_t *pd_new_connection(pcapdroid_t *pd, const zdtun_5tuple_t *tuple, int uid);
+
 void pd_purge_connection(pcapdroid_t *pd, pd_conn_t *data);
+
 int pd_notify_connection_update(pcapdroid_t *pd, const zdtun_5tuple_t *tuple, pd_conn_t *data);
+
 void pd_giveup_dpi(pcapdroid_t *pd, pd_conn_t *data, const zdtun_5tuple_t *tuple);
-const char* pd_get_proto_name(pcapdroid_t *pd, uint16_t proto, uint16_t alpn, int ipproto);
+
+const char *pd_get_proto_name(pcapdroid_t *pd, uint16_t proto, uint16_t alpn, int ipproto);
 
 // Utility
-const char* get_cache_path(pcapdroid_t *pd, const char *subpath);
-const char* get_file_path(pcapdroid_t *pd, const char *subpath);
-static inline const char* get_cache_dir(pcapdroid_t *pd) { return get_cache_path(pd, ""); }
-static inline const char* get_files_dir(pcapdroid_t *pd) { return get_file_path(pd, ""); }
-char* get_appname_by_uid(pcapdroid_t *pd, int uid, char *buf, int bufsize);
+const char *get_cache_path(pcapdroid_t *pd, const char *subpath);
+
+const char *get_file_path(pcapdroid_t *pd, const char *subpath);
+
+static inline const char *get_cache_dir(pcapdroid_t *pd) { return get_cache_path(pd, ""); }
+
+static inline const char *get_files_dir(pcapdroid_t *pd) { return get_file_path(pd, ""); }
+
+char *get_appname_by_uid(pcapdroid_t *pd, int uid, char *buf, int bufsize);
+
 uint16_t pd_ndpi2proto(ndpi_protocol proto);
 
 #ifdef ANDROID
 
-char* getStringPref(pcapdroid_t *pd, const char *key, char *buf, int bufsize);
+char *getStringPref(pcapdroid_t *pd, const char *key, char *buf, int bufsize);
+
 int getIntPref(JNIEnv *env, jobject vpn_inst, const char *key);
+
 int getIntArrayPref(JNIEnv *env, jobject vpn_inst, const char *key, int **out);
+
 zdtun_ip_t getIPPref(JNIEnv *env, jobject vpn_inst, const char *key, int *ip_ver);
+
 uint32_t getIPv4Pref(JNIEnv *env, jobject vpn_inst, const char *key);
+
 struct in6_addr getIPv6Pref(JNIEnv *env, jobject vpn_inst, const char *key);
+
 void getApplicationByUid(pcapdroid_t *pd, jint uid, char *buf, int bufsize);
 
 #endif // ANDROID
 
 // Internals
 void init_ndpi_protocols_bitmask(ndpi_protocol_bitmask_struct_t *b);
+
 void load_ndpi_hosts(struct ndpi_detection_module_struct *ndpi);
+
 uint32_t crc32(u_char *buf, size_t len, uint32_t crc);
 
 #endif //__PCAPDROID_H__

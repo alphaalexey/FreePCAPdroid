@@ -1,37 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
     <LinearLayout
-        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:padding="10dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:textStyle="bold"
-            android:text="@string/installation_id" />
+            android:text="@string/installation_id"
+            android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center">
+            android:gravity="center"
+            android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/installation_id"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textIsSelectable="true"
                 android:focusable="true"
+                android:textIsSelectable="true"
                 tools:text="A127ADC1245" />
 
             <ImageView
@@ -44,57 +43,57 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/show_qr_code"
+            style="?attr/materialButtonOutlinedStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/activate_via_qr_code"
             android:layout_gravity="center"
-            style="?attr/materialButtonOutlinedStyle" />
+            android:text="@string/activate_via_qr_code" />
 
         <TextView
             android:id="@+id/qr_code_loading"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:visibility="gone"
-            android:text="@string/loading" />
+            android:text="@string/loading"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/qr_info_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:textAlignment="center"
-            android:visibility="gone"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
             android:layout_marginHorizontal="40dp"
             android:layout_marginTop="10dp"
-            android:text="@string/qr_info_text" />
+            android:text="@string/qr_info_text"
+            android:textAlignment="center"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <LinearLayout
             android:id="@+id/qr_box"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="gone"
-            tools:visibility="visible"
             android:layout_gravity="center"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
 
             <ImageView
                 android:id="@+id/qr_code"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginVertical="20dp"
-                tools:layout_width="200dp"
-                tools:layout_height="200dp"/>
+                tools:layout_height="200dp"
+                tools:layout_width="200dp" />
 
             <ProgressBar
                 android:id="@+id/qr_remaining_time"
                 style="@android:style/Widget.Material.ProgressBar.Horizontal"
-                tools:progress="25"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                tools:progress="25" />
         </LinearLayout>
 
         <TextView
@@ -107,24 +106,24 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textStyle="bold"
-            android:text="@string/license_code" />
+            android:text="@string/license_code"
+            android:textStyle="bold" />
 
         <EditText
             android:id="@+id/license_code"
-            android:fontFamily="monospace"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textMultiLine"
+            android:fontFamily="monospace"
             android:gravity="top"
+            android:inputType="textMultiLine"
             android:lines="4" />
 
         <TextView
             android:id="@+id/validation_rc"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/ok"
             android:textAllCaps="true"
+            android:textColor="@color/ok"
             android:textSize="13sp"
             tools:text="@string/valid" />
     </LinearLayout>

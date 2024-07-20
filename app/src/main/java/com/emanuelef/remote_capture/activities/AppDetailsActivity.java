@@ -41,14 +41,13 @@ import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
 public class AppDetailsActivity extends BaseActivity {
-    private static final String TAG = "AppDetailsActivity";
     public static final String APP_UID_EXTRA = "app_uid";
-    private ViewPager2 mPager;
-    private int mUid;
-
+    private static final String TAG = "AppDetailsActivity";
     private static final int POS_OVERVIEW = 0;
     private static final int POS_CONNECTIONS = 1;
     private static final int POS_TOTAL = 2;
+    private ViewPager2 mPager;
+    private int mUid;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +65,7 @@ public class AppDetailsActivity extends BaseActivity {
 
     private void setupUidFilter() {
         Intent intent = getIntent();
-        if(intent == null) {
+        if (intent == null) {
             intent = new Intent();
             setIntent(intent);
         }
@@ -74,39 +73,6 @@ public class AppDetailsActivity extends BaseActivity {
         FilterDescriptor filter = new FilterDescriptor();
         filter.uid = mUid;
         intent.putExtra(ConnectionsFragment.FILTER_EXTRA, filter);
-    }
-
-    private class StateAdapter extends FragmentStateAdapter {
-        StateAdapter(final FragmentActivity fa) { super(fa); }
-
-        @NonNull
-        @Override
-        public Fragment createFragment(int position) {
-            //Log.d(TAG, "createFragment");
-            switch (position) {
-                case POS_CONNECTIONS:
-                    // APP_UID_EXTRA is passed (see setupUidFilter)
-                    return new ConnectionsFragment();
-                case POS_OVERVIEW:
-                default:
-                    return AppOverview.newInstance(mUid);
-            }
-        }
-
-        @Override
-        public int getItemCount() {
-            return POS_TOTAL;
-        }
-
-        public int getPageTitle(final int position) {
-            switch(position) {
-                case POS_CONNECTIONS:
-                    return R.string.connections_view;
-                case POS_OVERVIEW:
-                default:
-                    return R.string.overview;
-            }
-        }
     }
 
     private void setupTabs() {
@@ -143,7 +109,7 @@ public class AppDetailsActivity extends BaseActivity {
                     return true;
                 }
             }
-        } else if(keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+        } else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
             // Clicking "right" from the connections view goes to the fab down item
             if (mPager.getCurrentItem() == POS_CONNECTIONS) {
                 RecyclerView rview = findViewById(R.id.connections_view);
@@ -162,5 +128,40 @@ public class AppDetailsActivity extends BaseActivity {
         }
 
         return super.onKeyDown(keyCode, event);
+    }
+
+    private class StateAdapter extends FragmentStateAdapter {
+        StateAdapter(final FragmentActivity fa) {
+            super(fa);
+        }
+
+        @NonNull
+        @Override
+        public Fragment createFragment(int position) {
+            //Log.d(TAG, "createFragment");
+            switch (position) {
+                case POS_CONNECTIONS:
+                    // APP_UID_EXTRA is passed (see setupUidFilter)
+                    return new ConnectionsFragment();
+                case POS_OVERVIEW:
+                default:
+                    return AppOverview.newInstance(mUid);
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return POS_TOTAL;
+        }
+
+        public int getPageTitle(final int position) {
+            switch (position) {
+                case POS_CONNECTIONS:
+                    return R.string.connections_view;
+                case POS_OVERVIEW:
+                default:
+                    return R.string.overview;
+            }
+        }
     }
 }

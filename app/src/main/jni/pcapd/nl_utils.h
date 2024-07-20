@@ -27,26 +27,29 @@
 #define NL_BUFFER_SIZE 8192
 
 typedef struct {
-  union {
-    uint32_t v4;
-    uint8_t v6[8];
-  };
+    union {
+        uint32_t v4;
+        uint8_t v6[8];
+    };
 } __attribute__((packed)) addr_t;
 
 typedef struct {
-  zdtun_ip_t addr;
-  uint16_t port;
+    zdtun_ip_t addr;
+    uint16_t port;
 } pd_sockaddr_t;
 
 typedef struct {
-  addr_t gateway;
-  int ifidx;
-  int gw_len;
+    addr_t gateway;
+    int ifidx;
+    int gw_len;
 } route_info_t;
 
 int nl_get_route(int af, const addr_t *addr, route_info_t *out);
+
 int nl_route_socket(uint32_t groups);
+
 int nl_is_diag_working();
+
 int nl_get_uid(int nlsock, const zdtun_5tuple_t *tuple);
 
 #endif

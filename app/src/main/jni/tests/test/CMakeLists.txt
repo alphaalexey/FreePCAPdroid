@@ -7,11 +7,11 @@ add_dependencies(run_tests build_tests)
 
 # test_source(target)
 macro(test_source)
-  add_executable(${ARGV0} ${ARGV0}.c ../test_utils.c)
-  add_dependencies(${ARGV0} libpcapd.so)
-  add_dependencies(build_tests ${ARGV0})
+    add_executable(${ARGV0} ${ARGV0}.c ../test_utils.c)
+    add_dependencies(${ARGV0} libpcapd.so)
+    add_dependencies(build_tests ${ARGV0})
 
-  target_link_libraries(${ARGV0} capture)
+    target_link_libraries(${ARGV0} capture)
 endmacro()
 
 # Tests
