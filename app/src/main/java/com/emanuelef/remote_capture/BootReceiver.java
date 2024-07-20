@@ -55,7 +55,7 @@ public class BootReceiver extends BroadcastReceiver {
             return;
         }
 
-        CaptureSettings settings = new CaptureSettings(context, prefs);
+        CaptureSettings settings = new CaptureSettings(prefs);
 
         if(!settings.root_capture) {
             Intent vpnPrepareIntent = VpnService.prepare(context);

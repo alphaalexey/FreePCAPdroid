@@ -34,9 +34,9 @@ import androidx.appcompat.app.ActionBar;
 import androidx.core.view.MenuProvider;
 import androidx.preference.PreferenceManager;
 
-import com.emanuelef.remote_capture.Billing;
 import com.emanuelef.remote_capture.CaptureService;
 import com.emanuelef.remote_capture.ConnectionsRegister;
+import com.emanuelef.remote_capture.GUIUtils;
 import com.emanuelef.remote_capture.R;
 import com.emanuelef.remote_capture.Utils;
 import com.emanuelef.remote_capture.model.ConnectionDescriptor.Status;
@@ -120,13 +120,13 @@ public class EditFilterActivity extends BaseActivity implements MenuProvider {
             mOnlyCleartext.setVisibility(View.GONE);
         }
 
-        Billing billing = Billing.newInstance(this);
+        GUIUtils guiUtils = GUIUtils.newInstance(this);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-        if(!Prefs.isMalwareDetectionEnabled(this, prefs))
+        if(!Prefs.isMalwareDetectionEnabled(prefs))
             mOnlyBlacklisted.setVisibility(View.GONE);
 
-        if(billing.isFirewallVisible()) {
+        if(guiUtils.isFirewallVisible()) {
             findViewById(R.id.firewall_label).setVisibility(View.VISIBLE);
             findViewById(R.id.firewall_group).setVisibility(View.VISIBLE);
         }

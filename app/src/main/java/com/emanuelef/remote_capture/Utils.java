@@ -1136,53 +1136,6 @@ public class Utils {
         }
     }
 
-    // Returns true on the playstore branch
-    public static boolean isPlaystore() {
-        return false;
-    }
-
-    @SuppressWarnings("deprecation")
-    public static BuildType getVerifiedBuild(Context ctx, String package_name) {
-        try {
-            Signature[] signatures;
-
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                // NOTE: PCAPdroid does not use multiple signatures
-                PackageInfo pInfo = Utils.getPackageInfo(ctx.getPackageManager(), package_name, PackageManager.GET_SIGNING_CERTIFICATES);
-                signatures = (pInfo.signingInfo == null) ? null : pInfo.signingInfo.getSigningCertificateHistory();
-            } else {
-                @SuppressLint("PackageManagerGetSignatures")
-                PackageInfo pInfo = Utils.getPackageInfo(ctx.getPackageManager(), package_name, PackageManager.GET_SIGNATURES);
-                signatures = pInfo.signatures;
-            }
-
-            // can be null in robolectric tests
-            if((signatures == null) || (signatures.length < 1))
-                return BuildType.UNKNOWN;
-
-            MessageDigest sha1 = MessageDigest.getInstance("SHA");
-            sha1.update(signatures[0].toByteArray());
-
-            // keytool -printcert -jarfile file.apk
-            String hex = byteArrayToHex(sha1.digest(), sha1.getDigestLength());
-            switch(hex) {
-                case "511140392BFF2CFB4BD825895DD6510CE1807F6D":
-                    return BuildType.DEBUG;
-                case "EE953D4F988C8AC17575DFFAA1E3BBCE2E29E81D":
-                    return isPlaystore() ? BuildType.PLAYSTORE : BuildType.GITHUB;
-                case "72777D6939EF150099219BBB68C17220DB28EA8E":
-                    return BuildType.FDROID;
-            }
-        } catch (PackageManager.NameNotFoundException | NoSuchAlgorithmException e) {
-            Log.e(TAG, "Could not determine the build type");
-        }
-        return BuildType.UNKNOWN;
-    }
-
-    public static BuildType getVerifiedBuild(Context ctx) {
-        return getVerifiedBuild(ctx, ctx.getPackageName());
-    }
-
     public static X509Certificate x509FromPem(String pem) {
         int begin = pem.indexOf('\n') + 1;
         int end = pem.indexOf('-', begin);
@@ -1445,26 +1398,11 @@ public class Utils {
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
         boolean rooted = Utils.isRootAvailable();
 
-        return "Build type: " + Utils.getVerifiedBuild(ctx).toString().toLowerCase() + "\n" +
-                "Build version: " + BuildConfig.VERSION_NAME + "\n" +
+        return "Build version: " + BuildConfig.VERSION_NAME + "\n" +
                 "Build date: " + dateFormat.format(new Date(BuildConfig.BUILD_TIME)) + "\n" +
                 "Current date: " + dateFormat.format(new Date()) + "\n" +
                 "Device: " + getDeviceModel() + (rooted ? " (rooted)" : "") + "\n" +
                 "OS version: " + getOsVersion() + "\n";
-    }
-
-    // https://stackoverflow.com/questions/16704597/how-do-you-get-the-user-defined-device-name-in-android
-    public static @Nullable String getDeviceName(Context ctx) {
-        try {
-            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S)
-                // NOTE: on Android 32+ this generates a security exception
-                return Settings.Secure.getString(ctx.getContentResolver(), "bluetooth_name");
-
-            return Settings.Global.getString(ctx.getContentResolver(), Settings.Global.DEVICE_NAME);
-        } catch (Exception e) {
-            Log.d(TAG, "getDeviceName failed: " + e);
-            return null;
-        }
     }
 
     public static String getAppVersionString() {

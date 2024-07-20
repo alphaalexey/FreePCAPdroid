@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="pcapdroid_app_name" translatable="false">PCAPdroid</string>
     <string name="default_collector_ip" translatable="false">127.0.0.1</string>
     <string name="default_collector_port" translatable="false">1234</string>
     <string name="ip_and_port" translatable="false">%1$s:%2$d</string>
@@ -184,7 +183,6 @@
     <string name="reset">Reset</string>
     <string name="malware_whitelist_rules">Zasady białej listy złośliwego oprogramowania</string>
     <string name="feature_not_available">Ta funkcja jest obecnie niedostępna na Twoim urządzeniu</string>
-    <string name="billing_connecting">Trwa łączenie z Google Play, spróbuj ponownie za chwilę</string>
     <string name="malware_whitelist_help">Biała lista zdefiniowana przez użytkownika w celu zablokowania wykrywania złośliwego oprogramowania. Długo naciskaj złośliwe połączenia, aby utworzyć reguły usuwające ich oznaczenie jako złośliwego oprogramowania</string>
     <string name="hidden_connections_help">Lista reguł ukrywania wpisów na liście połączeń, dzięki czemu możesz skupić się na odpowiednich</string>
     <string name="malicious_connection_filter">Złośliwe połączenia</string>
@@ -247,15 +245,11 @@
     <string name="network_interface">Interfejs</string>
     <string name="interface_filter">Interfejs: %1$s</string>
     <string name="loading">Ładowanie…</string>
-    <string name="purchased">Zakupione</string>
-    <string name="no_items_for_purchase">Brak przedmiotów do kupienia</string>
-    <string name="billing_failure">Nie można połączyć się z Google Play. Spróbuj ponownie za chwilę</string>
     <string name="learn_more">Doczytaj</string>
     <string name="buy_action">Kup</string>
     <string name="capture_not_running_status">Przechwytywanie nie jest uruchomione</string>
     <string name="start_capture_first">Najpierw rozpocznij przechwytywanie</string>
     <string name="copied">Skopiowane</string>
-    <string name="can_use_purchased_feature">Możesz teraz korzystać z zakupionej funkcji</string>
     <string name="disconnect_vpn_confirm">Odłączyć aktywną aplikację VPN i kontynuować?</string>
     <string name="loading_apps">Ładowanie aplikacji…</string>
     <string name="open_nav_drawer">Otwórz szufladę</string>
@@ -393,7 +387,6 @@
     <string name="remote_collector_notice">Skonfigurowałeś PCAPdroid do wysyłania ruchu do zdalnego serwera. Serwer będzie mógł uzyskać dostęp do Twoich poufnych informacji.\n\nJeśli ktoś Cię o to poprosi, prawdopodobnie jest to próba oszustwa</string>
     <string name="remote_server_warning">Ze względów bezpieczeństwa wysyłanie ruchu do zdalnego serwera \"%1$s\" jest niedozwolone"</string>
     <string name="warning">Ostrzeżenie</string>
-    <string name="paid_features_unlocked">Płatne funkcje odblokowane. Uruchom ponownie przechwytywanie, jeśli jest uruchomione</string>
     <string name="build_info">Informacje o kompilacji</string>
     <string name="tls_decryption_with_root_msg">Możliwość uruchomienia deszyfrowania TLS z uprawnieniami administratora jest funkcją eksperymentalną. Oto lista znanych błędów:\n\n
 - w PCAPdroid zobaczysz ruch wygenerowany z aplikacji mitm-addon zamiast oryginalnej aplikacji\n
@@ -409,7 +402,6 @@
     <string name="requesting_unlock_token">Prośba o token odblokowania, proszę czekać</string>
     <string name="show_action">Pokaż</string>
     <string name="unlock_token_msg1">To jest twój token odblokowania. Zanotuj go, ponieważ będzie potrzebny <a href="%1$s">do wygenerowania kodów licencyjnych</a></string>
-    <string name="paid_feature">Płatna funkcja</string>
     <string name="firewall_purchase_msg">Kup funkcję <i>%1$s</i>, aby zacząć blokować połączenia</string>
     <string name="mitm_skip_notice">Wydaje się, że certyfikat mitm nie jest zainstalowany. Jeśli będziesz kontynuować, odszyfrowywanie może się nie powieść</string>
     <string name="mitm_wizard_description">Skonfiguruj urządzenie do deszyfrowania TLS</string>

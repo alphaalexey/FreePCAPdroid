@@ -133,7 +133,6 @@
     <string name="reset">Сбросить</string>
     <string name="malware_whitelist_rules">Правила игнорирования вредоносов</string>
     <string name="feature_not_available">Эта возможность на текущий момент недоступна для вашего устройства</string>
-    <string name="billing_connecting">Подключение к Google Play в процессе, пожалуйста попробуйте еще раз позже</string>
     <string name="malicious_connection_filter">Вредоносные</string>
     <string name="status_filter">Статус: %1$s</string>
     <string name="not_hidden_filter">Не скрыты</string>
@@ -183,15 +182,12 @@
     <string name="network_interface">Интерфейс</string>
     <string name="interface_filter">Интерфейс: %1$s</string>
     <string name="invalid">Недействителен</string>
-    <string name="purchased">Приобретено</string>
     <string name="learn_more">Узнать больше</string>
-    <string name="no_items_for_purchase">Отсутствуют опции доступные для покупки</string>
     <string name="buy_action">Купить</string>
     <string name="blocked_connection_filter">Заблокировано</string>
     <string name="block">Заблокировать…</string>
     <string name="firewall_rules">Правила для файрвола</string>
     <string name="validate">Подтвердить</string>
-    <string name="billing_failure">Не удалось подключиться к Google Play, пожалуйста повторите позже</string>
     <string name="loading">Загрузка…</string>
     <string name="no_intent_handler_found">Не найдено приложения для выполнения этого действия</string>
     <string name="save_ok">Сохранено</string>
@@ -205,7 +201,6 @@
     <string name="close_nav_drawer">Закрыть боковое меню</string>
     <string name="root_capture_summary">Позволяет PCAPdroid работать вместе с другими VPN приложениями</string>
     <string name="start_at_boot_summary">Автозапуск захвата после загрузки</string>
-    <string name="can_use_purchased_feature">Теперь вы можете пользоваться приобретенными возможностями</string>
     <string name="capture_all_apps">Захватывать траффик всех приложений</string>
     <string name="hidden_connections_help">Список правил для скрытия элементов из списка соединений, чтобы сфокусироваться только на нужном</string>
     <string name="enable_socks5_proxy_summary">Перенаправляет все TCP соединения на SOCKS5 прокси</string>
@@ -379,7 +374,6 @@
     <string name="install_the_mitm_addon">Установить <a href="%1$s">mitm дополнение</a> PCAPdroid</string>
     <string name="app_unblocked">Приложение %1$s было разблокировано</string>
     <string name="unblock_for_n_minutes">Разблокировать на %1$d мин</string>
-    <string name="paid_features_unlocked">Платные функции разблокированы. Перезапустите захват пакетов, если он запущен</string>
     <string name="tls_decryption_with_root_msg">Возможность запускать TLS дешифрование с использованием root является экспериментальной функцией. Cписок известных ошибок:
 \n
 \n - в PCAPdroid вы можете видеть трафик так, будто он был сгенерирован в приложении mitm-дополнением вместо оригинального приложения
@@ -387,7 +381,6 @@
 \n - если захват пакетов не может начаться, убедитесь, что вы можете запускать команду iptables от имени суперпользователя (например через termux)
 \n - функция может не работать на Android 12 и выше
 \n - если VPN приложение запущено, вы должны, либо указать целевое приложение для дешифрования, либо исключить PCAPdroid mitm-дополнение из VPN, иначе трафик будет закольцован</string>
-    <string name="paid_feature">Платная функция</string>
     <string name="unlock_token_summary">Токен, который может использоваться для разблокировки платных возможностей в версиях приложения не из Google Play (Github/F-Droid)</string>
     <string name="access_paid_features_msg">Ознакомьтесь <a href="%1$s">с инструкцией</a>, чтобы узнать, как получить доступ к платным функциям</string>
     <string name="requesting_unlock_token">Запрашиваю unlock token, пожалуйста подождите</string>

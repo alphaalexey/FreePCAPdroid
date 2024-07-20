@@ -134,7 +134,6 @@
     <string name="reset">Reiniciar</string>
     <string name="malware_whitelist_rules">Reglas de lista blanca de malware</string>
     <string name="feature_not_available">Esta función no está disponible actualmente para tu dispositivo</string>
-    <string name="billing_connecting">La conexión con Google Play está en curso, por favor reintenta más tarde</string>
     <string name="malicious_connection_filter">Malicioso</string>
     <string name="status_filter">Estado: %1$s</string>
     <string name="not_hidden_filter">No oculto</string>
@@ -188,7 +187,6 @@
     <string name="network_interface">Interfaz</string>
     <string name="interface_filter">Interfaz: %1$s</string>
     <string name="buy_action">Comprar</string>
-    <string name="can_use_purchased_feature">Ahora puedes utilizar la función comprada</string>
     <string name="save_ok">Guardado</string>
     <string name="loading_apps">Cargando apps…</string>
     <string name="decryption_no_filter_warn">Seleccione una aplicación de destino al descifrar TLS para evitar perder la conexión a Internet</string>
@@ -202,8 +200,6 @@
     <string name="hidden_connections_help">Lista de reglas para ocultar las entradas de la lista de conexiones y así poder centrarse en las relevantes</string>
     <string name="blocked_pkts">Bloqueado</string>
     <string name="n_pkts">%1$s paquetes</string>
-    <string name="no_items_for_purchase">No hay elementos disponibles para comprar</string>
-    <string name="purchased">Comprado</string>
     <string name="learn_more">Más información</string>
     <string name="malware_whitelist_help">Lista blanca definida por el usuario para inhibir la detección de malware. Mantener presionadas las conexiones maliciosas para crear reglas que las desmarquen como malware</string>
     <string name="start_at_boot_summary">Iniciar captura automáticamente después de arrancar</string>
@@ -211,7 +207,6 @@
     <string name="open_nav_drawer">Abrir cajón de navegación</string>
     <string name="close_nav_drawer">Cerrar cajón de navegación</string>
     <string name="no_intent_handler_found">No se encontró ninguna aplicación para realizar esta acción</string>
-    <string name="billing_failure">No se pudo conectar con Google Play. Por favor reintenta más tarde</string>
     <string name="show_only_cleartext">Conexiones de texto sin formato</string>
     <string name="allowed_connection_filter">Permitido</string>
     <string name="firewall_filter">Cortafuegos: %1$s</string>
@@ -255,7 +250,6 @@
 \n
 \nSi alguien te ha pedido que hagas esto, probablemente sea un intento de estafa</string>
     <string name="warning">Advertencia</string>
-    <string name="paid_features_unlocked">Funciones de pago desbloqueadas. Reinicia la captura si se está ejecutando</string>
     <string name="payload_truncated">La carga útil está truncada. Para mostrarla completa, detén la captura y activa \"%1$s\" desde los ajustes de PCAPdroid</string>
     <string name="display_as">Mostrar como…</string>
     <string name="privacy_first">La privacidad es lo primero</string>
@@ -331,7 +325,6 @@
     <string name="block_quick">Bloquear QUIC</string>
     <string name="app_intro_next_button">Siguiente</string>
     <string name="install_the_mitm_addon">Instala la extensión <a href="%1$s">complemento mitm</a></string>
-    <string name="paid_feature">Funciones de pago</string>
     <string name="firewall_purchase_msg">Compra la función <i>%1$s</i> para comenzar a bloquear conexiones</string>
     <string name="string_http_response">Respuesta HTTP</string>
     <string name="payload">Contenido</string>

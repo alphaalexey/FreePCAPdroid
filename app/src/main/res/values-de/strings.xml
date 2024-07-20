@@ -63,7 +63,6 @@
     <string name="malware_whitelist_help">Benutzerdefinierte Positivliste zur Verhinderung der Malware-Erkennung. Langes drücken auf bösartige Verbindungen kann zum Erstellen von Regeln genutzt werden, um die Malware-Markierung aufzuheben</string>
     <string name="whitelist">Positivliste</string>
     <string name="malware_detection_summary">Erkennung von Verbindungen zu bekannten bösartigen Hosts über Sperrlisten von Drittanbietern</string>
-    <string name="billing_connecting">Verbinde mit Google Play… Versuche es später noch einmal</string>
     <string name="hidden_connections_help">Liste der Regeln zum Ausblenden von Verbindungslisteneinträgen, um sich auf relevante fokussieren zu können</string>
     <string name="control_permissions">Berechtigungssteuerung</string>
     <string name="control_permissions_item">%1$s: %2$s</string>
@@ -196,14 +195,10 @@
     <string name="network_interface">Schnittstelle</string>
     <string name="interface_filter">Schnittstelle: %1$s</string>
     <string name="loading">Wird geladen…</string>
-    <string name="purchased">Gekauft</string>
-    <string name="no_items_for_purchase">Keine Artikel zum Kauf verfügbar</string>
-    <string name="billing_failure">Es konnte keine Verbindung zu Google Play hergestellt werden. Bitte versuche es später erneut</string>
     <string name="learn_more">Mehr erfahren</string>
     <string name="buy_action">Kaufen</string>
     <string name="malware_status_update_failed">Einige Sperrlisten sind veraltet</string>
     <string name="copied">Kopiert</string>
-    <string name="can_use_purchased_feature">Gekaufte Funktion jetzt verwenden werden</string>
     <string name="disconnect_vpn_confirm">Wenn Sie fortfahren wird die aktive VPN Verbindung unterbrochen</string>
     <string name="loading_apps">Lade Apps…</string>
     <string name="open_nav_drawer">Menü öffnen</string>
@@ -319,7 +314,6 @@
     <string name="cancel_action">Abbrechen</string>
     <string name="show_data_action">Daten anzeigen</string>
     <string name="remote_server_warning">Aus Sicherheitsgründen ist das Senden von Daten an den Remote-Server \"%1$s\" nicht erlaubt</string>
-    <string name="paid_features_unlocked">Kostenpflichtige Funktionen freigeschaltet. Starten Sie die Aufzeichnung neu, wenn sie ausgeführt wird</string>
     <string name="build_info">Build-Informationen</string>
     <string name="mitmproxy_opts">Zusätzliche mitmproxy-Optionen</string>
     <string name="mitmproxy_opts_description">Zusätzliche Optionen für mitmproxy bereitstellen</string>
@@ -424,7 +418,6 @@
 \n
 \nMöchten Sie jetzt die VPN-Einstellungen öffnen\?</string>
     <string name="write_ext_storage_failed">Schreiben auf externen Speicher fehlgeschlagen. Prüfen Sie das App-Protokoll für Details</string>
-    <string name="paid_feature">Kostenpflichtige Funktion</string>
     <string name="network_traffic">Verkehr</string>
     <string name="permission_granted">%1$s Berechtigung wurde erteilt</string>
     <string name="permission_grant_fail">%1$s Berechtigung konnte nicht erteilt werden</string>

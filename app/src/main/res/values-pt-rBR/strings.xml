@@ -135,7 +135,6 @@
     <string name="reset">Redefinir</string>
     <string name="malware_whitelist_rules">Regras da lista de permitidos de malware</string>
     <string name="feature_not_available">Esta funcionalidade está atualmente indisponível para seu dispositivo</string>
-    <string name="billing_connecting">A conexão com Google Play está em andamento, por favor, tente novamente daqui a pouco</string>
     <string name="malware_whitelist_help">Lista de permitidos definida pelo usuário para impedir a detecção de malware. Faça clique longo em conexões maliciosas para criar regras que marcam as como não nocivas</string>
     <string name="hidden_connections_help">Lista de regras que escondem entradas da lista de conexões a fim de mostrar apenas relevantes</string>
     <string name="not_hidden_filter">Não oculto</string>
@@ -181,7 +180,6 @@
     <string name="capture_not_running_status">A captura não está executada</string>
     <string name="start_capture_first">Primeiro execute a captura</string>
     <string name="copied">Copiado</string>
-    <string name="can_use_purchased_feature">Agora você pode usar a funcionalidade adquirida</string>
     <string name="disconnect_vpn_confirm">Desconectar o app da VPN ativo e continuar\?</string>
     <string name="loading_apps">Carregando apps…</string>
     <string name="open_nav_drawer">Abrir menu</string>
@@ -208,10 +206,7 @@
     <string name="invalid">Inválido</string>
     <string name="no_intent_handler_found">Nenhum app encontrado para realizar esta ação</string>
     <string name="network_interface">Interface</string>
-    <string name="billing_failure">Não foi possível conectar-se ao Google Play. Por favor, tente novamente daqui a pouco</string>
     <string name="learn_more">Saiba mais</string>
-    <string name="purchased">Adquirido</string>
-    <string name="no_items_for_purchase">Nenhum item disponível para comprar</string>
     <string name="buy_action">Comprar</string>
     <string name="allowed_connection_filter">Permitido</string>
     <string name="vpn_lockdown_notice">Para evitar que apps acessem a internet quando o PCAPdroid não estiver funcionando (p.ex., após uma reinicialização) você pode configurar o PCAPdroid como uma VPN sempre ligada no modo de bloqueio.
@@ -376,7 +371,6 @@
 \nNunca forneça estas informações a ninguém, pode ser uma tentativa de fraude</string>
     <string name="unblock_for_n_minutes">Desbloquear por %1$dm</string>
     <string name="app_unblocked">O %1$s app foi desbloqueado</string>
-    <string name="paid_features_unlocked">Funcionalidades pagas desbloqueadas. Reinicie a captura se estiver funcionando</string>
     <string name="build_info">Detalhes da compilação</string>
     <string name="install_the_mitm_addon">Instalar a <a href="%1$s">extensão de mitm</a> do PCAPdroid</string>
     <string name="warning">Aviso</string>
@@ -389,7 +383,6 @@
 \n - se um app da VPN estiver executado, você deve definir um app específico para decriptação ou definir uma exceção à extensão de mitm do PCAPdroid na VPN, caso contrário, o tráfego vai entrar em um loop</string>
     <string name="mitm_skip_notice">O certificado de mitm não parece estar instalado. Se continuar, o processo de decriptação pode falhar</string>
     <string name="mitm_wizard_description">Configurar o dispositivo para a decriptação do TLS</string>
-    <string name="paid_feature">Funcionalidades não gratuitas</string>
     <string name="firewall_purchase_msg">Adquira a funcionalidade <i>%1$s</i> para começar a bloquear conexões</string>
     <string name="unlock_token_summary">Um token que pode ser usado para desbloquear as funcionalidades pagas em versões do app que não são da loja do Google Play (p.ex. de fontes como F-Droid/Github)</string>
     <string name="unlock_token_error">Não foi possível solicitar um token de desbloqueio [%1$d]: %2$s</string>

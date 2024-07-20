@@ -25,11 +25,6 @@
             android:id="@+id/open_log"
             android:title="@string/app_log"
             android:icon="@drawable/ic_text_snippet" />
-        <item
-            android:id="@+id/paid_features"
-            android:visible="false"
-            android:title="@string/paid_features"
-            android:icon="@drawable/ic_money" />
     </group>
     <group android:id="@+id/group_social">
         <item

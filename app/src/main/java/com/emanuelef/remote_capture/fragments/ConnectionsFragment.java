@@ -43,7 +43,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.SearchView;
 import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
@@ -53,9 +52,9 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.emanuelef.remote_capture.AppsResolver;
-import com.emanuelef.remote_capture.Billing;
 import com.emanuelef.remote_capture.CaptureService;
 import com.emanuelef.remote_capture.ConnectionsRegister;
+import com.emanuelef.remote_capture.GUIUtils;
 import com.emanuelef.remote_capture.Log;
 import com.emanuelef.remote_capture.PCAPdroid;
 import com.emanuelef.remote_capture.R;
@@ -296,12 +295,11 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
         Context ctx = requireContext();
         MenuItem item;
 
-        Billing billing = Billing.newInstance(ctx);
+        GUIUtils guiUtils = GUIUtils.newInstance(ctx);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
 
-        boolean firewallVisible = billing.isFirewallVisible();
+        boolean firewallVisible = guiUtils.isFirewallVisible();
         boolean whitelistMode = Prefs.isFirewallWhitelistMode(prefs);
-        boolean showPurchaseFirewall = (!billing.isPurchased(Billing.FIREWALL_SKU) && billing.isAvailable(Billing.FIREWALL_SKU)) && !CaptureService.isCapturingAsRoot();
         boolean blockVisible = false;
         boolean unblockVisible = false;
         boolean decryptVisible = false;
@@ -479,7 +477,7 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
         menu.findItem(R.id.hide_proto).setTitle(label);
         menu.findItem(R.id.search_proto).setTitle(label);
 
-        menu.findItem(R.id.block_menu).setVisible((firewallVisible || showPurchaseFirewall) && blockVisible);
+        menu.findItem(R.id.block_menu).setVisible((firewallVisible) && blockVisible);
         menu.findItem(R.id.unblock_menu).setVisible(firewallVisible && unblockVisible);
 
         if(!conn.isBlacklisted())
@@ -499,7 +497,6 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
         MatchList fwWhitelist = PCAPdroid.getInstance().getFirewallWhitelist();
         MatchList decryptionList = PCAPdroid.getInstance().getDecryptionList();
         Blocklist blocklist = PCAPdroid.getInstance().getBlocklist();
-        boolean firewallPurchased = Billing.newInstance(ctx).isPurchased(Billing.FIREWALL_SKU);
         boolean mask_changed = false;
         boolean whitelist_changed = false;
         boolean blocklist_changed = false;
@@ -569,29 +566,17 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
             decryptionList.removeHost(conn.info);
             decryption_list_changed = true;
         } else if(id == R.id.block_app) {
-            if(firewallPurchased) {
-                blocklist.addApp(conn.uid);
-                blocklist_changed = true;
-            } else
-                showFirewallPurchaseDialog();
+            blocklist.addApp(conn.uid);
+            blocklist_changed = true;
         } else if(id == R.id.block_ip) {
-            if(firewallPurchased) {
-                blocklist.addIp(conn.dst_ip);
-                blocklist_changed = true;
-            } else
-                showFirewallPurchaseDialog();
+            blocklist.addIp(conn.dst_ip);
+            blocklist_changed = true;
         } else if(id == R.id.block_host) {
-            if(firewallPurchased) {
-                blocklist.addHost(conn.info);
-                blocklist_changed = true;
-            } else
-                showFirewallPurchaseDialog();
+            blocklist.addHost(conn.info);
+            blocklist_changed = true;
         } else if(id == R.id.block_domain) {
-            if(firewallPurchased) {
-                blocklist.addHost(Utils.getSecondLevelDomain(conn.info));
-                blocklist_changed = true;
-            } else
-                showFirewallPurchaseDialog();
+            blocklist.addHost(Utils.getSecondLevelDomain(conn.info));
+            blocklist_changed = true;
         } else if(id == R.id.unblock_app_permanently) {
             blocklist.removeApp(conn.uid);
             blocklist_changed = true;
@@ -651,17 +636,6 @@ public class ConnectionsFragment extends Fragment implements ConnectionsListener
             blocklist.saveAndReload();
 
         return true;
-    }
-
-    private void showFirewallPurchaseDialog() {
-        new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.paid_feature)
-                .setMessage(Utils.getText(requireContext(), R.string.firewall_purchase_msg, getString(R.string.no_root_firewall)))
-                .setPositiveButton(R.string.show_me, (dialogInterface, i) -> {
-                    // Billing code here
-                })
-                .setNegativeButton(R.string.cancel_action, (dialogInterface, i) -> {})
-                .show();
     }
 
     private void setQuery(String query) {

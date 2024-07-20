@@ -42,11 +42,9 @@
     <string name="network_interface">Інтерфейс</string>
     <string name="interface_filter">Інтерфейс: %1$s</string>
     <string name="loading">Вантаження…</string>
-    <string name="billing_failure">Не вдалося під\'єднатися до Google Play. Будь ласка, спробуйте пізніше</string>
     <string name="learn_more">Дізнатися більше</string>
     <string name="buy_action">Купити</string>
     <string name="open_nav_drawer">Відкрити меню</string>
-    <string name="can_use_purchased_feature">Тепер ви можете користуватися придбаною функцією</string>
     <string name="save_ok">Збережено</string>
     <string name="tls_decryption">Дешифрування TLS</string>
     <string name="checking_the_certificate">Перевірка сертифікату…</string>
@@ -135,7 +133,6 @@
 \nЯкщо хтось попросив вас це зробити, це, ймовірно, спроба шахрайства</string>
     <string name="remote_server_warning">З міркувань безпеки, надсилання трафіку на віддалений сервер \"%1$s\" не дозволено\"</string>
     <string name="warning">Застереження</string>
-    <string name="paid_features_unlocked">Платні функції розблоковано. Перезапустіть захоплення, якщо виконується</string>
     <string name="tls_decryption_with_root_msg">Можливість виконати дешифрування TLS з рут це експериментальна функція. Список відомих багів:
 \n
 \n - у PCAPdroid ви побачите трафік, згенерований додатком доповненням mitm замість оригінальним додатком
@@ -150,7 +147,6 @@
     <string name="requesting_unlock_token">Запит токена розблокування, зачекайте, будь ласка</string>
     <string name="show_action">Показати</string>
     <string name="unlock_token_msg1">Це ваш токен розблокування. Занотуйте його, оскільки він вам знадобиться <a href="%1$s">для генерування ваших кодів ліцензії</a></string>
-    <string name="paid_feature">Платна функція</string>
     <string name="firewall_purchase_msg">Купіть функцію <i>%1$s</i>, щоб розпочати блокування з\'єднання</string>
     <string name="mitm_skip_notice">Здається, сертифікат mitm не встановлено. Якщо ви продовжите, дешифрування може не вдатися</string>
     <string name="mitmproxy_opts">Додаткові опції mitmproxy</string>
@@ -346,7 +342,6 @@
     <string name="reset">Скинути</string>
     <string name="malware_whitelist_rules">Правила білого списку зловмисного ПЗ</string>
     <string name="feature_not_available">Ця функція наразі недоступна для вашого пристрою</string>
-    <string name="billing_connecting">Триває з\'єднання з Google Play, будь ласка, спробуйте пізніше</string>
     <string name="malware_whitelist_help">Зазначений користувачем білий список пригнічує виявлення зловмисного ПЗ. Утримуйте зловмисні з\'єднання для створення правил розмаркування їх як зловмисне ПЗ</string>
     <string name="hidden_connections_help">Список правил для приховання записів списку підключень, щоб ви могли зосередитися на доречних</string>
     <string name="malicious_connection_filter">Зловмисні</string>
@@ -386,8 +381,6 @@
     <string name="valid">Дійсні</string>
     <string name="invalid">Недійсні</string>
     <string name="no_intent_handler_found">Не знайдено додатку, щоб виконати цю дію</string>
-    <string name="purchased">Придбано</string>
-    <string name="no_items_for_purchase">Недоступно для покупки</string>
     <string name="capture_not_running_status">Захоплення не запущене</string>
     <string name="start_capture_first">Спочатку запустіть захоплення</string>
     <string name="copied">Скопійовано</string>

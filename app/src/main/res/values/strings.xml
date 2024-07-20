@@ -1,5 +1,5 @@
 <resources>
-    <string name="pcapdroid_app_name" translatable="false">PCAPdroid</string>
+    <string name="pcapdroid_app_name" translatable="false">FreePCAPdroid</string>
     <string name="default_collector_ip" translatable="false">127.0.0.1</string>
     <string name="default_collector_port" translatable="false">1234</string>
     <string name="ip_and_port" translatable="false">%1$s:%2$d</string>
@@ -190,7 +190,6 @@
     <string name="reset">Reset</string>
     <string name="malware_whitelist_rules">Malware whitelist rules</string>
     <string name="feature_not_available">This feature is currently unavailable for your device</string>
-    <string name="billing_connecting">The connection to Google Play is in progress, please retry in a while</string>
     <string name="malware_whitelist_help">User-defined whitelist to inhibit malware detection. Long-press malicious connections to create rules unmarking them as malware</string>
     <string name="hidden_connections_help">List of rules to hide connection-list entries so you can focus on relevant ones</string>
     <string name="malicious_connection_filter">Malicious</string>
@@ -253,15 +252,11 @@
     <string name="network_interface">Interface</string>
     <string name="interface_filter">Interface: %1$s</string>
     <string name="loading">Loading…</string>
-    <string name="purchased">Purchased</string>
-    <string name="no_items_for_purchase">No items available for purchase</string>
-    <string name="billing_failure">Could not connect to Google Play. Please retry in a while</string>
     <string name="learn_more">Learn more</string>
     <string name="buy_action">Buy</string>
     <string name="capture_not_running_status">The capture is not running</string>
     <string name="start_capture_first">Start the capture first</string>
     <string name="copied">Copied</string>
-    <string name="can_use_purchased_feature">You can now use the purchased feature</string>
     <string name="disconnect_vpn_confirm">Continuing will disconnect the active VPN</string>
     <string name="loading_apps">Loading apps…</string>
     <string name="open_nav_drawer">Open drawer</string>
@@ -401,7 +396,6 @@
     <string name="remote_collector_notice">You have configured PCAPdroid to send traffic to a remote server. The server will be able to access your sensitive information.\n\nIf someone asked you to do this, it is probably a scam attempt</string>
     <string name="remote_server_warning">For security reasons, sending traffic to the remote server \"%1$s\" is not allowed"</string>
     <string name="warning">Warning</string>
-    <string name="paid_features_unlocked">Paid features unlocked. Restart the capture if running</string>
     <string name="build_info">Build info</string>
     <string name="tls_decryption_with_root_msg">The ability to run TLS decryption with root is an experimental feature. This is a list of known bugs:\n\n
 - in PCAPdroid you will see the traffic as it was generated from the mitm-addon app in place of the original app\n
@@ -417,7 +411,6 @@
     <string name="requesting_unlock_token">Requesting an unlock token, please wait</string>
     <string name="show_action">Show</string>
     <string name="unlock_token_msg1">This is your unlock token. Note it down as you will need it <a href='%1$s'>to generate your license codes</a></string>
-    <string name="paid_feature">Paid feature</string>
     <string name="firewall_purchase_msg">Buy the <i>%1$s</i> feature to start blocking connections</string>
     <string name="mitm_skip_notice">The mitm certificate does not seem to be installed. If you proceed, decryption may fail</string>
     <string name="mitm_wizard_description">Configure the device for the TLS decryption</string>

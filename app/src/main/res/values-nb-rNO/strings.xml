@@ -153,12 +153,10 @@
     <string name="n_pkts">%1$s pakker</string>
     <string name="private_dns_hinders_detection">Privat DNS forhindrer oppdagelse</string>
     <string name="decryption_no_filter_warn">Velg et målprogram når du dekrypterer TLS for å unngå å miste tilkoblingen din til Internett</string>
-    <string name="billing_failure">Kunne ikke koble til Google Play. Prøv igjen om en stund</string>
     <string name="start_capture_first">Start fangst først</string>
     <string name="close_nav_drawer">Lukk skuff</string>
     <string name="save_ok">Lagret</string>
     <string name="copied">Kopiert</string>
-    <string name="can_use_purchased_feature">Du kan nå bruke den betalte funksjonen</string>
     <string name="disconnect_vpn_confirm">Koble fra aktivt VPN-program og fortsett\?</string>
     <string name="loading_apps">Laster inn programmer …</string>
     <string name="open_nav_drawer">Åpne skuff</string>
@@ -185,12 +183,9 @@
     <string name="trailer_how_to">Hvordan vise trailer-data i Wireshark</string>
     <string name="malware_whitelist_rules">Skadevare-hvitlisteregler</string>
     <string name="malware_detection_summary">Oppdag tilkoblinger til kjente ondsinnede verter via tredjeparts-svartelister</string>
-    <string name="billing_connecting">Kobler til Google Play …Prøv igjen om en stund.</string>
     <string name="hidden_connections_help">Lister over regler for skjuling av tilkoblingslisteoppføringer, slik at du kan fokusere på de som er relevante</string>
     <string name="updated_blacklists">Oppdaterte svartelister</string>
     <string name="last_blacklists_update">Siste oppdatering</string>
-    <string name="purchased">Kjøpt</string>
-    <string name="no_items_for_purchase">Ingenting for salg</string>
     <string name="no_intent_handler_found">Fant ikke noe program til å utføre handlingen</string>
     <string name="valid">Gyldig</string>
     <string name="pcap_file_action">Trafikk lagret til «%1$s»-filen (%2$s)</string>

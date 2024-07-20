@@ -24,7 +24,6 @@ import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 
@@ -37,7 +36,6 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.content.pm.PackageInfoCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
@@ -55,9 +53,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
-import com.emanuelef.remote_capture.AppsResolver;
-import com.emanuelef.remote_capture.Billing;
-import com.emanuelef.remote_capture.BuildConfig;
 import com.emanuelef.remote_capture.CaptureHelper;
 import com.emanuelef.remote_capture.ConnectionsRegister;
 import com.emanuelef.remote_capture.Log;
@@ -68,7 +63,6 @@ import com.emanuelef.remote_capture.activities.prefs.SettingsActivity;
 import com.emanuelef.remote_capture.fragments.ConnectionsFragment;
 import com.emanuelef.remote_capture.fragments.StatusFragment;
 import com.emanuelef.remote_capture.interfaces.AppStateListener;
-import com.emanuelef.remote_capture.model.AppDescriptor;
 import com.emanuelef.remote_capture.model.AppState;
 import com.emanuelef.remote_capture.CaptureService;
 import com.emanuelef.remote_capture.model.CaptureSettings;
@@ -86,12 +80,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends BaseActivity implements NavigationView.OnNavigationItemSelectedListener {
-    private Billing mIab;
     private ViewPager2 mPager;
     private AppState mState;
     private AppStateListener mListener;
@@ -131,8 +123,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             registerForActivityResult(new RequestPermission(), isGranted ->
                 Log.d(TAG, "Write permission " + (isGranted ? "granted" : "denied"))
             );
-    private final ActivityResultLauncher<Intent> peerInfoLauncher =
-            registerForActivityResult(new StartActivityForResult(), this::peerInfoResult);
     private final ActivityResultLauncher<Intent> pcapFileOpenLauncher =
             registerForActivityResult(new StartActivityForResult(), this::pcapFileOpenResult);
 
@@ -159,10 +149,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             Prefs.refreshAppVersion(mPrefs);
         }
 
-        mIab = Billing.newInstance(this);
-        mIab.setLicense(mIab.getLicense());
-
-        initPeerAppInfo();
         initAppState();
         checkPermissions();
 
@@ -235,8 +221,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             Menu navMenu = mNavView.getMenu();
             navMenu.findItem(R.id.tls_decryption).setVisible(Prefs.getTlsDecryptionEnabled(mPrefs) && !Prefs.isRootCaptureEnabled(mPrefs));
         }
-
-        checkPaidDrawerEntries();
     }
 
     private void setupNavigationDrawer() {
@@ -280,15 +264,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                 )
                 .setNeutralButton(R.string.ok, (dialogInterface, i) -> {})
                 .show();
-    }
-
-    // keep this in a separate function, used by play billing code
-    private void checkPaidDrawerEntries() {
-        if(mNavView == null)
-            return;
-        Menu navMenu = mNavView.getMenu();
-        navMenu.findItem(R.id.malware_detection).setVisible(Prefs.isMalwareDetectionEnabled(this, mPrefs));
-        navMenu.findItem(R.id.firewall).setVisible(mIab.isFirewallVisible());
     }
 
     @Override
@@ -344,73 +319,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         } catch (ActivityNotFoundException e) {
             Utils.showToastLong(this, R.string.no_intent_handler_found);
         }
-    }
-
-    // On debug builds, if the user also has the non-debug app installed (peer app), unlock the
-    // already-purchased features also on this beta app
-    private void initPeerAppInfo() {
-        if(!BuildConfig.APPLICATION_ID.equals("com.emanuelef.remote_capture.debug"))
-            return;
-
-        final String peerAppPackage = "com.emanuelef.remote_capture";
-
-        AppDescriptor peer = AppsResolver.resolveInstalledApp(getPackageManager(), peerAppPackage, 0);
-        if(peer == null) {
-            Log.d(TAG, "Peer app not found");
-            mIab.clearPeerSkus();
-            return;
-        }
-
-        PackageInfo pInfo = peer.getPackageInfo();
-        if((pInfo == null) || (PackageInfoCompat.getLongVersionCode(pInfo) < 56)) {
-            Log.d(TAG, "Unsupported peer app version found");
-            mIab.clearPeerSkus();
-            return;
-        }
-
-        // Verify that the peer signature
-        Utils.BuildType buildType = Utils.getVerifiedBuild(this, peerAppPackage);
-        if((buildType != Utils.BuildType.FDROID) && (buildType != Utils.BuildType.PLAYSTORE) && (buildType != Utils.BuildType.GITHUB)) {
-            Log.d(TAG, "Unsupported peer app build: " + buildType.name());
-            mIab.clearPeerSkus();
-            return;
-        }
-
-        Log.d(TAG, "Valid peer app found (" + pInfo.versionName + " - " + PackageInfoCompat.getLongVersionCode(pInfo) + ")");
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setClassName(peerAppPackage, "com.emanuelef.remote_capture.activities.CaptureCtrl");
-        intent.putExtra("action", "get_peer_info");
-
-        try {
-            peerInfoLauncher.launch(intent);
-        } catch (ActivityNotFoundException e) {
-            Log.d(TAG, "Peer app launch failed");
-            mIab.clearPeerSkus();
-        }
-    }
-
-    private void peerInfoResult(final ActivityResult result) {
-        if((result.getResultCode() == RESULT_OK) && (result.getData() != null)) {
-            Intent data = result.getData();
-
-            try {
-                @SuppressWarnings("unchecked")
-                HashSet<String> skus = Utils.getSerializableExtra(data, "skus", HashSet.class);
-
-                if(skus != null) {
-                    Log.d(TAG, "Found peer app info");
-
-                    mIab.handlePeerSkus(skus);
-
-                    // success
-                    return;
-                }
-            } catch (ClassCastException ignored) {}
-        }
-
-        // fail
-        Log.d(TAG, "Invalid peer app result");
-        mIab.clearPeerSkus();
     }
 
     private static class MainStateAdapter extends FragmentStateAdapter {
@@ -715,7 +623,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     private void doStartCaptureService(String input_pcap_path) {
         appStateStarting();
 
-        CaptureSettings settings = new CaptureSettings(this, mPrefs);
+        CaptureSettings settings = new CaptureSettings(mPrefs);
         settings.input_pcap_path = input_pcap_path;
         mCapHelper.startCapture(settings);
     }

@@ -70,17 +70,9 @@ public class PCAPdroid extends Application {
         if(!isUnderTest())
             Log.init(getCacheDir().getAbsolutePath());
 
-        Utils.BuildType buildtp = Utils.getVerifiedBuild(this);
-        Log.i(TAG, "Build type: " + buildtp);
-
         CaocConfig.Builder builder = CaocConfig.Builder.create();
-        if((buildtp == Utils.BuildType.PLAYSTORE) || (buildtp == Utils.BuildType.UNKNOWN)) {
-            // Disabled to get reports via the Android system reporting facility and for unsupported builds
-            builder.enabled(false);
-        } else {
-            builder.errorDrawable(R.drawable.ic_app_crash)
-                    .errorActivity(ErrorActivity.class);
-        }
+        builder.errorDrawable(R.drawable.ic_app_crash)
+                .errorActivity(ErrorActivity.class);
         builder.apply();
 
         mInstance = new WeakReference<>(this);

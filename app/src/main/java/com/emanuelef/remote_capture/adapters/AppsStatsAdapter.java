@@ -34,7 +34,7 @@ import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.emanuelef.remote_capture.Billing;
+import com.emanuelef.remote_capture.GUIUtils;
 import com.emanuelef.remote_capture.PCAPdroid;
 import com.emanuelef.remote_capture.R;
 import com.emanuelef.remote_capture.Utils;
@@ -131,7 +131,7 @@ public class AppsStatsAdapter extends RecyclerView.Adapter<AppsStatsAdapter.View
         mWhitelist = PCAPdroid.getInstance().getFirewallWhitelist();
         mListener = null;
         mStats = new ArrayList<>();
-        mFirewallAvailable = Billing.newInstance(context).isFirewallVisible();
+        mFirewallAvailable = GUIUtils.newInstance(context).isFirewallVisible();
         mSortField = SortField.NAME;
         setHasStableIds(true);
     }

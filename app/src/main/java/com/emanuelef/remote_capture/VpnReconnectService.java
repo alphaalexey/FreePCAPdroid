@@ -188,7 +188,7 @@ public class VpnReconnectService extends Service {
                         unregisterNetworkCallback();
 
                         Context ctx = VpnReconnectService.this;
-                        CaptureSettings settings = new CaptureSettings(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
+                        CaptureSettings settings = new CaptureSettings(PreferenceManager.getDefaultSharedPreferences(ctx));
 
                         CaptureHelper helper = new CaptureHelper(ctx);
                         helper.setListener(success -> stopService());

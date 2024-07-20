@@ -39,7 +39,6 @@ import androidx.core.widget.TextViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 
-import com.emanuelef.remote_capture.Billing;
 import com.emanuelef.remote_capture.Log;
 import com.emanuelef.remote_capture.R;
 import com.emanuelef.remote_capture.Utils;
@@ -131,7 +130,6 @@ public class OnBoardingActivity extends AppIntro {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         boolean backEnabled = false;
-        Billing billing = Billing.newInstance(this);
 
         Intent intent = getIntent();
         if(intent != null)
@@ -151,17 +149,15 @@ public class OnBoardingActivity extends AppIntro {
                         MainActivity.TLS_DECRYPTION_DOCS_URL),
                 R.drawable.http_inspection, 0, false));
 
-        if(billing.isPlayStore()) {
-            addSlide(OnBoardingFragment.createInstance(getString(R.string.firewall),
-                    Utils.getText(this, R.string.app_intro_firewall_msg,
-                            MainActivity.FIREWALL_DOCS_URL),
-                    R.drawable.firewall_block, 0, false));
+        addSlide(OnBoardingFragment.createInstance(getString(R.string.firewall),
+                Utils.getText(this, R.string.app_intro_firewall_msg,
+                        MainActivity.FIREWALL_DOCS_URL),
+                R.drawable.firewall_block, 0, false));
 
-            addSlide(OnBoardingFragment.createInstance(getString(R.string.malware_detection),
-                    Utils.getText(this, R.string.app_intro_malware_detection,
-                            MainActivity.MALWARE_DETECTION_DOCS_URL),
-                    R.drawable.malware_notification, 0, false));
-        }
+        addSlide(OnBoardingFragment.createInstance(getString(R.string.malware_detection),
+                Utils.getText(this, R.string.app_intro_malware_detection,
+                        MainActivity.MALWARE_DETECTION_DOCS_URL),
+                R.drawable.malware_notification, 0, false));
 
         addSlide(OnBoardingFragment.createInstance(getString(R.string.traffic_dump),
                 Utils.getText(this, R.string.app_intro_traffic_dump,

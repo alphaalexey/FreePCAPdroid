@@ -39,7 +39,6 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 import androidx.preference.SwitchPreference;
 
-import com.emanuelef.remote_capture.Billing;
 import com.emanuelef.remote_capture.Log;
 import com.emanuelef.remote_capture.PCAPdroid;
 import com.emanuelef.remote_capture.Utils;
@@ -149,7 +148,6 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
         private SwitchPreference mTrailerEnabled;
         private SwitchPreference mPcapngEnabled;
         private SwitchPreference mRestartOnDisconnect;
-        private Billing mIab;
         private boolean mHasStartedMitmWizard;
         private boolean mRootDecryptionNoticeShown = false;
 
@@ -160,7 +158,6 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
-            mIab = Billing.newInstance(requireContext());
 
             setupUdpExporterPrefs();
             setupHttpServerPrefs();
@@ -223,7 +220,7 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
         }
 
         private boolean isPcapngEnabled() {
-            return mIab.isPurchased(Billing.PCAPNG_SKU) && mPcapngEnabled.isChecked();
+            return mPcapngEnabled.isChecked();
         }
 
         private void refreshInterfaces() {
@@ -285,13 +282,6 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
 
         private void setupSecurityPrefs() {
             mMalwareDetectionEnabled = requirePreference(Prefs.PREF_MALWARE_DETECTION);
-
-            if(!mIab.isAvailable(Billing.MALWARE_DETECTION_SKU)) {
-                getPreferenceScreen().removePreference(requirePreference("security"));
-                return;
-            }
-
-            // Billing code here
         }
 
         @SuppressWarnings("deprecation")
@@ -321,17 +311,10 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
 
             mPcapngEnabled = requirePreference("pcapng_format");
 
-            if(mIab.isAvailable(Billing.PCAPNG_SKU)) {
-                mPcapngEnabled.setOnPreferenceClickListener((preference -> {
-                    // Billing code here
-
-                    mTrailerEnabled.setVisible(!mPcapngEnabled.isChecked());
-                    return false;
-                }));
-                if(!mIab.isPurchased(Billing.PCAPNG_SKU))
-                    mPcapngEnabled.setChecked(false);
-            } else
-                mPcapngEnabled.setVisible(false);
+            mPcapngEnabled.setOnPreferenceClickListener((preference -> {
+                mTrailerEnabled.setVisible(!mPcapngEnabled.isChecked());
+                return false;
+            }));
 
             mFullPayloadEnabled = requirePreference(Prefs.PREF_FULL_PAYLOAD);
             mBlockQuic = requirePreference(Prefs.PREF_BLOCK_QUIC);

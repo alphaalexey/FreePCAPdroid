@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="pcapdroid_app_name" translatable="false">PCAPdroid</string>
     <string name="default_collector_ip" translatable="false">127.0.0.1</string>
     <string name="default_collector_port" translatable="false">1234</string>
     <string name="ip_and_port" translatable="false">%1$s:%2$d</string>
@@ -162,7 +161,6 @@
     <string name="reset">重置</string>
     <string name="malware_whitelist_rules">恶意软件白名单规则</string>
     <string name="feature_not_available">此功能目前在您的设备上不可用</string>
-    <string name="billing_connecting">正在连接 Google Play，请稍候再试</string>
     <string name="malicious_connection_filter">恶意的</string>
     <string name="status_filter">状态： %1$s</string>
     <string name="not_hidden_filter">未隐藏</string>
@@ -218,16 +216,12 @@
     <string name="network_interface">接口</string>
     <string name="interface_filter">接口: %1$s</string>
     <string name="loading">加载中…</string>
-    <string name="purchased">已购买</string>
-    <string name="no_items_for_purchase">没有可供购买的项目</string>
-    <string name="billing_failure">未能连接到 Google Play，请稍后再试</string>
     <string name="learn_more">了解更多</string>
     <string name="buy_action">购买</string>
     <string name="start_at_boot_summary">开机后自动开始流量捕获</string>
     <string name="capture_not_running_status">流量捕获未在运行</string>
     <string name="start_capture_first">先开始流量捕获</string>
     <string name="copied">已复制</string>
-    <string name="can_use_purchased_feature">你现在可以使用购买的功能</string>
     <string name="disconnect_vpn_confirm">继续将断开与活动 VPN 的连接</string>
     <string name="loading_apps">正在加载应用…</string>
     <string name="open_nav_drawer">打开抽屉</string>
@@ -406,7 +400,6 @@
     <string name="warning">警告</string>
     <string name="app_unblocked">已解除对 %1$s 应用的封锁</string>
     <string name="build_info">构建信息</string>
-    <string name="paid_features_unlocked">付费功能已解锁。 如果正在运行，请重启流量捕获</string>
     <string name="unblock_for_n_minutes">解封 %1$d 分钟</string>
     <string name="install_the_mitm_addon">安装 PCAPdroid <a href="%1$s">mitm 附加组件</a></string>
     <string name="tls_decryption_with_root_msg">使用 root 权限运行 TLS 解密是一项实验性功能。 这是已知错误的列表：:
@@ -423,7 +416,6 @@
     <string name="requesting_unlock_token">请求解锁令牌中，请稍候</string>
     <string name="show_action">显示</string>
     <string name="unlock_token_msg1">这是您的解锁令牌。 请记下它，因为你需要它<a href="%1$s">生成许可证代码</a></string>
-    <string name="paid_feature">付费功能</string>
     <string name="firewall_purchase_msg">购买 <i>%1$s</i> 功能开始拦截连接</string>
     <string name="mitm_skip_notice">似乎未安装 mitm 证书。如果继续，解密会失败</string>
     <string name="mitm_wizard_description">配置设备以进行 TLS 解密</string>

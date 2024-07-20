@@ -26,8 +26,8 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import androidx.preference.PreferenceManager;
 
-import com.emanuelef.remote_capture.Billing;
 import com.emanuelef.remote_capture.BuildConfig;
+import com.emanuelef.remote_capture.GUIUtils;
 import com.emanuelef.remote_capture.MitmAddon;
 import com.emanuelef.remote_capture.Utils;
 
@@ -207,19 +207,13 @@ public class Prefs {
     public static boolean isRootCaptureEnabled(SharedPreferences p) { return(Utils.isRootAvailable() && p.getBoolean(PREF_ROOT_CAPTURE, false)); }
     public static boolean isPcapdroidTrailerEnabled(SharedPreferences p) { return(p.getBoolean(PREF_PCAPDROID_TRAILER, false)); }
     public static String getCaptureInterface(SharedPreferences p) { return(p.getString(PREF_CAPTURE_INTERFACE, "@inet")); }
-    public static boolean isMalwareDetectionEnabled(Context ctx, SharedPreferences p) {
-        return(Billing.newInstance(ctx).isPurchased(Billing.MALWARE_DETECTION_SKU)
-                && p.getBoolean(PREF_MALWARE_DETECTION, true));
-    }
+    public static boolean isMalwareDetectionEnabled(SharedPreferences p) { return(p.getBoolean(PREF_MALWARE_DETECTION, true)); }
     public static boolean isFirewallEnabled(Context ctx, SharedPreferences p) {
         // NOTE: firewall can be disabled at runtime
-        return(Billing.newInstance(ctx).isFirewallVisible()
+        return(GUIUtils.newInstance(ctx).isFirewallVisible()
                 && p.getBoolean(PREF_FIREWALL, true));
     }
-    public static boolean isPcapngEnabled(Context ctx, SharedPreferences p)  {
-        return(Billing.newInstance(ctx).isPurchased(Billing.PCAPNG_SKU)
-                && p.getBoolean(PREF_PCAPNG_ENABLED, true));
-    }
+    public static boolean isPcapngEnabled(SharedPreferences p)  { return(p.getBoolean(PREF_PCAPNG_ENABLED, true)); }
     public static boolean startAtBoot(SharedPreferences p)        { return(p.getBoolean(PREF_START_AT_BOOT, false)); }
     public static boolean restartOnDisconnect(SharedPreferences p)        { return(p.getBoolean(PREF_RESTART_ON_DISCONNECT, false)); }
     public static boolean isTLSDecryptionSetupDone(SharedPreferences p)     { return(p.getBoolean(PREF_TLS_DECRYPTION_SETUP_DONE, false)); }
@@ -274,9 +268,9 @@ public class Prefs {
                 "\nSocks5: " + getSocks5Enabled(p) +
                 "\nBlockPrivateDns: " + isPrivateDnsBlockingEnabled(p) +
                 "\nCaptureInterface: " + getCaptureInterface(p) +
-                "\nMalwareDetection: " + isMalwareDetectionEnabled(ctx, p) +
+                "\nMalwareDetection: " + isMalwareDetectionEnabled(p) +
                 "\nFirewall: " + isFirewallEnabled(ctx, p) +
-                "\nPCAPNG: " + isPcapngEnabled(ctx, p) +
+                "\nPCAPNG: " + isPcapngEnabled(p) +
                 "\nBlockNewApps: " + blockNewApps(p) +
                 "\nTargetApps: " + getAppFilter(p) +
                 "\nIpMode: " + getIPMode(p) +

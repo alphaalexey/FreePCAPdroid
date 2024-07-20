@@ -43,10 +43,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 
 import com.emanuelef.remote_capture.AppsResolver;
-import com.emanuelef.remote_capture.Billing;
 import com.emanuelef.remote_capture.BuildConfig;
 import com.emanuelef.remote_capture.CaptureHelper;
 import com.emanuelef.remote_capture.CaptureService;
+import com.emanuelef.remote_capture.GUIUtils;
 import com.emanuelef.remote_capture.Log;
 import com.emanuelef.remote_capture.PCAPdroid;
 import com.emanuelef.remote_capture.PersistableUriPermission;
@@ -64,7 +64,6 @@ public class CaptureCtrl extends AppCompatActivity {
     public static final String ACTION_START = "start";
     public static final String ACTION_STOP = "stop";
     public static final String ACTION_STATUS = "get_status";
-    public static final String ACTION_PEER_INFO = "get_peer_info";
     public static final String ACTION_NOTIFY_STATUS = "com.emanuelef.remote_capture.CaptureStatus";
     private static final String TAG = "CaptureCtrl";
     private static AppDescriptor mStarterApp = null; // the app which started the capture, may be unknown
@@ -110,11 +109,6 @@ public class CaptureCtrl extends AppCompatActivity {
         if(action == null) {
             Log.e(TAG, "no action provided");
             abort();
-            return;
-        }
-
-        if(action.equals(ACTION_PEER_INFO)) {
-            getPeerInfo();
             return;
         }
 
@@ -243,7 +237,7 @@ public class CaptureCtrl extends AppCompatActivity {
             mReceiverClass = req_intent.getStringExtra("broadcast_receiver");
             Log.d(TAG, "Starting capture, caller=" + mStarterApp);
 
-            CaptureSettings settings = new CaptureSettings(this, req_intent);
+            CaptureSettings settings = new CaptureSettings(req_intent);
             String disallowedServer = checkRemoteServerNotAllowed(settings);
             if(disallowedServer != null) {
                 Utils.showToastLong(this, R.string.remote_server_warning, disallowedServer);
@@ -326,32 +320,5 @@ public class CaptureCtrl extends AppCompatActivity {
         intent.putExtra("pkts_sent", stats.pkts_sent);
         intent.putExtra("pkts_rcvd", stats.pkts_rcvd);
         intent.putExtra("pkts_dropped", stats.pkts_dropped);
-    }
-
-    // A request sent from a debug build of PCAPdroid to a non-debug one
-    private void getPeerInfo() {
-        // Verify the peer app
-        String package_name = getCallingPackage();
-        if((package_name == null) || !package_name.equals(BuildConfig.APPLICATION_ID + ".debug")) {
-            Log.w(TAG, "getPeerInfo: package name mismatch");
-            abort(false);
-            return;
-        }
-
-        Billing billing = Billing.newInstance(this);
-        billing.setLicense(billing.getLicense());
-
-        Intent res = new Intent();
-        HashSet<String> purchased = new HashSet<>();
-
-        for(String sku: Billing.ALL_SKUS) {
-            if(billing.isPurchased(sku))
-                purchased.add(sku);
-        }
-
-        res.putExtra("skus", purchased);
-
-        setResult(RESULT_OK, res);
-        finish();
     }
 }

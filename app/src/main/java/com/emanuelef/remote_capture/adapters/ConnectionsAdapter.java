@@ -448,7 +448,7 @@ public class ConnectionsAdapter extends RecyclerView.Adapter<ConnectionsAdapter.
     public String dumpConnectionsCsv() {
         StringBuilder builder = new StringBuilder();
         AppsResolver resolver = new AppsResolver(mContext);
-        boolean malwareDetection = Prefs.isMalwareDetectionEnabled(mContext, PreferenceManager.getDefaultSharedPreferences(mContext));
+        boolean malwareDetection = Prefs.isMalwareDetectionEnabled(PreferenceManager.getDefaultSharedPreferences(mContext));
 
         String header = mContext.getString(R.string.connections_csv_fields);
         builder.append(header);

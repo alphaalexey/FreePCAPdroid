@@ -145,7 +145,6 @@
     <string name="status_filter">Status : %1$s</string>
     <string name="not_hidden_filter">Non masqué</string>
     <string name="url_val">URL : %1$s</string>
-    <string name="billing_connecting">Connexion au Google Player en cours, veuillez réessayer plus tard</string>
     <string name="feature_not_available">Cette fonctionnalité n\'est actuellement pas disponible sur votre appareil</string>
     <string name="malware_whitelist_rules">Règles d\'autorisation des virus</string>
     <string name="hidden_connections_help">La liste des règles pour masquer les connexions de la liste et ainsi se concentrer sur les plus pertinentes</string>
@@ -199,17 +198,13 @@
     <string name="no_intent_handler_found">Aucune application pour cette action</string>
     <string name="decryption_no_filter_warn">Sélectionnez une application cible lors du décryptage TLS pour éviter de perdre votre connexion internet</string>
     <string name="n_pkts">%1$s paq.</string>
-    <string name="purchased">Acheté</string>
     <string name="network_interface">Interface</string>
     <string name="loading">Chargement…</string>
     <string name="buy_action">Acheter</string>
     <string name="interface_filter">Interface : %1$s</string>
     <string name="learn_more">Plus d\'info</string>
-    <string name="no_items_for_purchase">Aucun élément à acheter</string>
-    <string name="billing_failure">Échec de connexion au Google Play. Veuillez réessayer plus tard</string>
     <string name="capture_not_running_status">La capture n\'a pas été lancée</string>
     <string name="copied">Copié</string>
-    <string name="can_use_purchased_feature">Vous pouvez maintenant la fonctionnalité d\'achat</string>
     <string name="start_capture_first">Lancez d\'abord la capture</string>
     <string name="malware_whitelist_help">Les listes utilisateur pour la détection des virus. Pressez longuement une connexion virale pour créer une nouvelle règle qui ne la détectera plus comme un virus</string>
     <string name="conn_status_active">Actif</string>
@@ -317,14 +312,12 @@
     <string name="waiting_application_data">En attente des données</string>
     <string name="no_root_firewall">Pare-feu non-root</string>
     <string name="block_quick">Bloquer QUIC</string>
-    <string name="paid_feature">Fonctionnalité payante</string>
     <string name="firewall_purchase_msg">Achetez la fonctionnalité <i>%1$s</i> pour commencer à bloquer des connexions</string>
     <string name="app_intro_geolocation_msg">PCAPdroid peut demander à une base de données locale le pays du serveur distant
 \n
 \nVous devez d\'abord télécharger cette base de géolocalisation depuis les préférences de l\'application</string>
     <string name="install_the_mitm_addon">Installer <a href="%1$s">le greffon mitm</a> de PCAPdroid</string>
     <string name="app_blocked_info">L\'application %1$s a été bloquée par le pare-feu</string>
-    <string name="paid_features_unlocked">Les fonctionnalités payantes ont été débloquées. Relancez la capture si déjà lancée</string>
     <string name="access_paid_features_msg">Consultez <a href="%1$s">le guide utilisateur</a> pour savoir comment accéder au fonctionnalités payantes</string>
     <string name="unlock_token_error">Le \"unlock token\" [%1$d] n\'a pu être demandé : %2$s</string>
     <string name="show_action">Afficher</string>

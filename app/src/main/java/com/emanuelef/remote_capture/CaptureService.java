@@ -115,7 +115,7 @@ public class CaptureService extends VpnService implements Runnable {
     private boolean mRevoked;
     private SharedPreferences mPrefs;
     private CaptureSettings mSettings;
-    private Billing mBilling;
+    private GUIUtils mGUIUtils;
     private Handler mHandler;
     private Thread mCaptureThread;
     private Thread mBlacklistsUpdateThread;
@@ -202,7 +202,7 @@ public class CaptureService extends VpnService implements Runnable {
         Log.d(CaptureService.TAG, "onCreate");
         nativeAppsResolver = new AppsResolver(this);
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-        mSettings = new CaptureSettings(this, mPrefs); // initialize to prevent NULL pointer exceptions in methods (e.g. isRootCapture)
+        mSettings = new CaptureSettings(mPrefs); // initialize to prevent NULL pointer exceptions in methods (e.g. isRootCapture)
 
         INSTANCE = this;
         super.onCreate();
@@ -241,7 +241,7 @@ public class CaptureService extends VpnService implements Runnable {
             VpnReconnectService.stopService();
 
         mHandler = new Handler(Looper.getMainLooper());
-        mBilling = Billing.newInstance(this);
+        mGUIUtils = GUIUtils.newInstance(this);
 
         Log.d(CaptureService.TAG, "onStartCommand");
 
@@ -435,7 +435,7 @@ public class CaptureService extends VpnService implements Runnable {
         } else
             mAppFilterUids = new int[0];
 
-        mMalwareDetectionEnabled = Prefs.isMalwareDetectionEnabled(this, mPrefs);
+        mMalwareDetectionEnabled = Prefs.isMalwareDetectionEnabled(mPrefs);
         mFirewallEnabled = Prefs.isFirewallEnabled(this, mPrefs);
 
         if(!mSettings.root_capture && !mSettings.readFromPcap()) {
@@ -1522,7 +1522,7 @@ public class CaptureService extends VpnService implements Runnable {
     }
 
     public void reloadBlocklist() {
-        if(!mBilling.isFirewallVisible())
+        if(!mGUIUtils.isFirewallVisible())
             return;
 
         Log.i(TAG, "reloading firewall blocklist");
@@ -1530,7 +1530,7 @@ public class CaptureService extends VpnService implements Runnable {
     }
 
     public void reloadFirewallWhitelist() {
-        if(!mBilling.isFirewallVisible())
+        if(!mGUIUtils.isFirewallVisible())
             return;
 
         Log.i(TAG, "reloading firewall whitelist");

@@ -1,11 +1,8 @@
 package com.emanuelef.remote_capture.model;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-
-import com.emanuelef.remote_capture.Billing;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -42,7 +39,7 @@ public class CaptureSettings implements Serializable {
     public int max_dump_size = 0;
     public String mitmproxy_opts;
 
-    public CaptureSettings(Context ctx, SharedPreferences prefs) {
+    public CaptureSettings(SharedPreferences prefs) {
         dump_mode = Prefs.getDumpMode(prefs);
         app_filter = Prefs.getAppFilter(prefs);
         collector_address = Prefs.getCollectorIp(prefs);
@@ -62,10 +59,10 @@ public class CaptureSettings implements Serializable {
         block_quic_mode = Prefs.getBlockQuicMode(prefs);
         auto_block_private_dns = Prefs.isPrivateDnsBlockingEnabled(prefs);
         mitmproxy_opts = Prefs.getMitmproxyOpts(prefs);
-        pcapng_format = Prefs.isPcapngEnabled(ctx, prefs);
+        pcapng_format = Prefs.isPcapngEnabled(prefs);
     }
 
-    public CaptureSettings(Context ctx, Intent intent) {
+    public CaptureSettings(Intent intent) {
         dump_mode = Prefs.getDumpMode(getString(intent, "pcap_dump_mode", "none"));
         app_filter = new HashSet<>(getStringList(intent, Prefs.PREF_APP_FILTER));
         collector_address = getString(intent, Prefs.PREF_COLLECTOR_IP_KEY, "127.0.0.1");
@@ -90,7 +87,7 @@ public class CaptureSettings implements Serializable {
         block_quic_mode = Prefs.getBlockQuicMode(getString(intent, "block_quic", Prefs.BLOCK_QUIC_MODE_DEFAULT));
         auto_block_private_dns = getBool(intent, Prefs.PREF_AUTO_BLOCK_PRIVATE_DNS, true);
         mitmproxy_opts = getString(intent, Prefs.PREF_MITMPROXY_OPTS, "");
-        pcapng_format = getBool(intent, Prefs.PREF_PCAPNG_ENABLED, false) && Billing.newInstance(ctx).isPurchased(Billing.PCAPNG_SKU);
+        pcapng_format = getBool(intent, Prefs.PREF_PCAPNG_ENABLED, false);
     }
 
     private static String getString(Intent intent, String key, String def_value) {
