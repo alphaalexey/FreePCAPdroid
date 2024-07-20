@@ -13,31 +13,31 @@ import java.util.Set;
 
 public class CaptureSettings implements Serializable {
     public Prefs.DumpMode dump_mode;
-    public Set<String> app_filter;
-    public String collector_address;
-    public int collector_port;
-    public int http_server_port;
+    public final Set<String> app_filter;
+    public final String collector_address;
+    public final int collector_port;
+    public final int http_server_port;
     public boolean socks5_enabled;
     public boolean tls_decryption;
     public String socks5_proxy_address;
-    public int socks5_proxy_port;
-    public String socks5_username;
-    public String socks5_password;
-    public Prefs.IpMode ip_mode;
+    public final int socks5_proxy_port;
+    public final String socks5_username;
+    public final String socks5_password;
+    public final Prefs.IpMode ip_mode;
     public String input_pcap_path;
     public boolean root_capture;
-    public boolean pcapdroid_trailer;
+    public final boolean pcapdroid_trailer;
     public boolean full_payload;
-    public Prefs.BlockQuicMode block_quic_mode;
+    public final Prefs.BlockQuicMode block_quic_mode;
     public boolean auto_block_private_dns;
-    public boolean pcapng_format;
+    public final boolean pcapng_format;
     public String capture_interface;
     public String pcap_uri = "";
     public String pcap_name = "";
     public int snaplen = 0;
     public int max_pkts_per_flow = 0;
     public int max_dump_size = 0;
-    public String mitmproxy_opts;
+    public final String mitmproxy_opts;
 
     public CaptureSettings(SharedPreferences prefs) {
         dump_mode = Prefs.getDumpMode(prefs);

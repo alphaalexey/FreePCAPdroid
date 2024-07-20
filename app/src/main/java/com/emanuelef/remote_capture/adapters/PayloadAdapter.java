@@ -439,10 +439,10 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
     }
 
     private static class Page {
-        AdapterChunk adaptChunk;
-        int textStart;
-        int textEnd;
-        boolean isLast;
+        final AdapterChunk adaptChunk;
+        final int textStart;
+        final int textEnd;
+        final boolean isLast;
 
         Page(AdapterChunk _adaptChunk, int _textStart, int _textEnd, boolean _isLast) {
             adaptChunk = _adaptChunk;
@@ -461,13 +461,13 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
     }
 
     protected static class PayloadViewHolder extends RecyclerView.ViewHolder {
-        View headerLine;
-        View dumpBox;
-        TextView header;
-        TextView dump;
-        MaterialButton expandButton;
-        MaterialButton copybutton;
-        MaterialButton exportbutton;
+        final View headerLine;
+        final View dumpBox;
+        final TextView header;
+        final TextView dump;
+        final MaterialButton expandButton;
+        final MaterialButton copybutton;
+        final MaterialButton exportbutton;
 
         public PayloadViewHolder(View view) {
             super(view);

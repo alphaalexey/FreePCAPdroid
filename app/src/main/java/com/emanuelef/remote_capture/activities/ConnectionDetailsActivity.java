@@ -263,7 +263,7 @@ public class ConnectionDetailsActivity extends BaseActivity implements Connectio
 
             if (view instanceof TabLayout.TabView) {
                 int pos = mPager.getCurrentItem();
-                View focusOverride = null;
+                View focusOverride;
 
                 Log.d(TAG, "TabLayout.TabView focus pos " + pos);
 

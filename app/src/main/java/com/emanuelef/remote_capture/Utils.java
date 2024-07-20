@@ -201,7 +201,6 @@ public class Utils {
         return String.format("%.1f %s", ((float) val) / divisor, suffix);
     }
 
-    @SuppressWarnings("deprecation")
     public static Locale getPrimaryLocale(Context context) {
         if (primaryLocale == null) {
             Configuration config = context.getResources().getConfiguration();
@@ -215,7 +214,6 @@ public class Utils {
         return primaryLocale;
     }
 
-    @SuppressWarnings("deprecation")
     public static int getSmallerDisplayDimension(Context ctx) {
         WindowManager manager = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
 
@@ -401,7 +399,6 @@ public class Utils {
     // API level 31 requires building a NetworkRequest, which in turn requires an asynchronous callback.
     // Using the deprecated API instead to keep things simple.
     // https://developer.android.com/reference/android/net/wifi/WifiManager#getConnectionInfo()
-    @SuppressWarnings("deprecation")
     public static String getLocalWifiIpAddress(Context context) {
         WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         if (wifiManager == null)
@@ -642,7 +639,6 @@ public class Utils {
     // API level 31 requires building a NetworkRequest, which in turn requires an asynchronous callback.
     // Using the deprecated API instead to keep things simple.
     // https://developer.android.com/reference/android/net/ConnectivityManager#getAllNetworks()
-    @SuppressWarnings("deprecation")
     public static Network getRunningVpn(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (cm != null) {
@@ -667,12 +663,12 @@ public class Utils {
     }
 
     public static void showToast(Context context, int id, Object... args) {
-        String msg = context.getResources().getString(id, (Object[]) args);
+        String msg = context.getResources().getString(id, args);
         Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
     }
 
     public static void showToastLong(Context context, int id, Object... args) {
-        String msg = context.getResources().getString(id, (Object[]) args);
+        String msg = context.getResources().getString(id, args);
         Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
     }
 
@@ -829,7 +825,7 @@ public class Utils {
 
         //values.put(MediaStore.MediaColumns.MIME_TYPE, "text/plain");
         values.put(MediaStore.MediaColumns.DISPLAY_NAME, fname);
-        String selectQuery = "";
+        String selectQuery;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // On Android Q+ cannot directly access the external dir. Must use RELATIVE_PATH instead.
@@ -1444,7 +1440,6 @@ public class Utils {
         }
     }
 
-    @SuppressWarnings({"deprecation"})
     public static PackageInfo getPackageInfo(PackageManager pm, String package_name, int flags) throws PackageManager.NameNotFoundException {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
             return pm.getPackageInfo(package_name, PackageManager.PackageInfoFlags.of(flags));
@@ -1452,7 +1447,6 @@ public class Utils {
             return pm.getPackageInfo(package_name, flags);
     }
 
-    @SuppressWarnings({"deprecation"})
     public static int getPackageUid(PackageManager pm, String package_name, int flags) throws PackageManager.NameNotFoundException {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
             return pm.getPackageUid(package_name, PackageManager.PackageInfoFlags.of(flags));
@@ -1463,7 +1457,6 @@ public class Utils {
     }
 
     @SuppressLint({"QueryPermissionsNeeded"})
-    @SuppressWarnings({"deprecation"})
     public static List<PackageInfo> getInstalledPackages(PackageManager pm, int flags) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
             return pm.getInstalledPackages(PackageManager.PackageInfoFlags.of(flags));
@@ -1482,7 +1475,7 @@ public class Utils {
 
     // from bouncycastle
     private static boolean isValidIPv6(String address) {
-        if (address.length() == 0)
+        if (address.isEmpty())
             return false;
 
         char firstChar = address.charAt(0);
@@ -1578,9 +1571,7 @@ public class Utils {
             return false;
         if ((host.charAt(0) == '-') || (host.charAt(len - 1) == '-'))
             return false;
-        if (host.matches(".*[A-Z\\s?!=`@].*"))
-            return false;
-        return true;
+        return !host.matches(".*[A-Z\\s?!=`@].*");
     }
 
     public static String uriToFilePath(Context ctx, Uri uri) {

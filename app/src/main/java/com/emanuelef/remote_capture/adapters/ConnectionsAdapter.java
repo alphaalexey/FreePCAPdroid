@@ -257,7 +257,7 @@ public class ConnectionsAdapter extends RecyclerView.Adapter<ConnectionsAdapter.
                         Log.d(TAG, "Changed item " + pos + ", dataset size: " + getItemCount());
                         notifyItemChanged(pos);
                     } else {
-                        Log.d(TAG, "Unmatch item " + pos + ": " + conn.toString());
+                        Log.d(TAG, "Unmatch item " + pos + ": " + conn);
 
                         // A previously matching connection may not match anymore. This happens, for
                         // example, when its info or protocol is updated. In this case, the connection
@@ -412,18 +412,18 @@ public class ConnectionsAdapter extends RecyclerView.Adapter<ConnectionsAdapter.
     public static class ViewHolder extends RecyclerView.ViewHolder {
         //FlagImageView countryFlag;
         final String mProtoAndPort;
-        ImageView icon;
-        ImageView jsInjectorInd;
-        ImageView blacklistedInd;
-        ImageView blockedInd;
-        ImageView redirectedInd;
-        ImageView decryptionInd;
-        TextView statusInd;
-        TextView remote;
-        TextView l7proto;
-        TextView traffic;
-        TextView appName;
-        TextView lastSeen;
+        final ImageView icon;
+        final ImageView jsInjectorInd;
+        final ImageView blacklistedInd;
+        final ImageView blockedInd;
+        final ImageView redirectedInd;
+        final ImageView decryptionInd;
+        final TextView statusInd;
+        final TextView remote;
+        final TextView l7proto;
+        final TextView traffic;
+        final TextView appName;
+        final TextView lastSeen;
 
         ViewHolder(View itemView) {
             super(itemView);
@@ -446,7 +446,6 @@ public class ConnectionsAdapter extends RecyclerView.Adapter<ConnectionsAdapter.
             mProtoAndPort = context.getString(R.string.proto_and_port);
         }
 
-        @SuppressWarnings("deprecation")
         public void bindConn(Context context, ConnectionDescriptor conn, AppsResolver apps, Drawable unknownIcon) {
             AppDescriptor app = apps.getAppByUid(conn.uid, 0);
             Drawable appIcon;
@@ -455,7 +454,7 @@ public class ConnectionsAdapter extends RecyclerView.Adapter<ConnectionsAdapter.
             appIcon = ((app != null) && (app.getIcon() != null)) ? app.getIcon() : unknownIcon;
             icon.setImageDrawable(appIcon);
 
-            if ((conn.info != null) && (conn.info.length() > 0))
+            if ((conn.info != null) && (!conn.info.isEmpty()))
                 remote.setText(conn.info);
             else
                 remote.setText(conn.dst_ip);

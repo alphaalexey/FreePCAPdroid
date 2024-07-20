@@ -119,7 +119,7 @@ public class Geolocation {
     }
 
     @Override
-    public void finalize() {
+    protected void finalize() {
         Utils.safeClose(mCountryReader);
         Utils.safeClose(mAsnReader);
         mCountryReader = null;

@@ -386,7 +386,7 @@ public class MatchList {
     }
 
     public void clear(boolean notify) {
-        boolean hasRules = mRules.size() > 0;
+        boolean hasRules = !mRules.isEmpty();
         mRules.clear();
         mMatches.clear();
         mPackageToUid.clear();
@@ -401,7 +401,7 @@ public class MatchList {
     }
 
     public boolean isEmpty() {
-        return (mRules.size() == 0);
+        return (mRules.isEmpty());
     }
 
     public int getSize() {

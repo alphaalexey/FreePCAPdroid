@@ -8,11 +8,9 @@ import androidx.preference.PreferenceManager;
 import com.emanuelef.remote_capture.model.Prefs;
 
 public class GUIUtils {
-    protected final Context mContext;
-    protected SharedPreferences mPrefs;
+    protected final SharedPreferences mPrefs;
 
     protected GUIUtils(Context ctx) {
-        mContext = ctx;
         mPrefs = PreferenceManager.getDefaultSharedPreferences(ctx);
     }
 

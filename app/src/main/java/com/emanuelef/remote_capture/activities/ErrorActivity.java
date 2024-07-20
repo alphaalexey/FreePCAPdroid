@@ -94,52 +94,34 @@ public final class ErrorActivity extends AppCompatActivity {
 
         if (config.isShowRestartButton() && config.getRestartActivityClass() != null) {
             restartButton.setText(R.string.customactivityoncrash_error_activity_restart_app);
-            restartButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    CustomActivityOnCrash.restartApplication(ErrorActivity.this, config);
-                }
-            });
+            restartButton.setOnClickListener(v -> CustomActivityOnCrash.restartApplication(ErrorActivity.this, config));
         } else {
-            restartButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    CustomActivityOnCrash.closeApplication(ErrorActivity.this, config);
-                }
-            });
+            restartButton.setOnClickListener(v -> CustomActivityOnCrash.closeApplication(ErrorActivity.this, config));
         }
 
         Button moreInfoButton = findViewById(R.id.customactivityoncrash_error_activity_more_info_button);
 
         if (config.isShowErrorDetails()) {
-            moreInfoButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    //We retrieve all the error data and show it
+            moreInfoButton.setOnClickListener(v -> {
+                //We retrieve all the error data and show it
 
-                    AlertDialog dialog = new AlertDialog.Builder(ErrorActivity.this)
-                            .setTitle(R.string.customactivityoncrash_error_activity_error_details_title)
-                            .setMessage(getErrorDetails())
-                            .setPositiveButton(R.string.customactivityoncrash_error_activity_error_details_close, null)
-                            .setNeutralButton(R.string.customactivityoncrash_error_activity_error_details_copy,
-                                    new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            copyErrorToClipboard();
-                                        }
-                                    })
-                            .show();
-                    TextView textView = dialog.findViewById(android.R.id.message);
-                    if (textView != null) {
-                        textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.customactivityoncrash_error_activity_error_details_text_size));
-                    }
+                AlertDialog dialog = new AlertDialog.Builder(ErrorActivity.this)
+                        .setTitle(R.string.customactivityoncrash_error_activity_error_details_title)
+                        .setMessage(getErrorDetails())
+                        .setPositiveButton(R.string.customactivityoncrash_error_activity_error_details_close, null)
+                        .setNeutralButton(R.string.customactivityoncrash_error_activity_error_details_copy,
+                                (dialog1, which) -> copyErrorToClipboard())
+                        .show();
+                TextView textView = dialog.findViewById(android.R.id.message);
+                if (textView != null) {
+                    textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.customactivityoncrash_error_activity_error_details_text_size));
                 }
             });
         } else {
             moreInfoButton.setVisibility(View.GONE);
         }
 
-        Button emailButton = ((Button) findViewById(com.emanuelef.remote_capture.R.id.report_button));
+        Button emailButton = findViewById(com.emanuelef.remote_capture.R.id.report_button);
         Intent emailIntent = new Intent(Intent.ACTION_SENDTO);
         emailIntent.setData(Uri.parse("mailto:"));
         emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{"Emanuele Faranda <black.silver@hotmail.it>"});

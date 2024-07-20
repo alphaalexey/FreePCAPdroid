@@ -177,7 +177,7 @@ public class PortMapFragment extends Fragment implements MenuProvider {
 
         final String[] protocols = {"TCP", "UDP"};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(ctx, R.layout.dropdown_item, protocols);
-        AutoCompleteTextView protoField = (AutoCompleteTextView) view.findViewById(R.id.proto);
+        AutoCompleteTextView protoField = view.findViewById(R.id.proto);
         protoField.setText(protocols[0]);
         protoField.setAdapter(adapter);
 
@@ -214,9 +214,9 @@ public class PortMapFragment extends Fragment implements MenuProvider {
     }
 
     private PortMap validateAddDialog(View view) {
-        TextInputEditText origPortField = (TextInputEditText) view.findViewById(R.id.orig_port);
-        TextInputEditText redirectIpField = (TextInputEditText) view.findViewById(R.id.redirect_ip);
-        TextInputEditText redirectPortField = (TextInputEditText) view.findViewById(R.id.redirect_port);
+        TextInputEditText origPortField = view.findViewById(R.id.orig_port);
+        TextInputEditText redirectIpField = view.findViewById(R.id.redirect_ip);
+        TextInputEditText redirectPortField = view.findViewById(R.id.redirect_port);
 
         String origPort = Objects.requireNonNull(origPortField.getText()).toString();
         String redirectIp = Objects.requireNonNull(redirectIpField.getText()).toString();
@@ -293,7 +293,7 @@ public class PortMapFragment extends Fragment implements MenuProvider {
                 toRemove.add(mapping);
         }
 
-        if (toRemove.size() > 0) {
+        if (!toRemove.isEmpty()) {
             for (PortMap mapping : toRemove)
                 mPortMap.remove(mapping);
             mPortMap.save();

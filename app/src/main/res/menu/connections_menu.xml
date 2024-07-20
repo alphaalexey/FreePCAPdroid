@@ -19,7 +19,7 @@
         android:icon="@drawable/ic_filter"
         android:orderInCategory="20"
         android:title="@string/edit_filter"
-        app:showAsAction="always"></item>
+        app:showAsAction="always" />
 
     <item
         android:id="@+id/save"

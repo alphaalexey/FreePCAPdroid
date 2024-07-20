@@ -116,7 +116,7 @@ public class HTTPReassembly {
                     }
                 }
 
-                while ((line != null) && (line.length() > 0)) {
+                while ((line != null) && (!line.isEmpty())) {
                     line = line.toLowerCase();
                     //log_d("[HEADER] " + line);
 
@@ -248,7 +248,7 @@ public class HTTPReassembly {
                     && !mChunkedEncoding) {
                 // Reassemble the chunks (NOTE: gzip is applied only after all the chunks are collected)
                 PayloadChunk headers = reassembleChunks(mHeaders);
-                PayloadChunk body = mBody.size() > 0 ? reassembleChunks(mBody) : null;
+                PayloadChunk body = !mBody.isEmpty() ? reassembleChunks(mBody) : null;
 
                 //log_d("mContentLength=" + mContentLength + ", mReassembleChunks=" + mReassembleChunks + ", mChunkedEncoding=" + mChunkedEncoding);
 

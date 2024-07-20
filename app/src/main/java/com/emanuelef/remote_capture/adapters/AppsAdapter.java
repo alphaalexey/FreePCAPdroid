@@ -90,9 +90,9 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.AppViewHolder>
     }
 
     public static class AppViewHolder extends RecyclerView.ViewHolder {
-        TextView textInListView;
-        ImageView imageInListView;
-        TextView packageInListView;
+        final TextView textInListView;
+        final ImageView imageInListView;
+        final TextView packageInListView;
 
         public AppViewHolder(View view) {
             super(view);

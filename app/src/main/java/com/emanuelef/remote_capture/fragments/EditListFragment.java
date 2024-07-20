@@ -405,7 +405,7 @@ public class EditListFragment extends Fragment implements MatchList.ListChangeLi
                 toRemove.add(rule);
         }
 
-        if (toRemove.size() > 0) {
+        if (!toRemove.isEmpty()) {
             mIsOwnUpdate = true;
 
             for (MatchList.Rule rule : toRemove)

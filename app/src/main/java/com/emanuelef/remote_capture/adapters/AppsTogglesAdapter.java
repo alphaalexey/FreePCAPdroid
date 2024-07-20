@@ -224,10 +224,10 @@ public class AppsTogglesAdapter extends RecyclerView.Adapter<AppsTogglesAdapter.
     }
 
     public static class AppViewHolder extends RecyclerView.ViewHolder {
-        TextView appName;
-        TextView packageName;
-        ImageView icon;
-        SwitchCompat toggle;
+        final TextView appName;
+        final TextView packageName;
+        final ImageView icon;
+        final SwitchCompat toggle;
 
         public AppViewHolder(View view) {
             super(view);

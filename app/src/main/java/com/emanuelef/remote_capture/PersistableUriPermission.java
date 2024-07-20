@@ -41,7 +41,7 @@ public class PersistableUriPermission {
     private static final String PREF_KEY = "persistable_uri";
 
     /* FLAG_GRANT_READ_URI_PERMISSION required for showPcapActionDialog (e.g. when auto-started at boot) */
-    private static int PERSIST_MODE = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+    private static final int PERSIST_MODE = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
     private final Context mCtx;
     private final SharedPreferences mPrefs;
     private final ActivityResultLauncher<Intent> mPcapLauncher;

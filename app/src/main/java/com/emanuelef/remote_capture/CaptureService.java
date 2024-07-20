@@ -187,7 +187,6 @@ public class CaptureService extends VpnService implements Runnable {
 
     /* Stops the running Service. The SERVICE_STATUS_STOPPED notification is sent asynchronously
      * when mCaptureThread terminates. */
-    @SuppressWarnings("deprecation")
     public static void stopService() {
         CaptureService captureService = INSTANCE;
         Log.d(TAG, "stopService called (instance? " + (captureService != null) + ")");

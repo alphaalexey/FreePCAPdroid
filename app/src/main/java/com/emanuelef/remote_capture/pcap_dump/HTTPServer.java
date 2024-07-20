@@ -225,7 +225,7 @@ public class HTTPServer implements PcapDumper, Runnable {
         final OutputStream mOutputStream;
         final String mFname;
         final String mMimeType;
-        Socket mSocket;
+        final Socket mSocket;
         ChunkedOutputStream mChunkedOutputStream;
         boolean mHasError;
         boolean mReadyForData;

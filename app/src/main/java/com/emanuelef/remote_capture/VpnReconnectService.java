@@ -19,7 +19,6 @@
 
 package com.emanuelef.remote_capture;
 
-import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -63,13 +62,10 @@ public class VpnReconnectService extends Service {
     private ConnectivityManager.NetworkCallback mNetworkCallback;
     private Network mActiveVpnNetwork;
 
-    @SuppressLint("ObsoleteSdkInt")
-    @RequiresApi(api = Build.VERSION_CODES.BASE)
     public static boolean isAvailable() {
         return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M;
     }
 
-    @SuppressWarnings("deprecation")
     public static void stopService() {
         Log.d(TAG, "stopService called");
         VpnReconnectService service = INSTANCE;

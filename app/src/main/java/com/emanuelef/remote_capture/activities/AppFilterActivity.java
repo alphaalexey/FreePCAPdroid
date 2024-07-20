@@ -28,7 +28,6 @@ public class AppFilterActivity extends BaseActivity implements MenuProvider {
     private AppFilterFragment mFragment;
 
     @Override
-    @SuppressWarnings("deprecation")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setTitle(R.string.target_apps);

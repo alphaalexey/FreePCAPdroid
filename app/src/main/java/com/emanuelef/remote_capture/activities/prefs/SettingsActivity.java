@@ -85,15 +85,19 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
 
         Log.d(TAG, "startFragment: " + prefKey);
 
-        if (prefKey.equals("geolocation")) {
-            targetFragment = new GeoipSettings();
-            setTitle(R.string.geolocation);
-        } else if (prefKey.equals("dns_settings")) {
-            targetFragment = new DnsSettings();
-            setTitle(R.string.dns_servers);
-        } else if (prefKey.equals("socks5_settings")) {
-            targetFragment = new Socks5Settings();
-            setTitle(R.string.socks5_proxy);
+        switch (prefKey) {
+            case "geolocation":
+                targetFragment = new GeoipSettings();
+                setTitle(R.string.geolocation);
+                break;
+            case "dns_settings":
+                targetFragment = new DnsSettings();
+                setTitle(R.string.dns_servers);
+                break;
+            case "socks5_settings":
+                targetFragment = new Socks5Settings();
+                setTitle(R.string.socks5_proxy);
+                break;
         }
 
         if (targetFragment != null) {
@@ -196,7 +200,6 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
             return pref;
         }
 
-        @SuppressWarnings("deprecation")
         private void setupUdpExporterPrefs() {
             /* Collector IP validation */
             EditTextPreference mRemoteCollectorIp = requirePreference(Prefs.PREF_COLLECTOR_IP_KEY);
@@ -268,7 +271,6 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
             mRestartOnDisconnect.setVisible(VpnReconnectService.isAvailable());
 
             mDnsSettings = requirePreference("dns_settings");
-            ;
             mVpnExceptions = requirePreference(Prefs.PREF_VPN_EXCEPTIONS);
             mVpnExceptions.setOnPreferenceClickListener(preference -> {
                 Intent intent = new Intent(requireContext(), VpnExemptionsActivity.class);
@@ -284,7 +286,6 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
             mMalwareDetectionEnabled = requirePreference(Prefs.PREF_MALWARE_DETECTION);
         }
 
-        @SuppressWarnings("deprecation")
         private void setupTrafficInspectionPrefs() {
             mAutoBlockPrivateDNS = requirePreference("auto_block_private_dns");
 

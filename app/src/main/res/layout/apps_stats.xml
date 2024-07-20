@@ -19,5 +19,5 @@
         android:gravity="center_horizontal"
         android:text="@string/no_apps"
         android:textSize="15sp"
-        android:textStyle="italic"></TextView>
+        android:textStyle="italic" />
 </RelativeLayout>

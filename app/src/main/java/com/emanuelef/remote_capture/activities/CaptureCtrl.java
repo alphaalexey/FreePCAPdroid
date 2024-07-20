@@ -106,7 +106,6 @@ public class CaptureCtrl extends AppCompatActivity {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         // Important: calls must occur in the following order:
         //  requestWindowFeature -> setContentView -> getInsetsController()
@@ -264,55 +263,58 @@ public class CaptureCtrl extends AppCompatActivity {
         Intent res = new Intent();
         Utils.showToast(this, R.string.ctrl_consent_allowed);
 
-        if (action.equals(ACTION_START)) {
-            mStarterApp = getCallingApp();
-            mReceiverClass = req_intent.getStringExtra("broadcast_receiver");
-            Log.d(TAG, "Starting capture, caller=" + mStarterApp);
+        switch (action) {
+            case ACTION_START:
+                mStarterApp = getCallingApp();
+                mReceiverClass = req_intent.getStringExtra("broadcast_receiver");
+                Log.d(TAG, "Starting capture, caller=" + mStarterApp);
 
-            CaptureSettings settings = new CaptureSettings(req_intent);
-            String disallowedServer = checkRemoteServerNotAllowed(settings);
-            if (disallowedServer != null) {
-                Utils.showToastLong(this, R.string.remote_server_warning, disallowedServer);
+                CaptureSettings settings = new CaptureSettings(req_intent);
+                String disallowedServer = checkRemoteServerNotAllowed(settings);
+                if (disallowedServer != null) {
+                    Utils.showToastLong(this, R.string.remote_server_warning, disallowedServer);
+                    abort();
+                    return;
+                }
+
+                if (!settings.pcap_uri.isEmpty()) {
+                    persistableUriPermission.checkPermission(settings.pcap_uri, settings.pcapng_format, granted_uri -> {
+                        Log.d(TAG, "persistable uri granted? " + granted_uri);
+
+                        if (granted_uri != null) {
+                            settings.pcap_uri = granted_uri.toString();
+                            mCapHelper.startCapture(settings);
+                        } else
+                            abort();
+                    });
+                } else
+                    // will call the mCapHelper listener
+                    mCapHelper.startCapture(settings);
+                return;
+            case ACTION_STOP:
+                Log.d(TAG, "Stopping capture");
+
+                CaptureService.stopService();
+                mStarterApp = null;
+
+                // stopService returns immediately, need to wait for capture stop
+                CaptureService.waitForCaptureStop();
+
+                putStats(res, CaptureService.getStats());
+                break;
+            case ACTION_STATUS:
+                Log.d(TAG, "Returning status");
+
+                res.putExtra("running", CaptureService.isServiceActive());
+                res.putExtra("version_name", BuildConfig.VERSION_NAME);
+                res.putExtra("version_code", BuildConfig.VERSION_CODE);
+
+                putStats(res, CaptureService.getStats());
+                break;
+            default:
+                Log.e(TAG, "unknown action: " + action);
                 abort();
                 return;
-            }
-
-            if (!settings.pcap_uri.isEmpty()) {
-                persistableUriPermission.checkPermission(settings.pcap_uri, settings.pcapng_format, granted_uri -> {
-                    Log.d(TAG, "persistable uri granted? " + granted_uri);
-
-                    if (granted_uri != null) {
-                        settings.pcap_uri = granted_uri.toString();
-                        mCapHelper.startCapture(settings);
-                    } else
-                        abort();
-                });
-            } else
-                // will call the mCapHelper listener
-                mCapHelper.startCapture(settings);
-            return;
-        } else if (action.equals(ACTION_STOP)) {
-            Log.d(TAG, "Stopping capture");
-
-            CaptureService.stopService();
-            mStarterApp = null;
-
-            // stopService returns immediately, need to wait for capture stop
-            CaptureService.waitForCaptureStop();
-
-            putStats(res, CaptureService.getStats());
-        } else if (action.equals(ACTION_STATUS)) {
-            Log.d(TAG, "Returning status");
-
-            res.putExtra("running", CaptureService.isServiceActive());
-            res.putExtra("version_name", BuildConfig.VERSION_NAME);
-            res.putExtra("version_code", BuildConfig.VERSION_CODE);
-
-            putStats(res, CaptureService.getStats());
-        } else {
-            Log.e(TAG, "unknown action: " + action);
-            abort();
-            return;
         }
 
         setResult(RESULT_OK, res);

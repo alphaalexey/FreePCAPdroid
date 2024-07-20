@@ -509,11 +509,11 @@ public class MitmReceiver implements Runnable, ConnectionsListener, MitmListener
     }
 
     private static class PendingMessage {
-        MsgType type;
-        byte[] msg;
-        int port;
-        long pendingSince;
-        long when;
+        final MsgType type;
+        final byte[] msg;
+        final int port;
+        final long pendingSince;
+        final long when;
 
         PendingMessage(MsgType _type, byte[] _msg, int _port, long _now) {
             type = _type;

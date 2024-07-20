@@ -205,13 +205,13 @@ public class AppsStatsAdapter extends RecyclerView.Adapter<AppsStatsAdapter.View
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-        ImageView icon;
-        ImageView blockedFlag;
-        ImageView whitelistedFlag;
-        ImageView tempUnblocked;
-        TextView info;
-        TextView sent_rcvd;
-        TextView traffic;
+        final ImageView icon;
+        final ImageView blockedFlag;
+        final ImageView whitelistedFlag;
+        final ImageView tempUnblocked;
+        final TextView info;
+        final TextView sent_rcvd;
+        final TextView traffic;
 
         ViewHolder(View itemView) {
             super(itemView);
